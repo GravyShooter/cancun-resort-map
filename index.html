@@ -366,6 +366,25 @@
       .walklist .wtime { color: var(--ink-soft); white-space: nowrap; }
       .walklist .wtime strong { color: var(--accent); font-weight: 700; }
 
+      /* Getting around: origin picker */
+      .originbar { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; margin: 2px 0 6px; }
+      .originbar .olabel { font-weight: 700; font-size: 0.95rem; }
+      .ocontrol {
+        height: 44px; border-radius: 999px; border: 1px solid var(--line);
+        background: var(--panel-2); color: var(--ink); font: inherit; font-size: 0.95rem;
+        padding: 0 14px; min-width: 0;
+      }
+      select.ocontrol {
+        appearance: none; flex: 1 1 210px; cursor: pointer; padding-right: 34px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%238a8272' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 14px center;
+      }
+      input.ocontrol { flex: 0 1 118px; }
+      .ocontrol:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+      .ofrom { margin: 0 0 2px; font-size: 0.9rem; color: var(--ink-soft); }
+      .ofrom strong { color: var(--ink); }
+      .onote { margin: 0 0 6px; font-size: 0.9rem; font-weight: 600; color: var(--c-dining); }
+
       /* Place list + detail */
       .layout { display: grid; gap: var(--s-5); margin-top: var(--s-5); }
       @media (min-width: 900px) {
@@ -749,14 +768,26 @@
       <section class="grounds" aria-label="Walking times between landmarks">
         <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="aroundBody"><span>Getting around</span><span class="chev" aria-hidden="true"></span></button></h2>
         <div class="foldbody" id="aroundBody" hidden>
-        <p class="gsub">The resort is compact — the whole grounds are about a 5–7 minute walk end to end. Walking times between the landmarks you'll use most:</p>
-        <ul class="walklist">
-          <li><span class="wroute">Lobby → Beach</span><span class="wtime">≈350 m · <strong>4–6 min</strong></span></li>
-          <li><span class="wroute">Lobby → Miilé Spa</span><span class="wtime">≈150 m · <strong>2–3 min</strong></span></li>
-          <li><span class="wroute">Building 1 → Main pool</span><span class="wtime">≈200 m · <strong>3–4 min</strong></span></li>
-          <li><span class="wroute">Building 9 → Lobby</span><span class="wtime">≈250 m · <strong>3–5 min</strong></span></li>
-          <li><span class="wroute">Building 9 → Excellence Club pool</span><span class="wtime">≈10–20 m · <strong>under 1 min</strong></span></li>
-        </ul>
+        <p class="gsub">The resort is compact — the whole grounds are about a 5–7 minute walk end to end. Walking times to the landmarks you'll use most, from where you're staying:</p>
+        <div class="originbar">
+          <label class="olabel" for="originSel">From</label>
+          <select class="ocontrol" id="originSel" aria-label="Where walking times start">
+            <option value="lobby" selected>Lobby</option>
+            <option value="b1">Building 1 · rooms 1001–1306</option>
+            <option value="b2">Building 2 · rooms 2001–2308</option>
+            <option value="b3">Building 3 · rooms 3001–3308</option>
+            <option value="b4">Building 4 · rooms 4001–4308</option>
+            <option value="b5">Building 5 · rooms 5001–5308</option>
+            <option value="b6">Building 6 · rooms 6001–6336</option>
+            <option value="b7">Building 7 · rooms 7051–7369</option>
+            <option value="b8">Building 8 · rooms 8051–8359</option>
+            <option value="b9">Building 9 · rooms 9051–9357</option>
+          </select>
+          <input class="ocontrol" id="originRoom" type="text" inputmode="numeric" autocomplete="off" placeholder="Room #" aria-label="Room number — jumps to your building">
+        </div>
+        <p class="onote" id="originNote" role="status" hidden>Not a known room number</p>
+        <p class="ofrom" id="originLabel">From: <strong>Lobby</strong></p>
+        <ul class="walklist" id="walkList"></ul>
         </div>
       </section>
 
@@ -3337,6 +3368,131 @@
             } catch (e) { /* never let worker registration break the page */ }
           });
         }
+      })();
+    </script>
+    <script>
+      // ---------- Getting around: walking times from your building ----------
+      (function () {
+        "use strict";
+        var sel = document.getElementById("originSel");
+        var roomIn = document.getElementById("originRoom");
+        var note = document.getElementById("originNote");
+        var label = document.getElementById("originLabel");
+        var list = document.getElementById("walkList");
+        if (!sel || !roomIn || !list) return;
+
+        // Anchors in the map's own viewBox units — the same points the
+        // pins sit on (lobby pin, building pins 1–9, destination pins).
+        var LOBBY = [417, 108];
+        var BLDG = {
+          1: [237, 234], 2: [156, 286], 3: [117, 366], 4: [158, 455], 5: [264, 465],
+          6: [390, 395], 7: [526, 398], 8: [586, 501], 9: [499, 506]
+        };
+        // Official room ranges per building (first digit = building).
+        var RANGES = {
+          1: [1001, 1306], 2: [2001, 2308], 3: [3001, 3308], 4: [4001, 4308], 5: [5001, 5308],
+          6: [6001, 6336], 7: [7051, 7369], 8: [8051, 8359], 9: [9051, 9357]
+        };
+        function units(a, b) {
+          var dx = a[0] - b[0], dy = a[1] - b[1];
+          return Math.sqrt(dx * dx + dy * dy);
+        }
+        // Destinations, each with a meters-per-unit scale calibrated so the
+        // panel's established figures come back exact (lobby → beach
+        // ≈350 m, lobby → spa ≈150 m, Building 1 → main pool ≈200 m,
+        // Building 9 → lobby ≈250 m, Building 9 → club pool ≈15 m). The
+        // drawing is stylized rather than surveyed, so scale varies by
+        // direction; times use a 55–79 m/min stroll-to-brisk pace range.
+        var DESTS = [
+          { name: "Beach", xy: [634, 352], sf: 350 / units(LOBBY, [634, 352]) },
+          { name: "Miilé Spa", xy: [228, 362], sf: 150 / units(LOBBY, [228, 362]) },
+          { name: "Main pool", xy: [536, 207], sf: 200 / units(BLDG[1], [536, 207]) },
+          { name: "Lobby", xy: LOBBY, sf: 250 / units(BLDG[9], LOBBY) },
+          { name: "Excellence Club pool", xy: [518, 530], sf: 15 / units(BLDG[9], [518, 530]) }
+        ];
+        function fmtWalk(m) {
+          if (m < 25) return "≈10–20 m · <strong>under 1 min</strong>";
+          var disp = Math.round(m / 10) * 10;
+          var lo = Math.round(disp / 79), hi = Math.round(disp / 55), t;
+          if (hi <= 1 && lo < 1) t = "under 1 min";
+          else {
+            if (lo < 1) lo = 1;
+            t = lo === hi ? lo + " min" : lo + "–" + hi + " min";
+          }
+          return "≈" + disp + " m · <strong>" + t + "</strong>";
+        }
+
+        var KEY = "erc-getting-around-origin";
+        var origin = { bnum: 0, room: "" }; // bnum 0 = Lobby
+        function originXY() { return origin.bnum ? BLDG[origin.bnum] : LOBBY; }
+        function originName() { return origin.bnum ? "Building " + origin.bnum : "Lobby"; }
+        function originLabel() {
+          return origin.bnum
+            ? "Building " + origin.bnum + (origin.room ? " · room " + origin.room : "")
+            : "Lobby";
+        }
+        function save() {
+          try {
+            localStorage.setItem(KEY, origin.bnum ? "b" + origin.bnum + (origin.room ? ":" + origin.room : "") : "lobby");
+          } catch (e) { /* storage unavailable — the picker still works for this visit */ }
+        }
+        function render() {
+          label.innerHTML = "From: <strong>" + originLabel() + "</strong>";
+          var o = originXY(), html = "";
+          DESTS.forEach(function (d) {
+            if (!origin.bnum && d.name === "Lobby") return;
+            var m = units(o, d.xy) * d.sf;
+            html += '<li><span class="wroute">' + originName() + " → " + d.name +
+              '</span><span class="wtime">' + fmtWalk(m) + "</span></li>";
+          });
+          list.innerHTML = html;
+        }
+        function restore() {
+          var v = null;
+          try { v = localStorage.getItem(KEY); } catch (e) { /* ignore */ }
+          if (!v || v === "lobby") return;
+          var mt = /^b([1-9])(?::(\d{4}))?$/.exec(v);
+          if (!mt) return;
+          var n = parseInt(mt[1], 10);
+          origin = { bnum: n, room: "" };
+          if (mt[2]) {
+            var r = parseInt(mt[2], 10), rg = RANGES[n];
+            if (r >= rg[0] && r <= rg[1]) { origin.room = mt[2]; roomIn.value = mt[2]; }
+          }
+          sel.value = "b" + n;
+        }
+
+        sel.addEventListener("change", function () {
+          note.hidden = true;
+          roomIn.value = "";
+          origin = sel.value === "lobby" ? { bnum: 0, room: "" } : { bnum: parseInt(sel.value.slice(1), 10), room: "" };
+          save();
+          render();
+        });
+        function applyRoom() {
+          var raw = roomIn.value.replace(/\D/g, "");
+          if (!raw) { note.hidden = true; return; }
+          var n = parseInt(raw, 10), b = Math.floor(n / 1000), rg = RANGES[b];
+          if (raw.length === 4 && rg && n >= rg[0] && n <= rg[1]) {
+            origin = { bnum: b, room: raw };
+            sel.value = "b" + b;
+            note.hidden = true;
+            save();
+            render();
+          } else {
+            note.hidden = false; // keep the previous origin
+          }
+        }
+        roomIn.addEventListener("change", applyRoom);
+        roomIn.addEventListener("input", function () {
+          if (roomIn.value.replace(/\D/g, "").length === 4) applyRoom();
+        });
+        roomIn.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") { e.preventDefault(); applyRoom(); }
+        });
+
+        restore();
+        render();
       })();
     </script>
     <script>
