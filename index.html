@@ -688,6 +688,18 @@
       .boardmeta .bname { font-weight: 700; color: var(--ink); font-size: 0.92rem; }
       .boardmsg { margin: 0; overflow-wrap: break-word; white-space: pre-wrap; }
       .boardempty { color: var(--ink-soft); margin: 12px 0 0; }
+      .boardbadge {
+        display: inline-block; min-width: 26px; text-align: center; vertical-align: 3px;
+        margin-left: 8px; padding: 2px 9px; border-radius: 999px;
+        background: var(--accent); color: var(--accent-ink);
+        font-size: 0.78rem; font-weight: 700; line-height: 1.4;
+      }
+      .boardbadge[hidden] { display: none; }
+      .boardacts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 7px; }
+      .boardbtn-sm { min-height: 34px; padding: 4px 13px; font-size: 0.82rem; }
+      .boardbtn-danger { color: var(--c-dining); border-color: var(--c-dining); }
+      .boardconfirm { font-size: 0.88rem; font-weight: 600; color: var(--c-dining); }
+      .boardedit { margin-top: 4px; }
 
       /* ---------- Route mode ---------- */
       .routebar {
@@ -816,6 +828,25 @@
         </div>
       </section>
 
+      <section class="grounds" aria-label="Group message board">
+        <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="boardBody"><span>Group board<span class="boardbadge" id="boardBadge" hidden>0</span></span><span class="chev" aria-hidden="true"></span></button></h2>
+        <div class="foldbody" id="boardBody" hidden>
+        <p class="gsub">Short notes for the whole group — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it.</p>
+        <form id="boardForm">
+          <div class="boardwho" id="boardWho"></div>
+          <label class="boardlabel" for="boardText">Your note</label>
+          <textarea class="boardtext" id="boardText" rows="2" maxlength="280" placeholder="e.g. Pool at 3 — bring sunscreen" aria-describedby="boardCount"></textarea>
+          <div class="boardrow">
+            <span class="boardcount" id="boardCount">280</span>
+            <button type="submit" class="gpsbtn" id="boardPost">Post note</button>
+          </div>
+          <p class="boardnote" id="boardNote" role="status" hidden></p>
+        </form>
+        <ul class="boardlist" id="boardList"></ul>
+        <p class="boardempty" id="boardEmpty">No notes yet — be the first to post one.</p>
+        </div>
+      </section>
+
       <section class="grounds" aria-label="Walking times between landmarks">
         <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="aroundBody"><span>Getting around</span><span class="chev" aria-hidden="true"></span></button></h2>
         <div class="foldbody" id="aroundBody" hidden>
@@ -839,25 +870,6 @@
         <p class="onote" id="originNote" role="status" hidden>Not a known room number</p>
         <p class="ofrom" id="originLabel">From: <strong>Lobby</strong></p>
         <ul class="walklist" id="walkList"></ul>
-        </div>
-      </section>
-
-      <section class="grounds" aria-label="Group message board">
-        <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="boardBody"><span>Group board</span><span class="chev" aria-hidden="true"></span></button></h2>
-        <div class="foldbody" id="boardBody" hidden>
-        <p class="gsub">Short notes for the whole group — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it.</p>
-        <form id="boardForm">
-          <div class="boardwho" id="boardWho"></div>
-          <label class="boardlabel" for="boardText">Your note</label>
-          <textarea class="boardtext" id="boardText" rows="2" maxlength="280" placeholder="e.g. Pool at 3 — bring sunscreen" aria-describedby="boardCount"></textarea>
-          <div class="boardrow">
-            <span class="boardcount" id="boardCount">280</span>
-            <button type="submit" class="gpsbtn" id="boardPost">Post note</button>
-          </div>
-          <p class="boardnote" id="boardNote" role="status" hidden></p>
-        </form>
-        <ul class="boardlist" id="boardList"></ul>
-        <p class="boardempty" id="boardEmpty">No notes yet — be the first to post one.</p>
         </div>
       </section>
 
@@ -3324,6 +3336,11 @@
       var boardWhoEl = document.getElementById("boardWho");
       var boardListEl = document.getElementById("boardList");
       var boardEmptyEl = document.getElementById("boardEmpty");
+      var boardBadgeEl = document.getElementById("boardBadge");
+      var boardItems = {};        // push key -> note, kept current by the child listeners
+      var boardQuery = null;      // the live query the board listeners hang off
+      var boardEditingKey = null; // key of the note being edited inline, if any
+      var boardConfirmKey = null; // key of the note awaiting a delete confirm, if any
 
       function boardNote(msg) {
         if (!boardNoteEl) return;
@@ -3363,6 +3380,9 @@
           boardWhoEl.appendChild(msg);
           boardWhoEl.appendChild(setBtn);
         }
+        // Edit/Delete buttons key off the current profile name, so a
+        // name change re-renders which notes count as "yours".
+        boardRenderList();
       }
       function boardTime(ts) {
         if (typeof ts !== "number" || !isFinite(ts)) return "";
@@ -3371,24 +3391,39 @@
         if (d.toDateString() === new Date().toDateString()) return time;
         return d.toLocaleDateString([], { month: "short", day: "numeric" }) + " · " + time;
       }
+      // A note is "yours" when its author name matches your saved
+      // profile name — only your own notes get Edit / Delete controls,
+      // and the writes below re-check the same match before touching
+      // the database, so nobody can edit or delete anyone else's note.
+      function boardIsMine(e) {
+        return !!(liveProfile && e && typeof e.name === "string" && e.name !== "" && e.name === liveProfile.name);
+      }
       // Names and note text are rendered with textContent only, never
       // innerHTML — board content is written by anyone in the group.
-      function boardRender(snap) {
-        if (!boardListEl) return;
-        var v = null;
-        try { v = snap.val(); } catch (e) { v = null; }
+      function boardSortedItems() {
         var items = [];
-        if (v) {
-          for (var k in v) {
-            if (!Object.prototype.hasOwnProperty.call(v, k)) continue;
-            var e = v[k];
-            if (e && typeof e.text === "string" && e.text) items.push(e);
-          }
+        for (var k in boardItems) {
+          if (!Object.prototype.hasOwnProperty.call(boardItems, k)) continue;
+          var e = boardItems[k];
+          if (e && typeof e.text === "string" && e.text) items.push({ key: k, note: e });
         }
-        items.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-        items = items.slice(0, 50);
+        items.sort(function (a, b) { return (b.note.ts || 0) - (a.note.ts || 0); });
+        return items.slice(0, 50);
+      }
+      function boardRenderList() {
+        if (!boardListEl) return;
+        // An edit in progress survives a re-render (a remote note
+        // landing mid-edit must not wipe what you're typing).
+        var draft = null;
+        if (boardEditingKey) {
+          var open = boardListEl.querySelector("textarea.boardedit");
+          if (open) draft = open.value;
+        }
+        var items = boardSortedItems();
+        var editAlive = false;
         boardListEl.innerHTML = "";
-        items.forEach(function (e) {
+        items.forEach(function (it) {
+          var e = it.note, key = it.key;
           var li = document.createElement("li");
           var meta = document.createElement("div");
           meta.className = "boardmeta";
@@ -3399,31 +3434,215 @@
           nm.className = "bname";
           nm.textContent = typeof e.name === "string" && e.name ? e.name : "Guest";
           var tm = document.createElement("span");
-          tm.textContent = boardTime(e.ts);
+          tm.textContent = boardTime(e.ts) + (e.edited ? " · edited" : "");
           meta.appendChild(dot);
           meta.appendChild(nm);
           meta.appendChild(tm);
-          var msg = document.createElement("p");
-          msg.className = "boardmsg";
-          msg.textContent = e.text;
           li.appendChild(meta);
-          li.appendChild(msg);
+          if (boardEditingKey === key && boardIsMine(e)) {
+            editAlive = true;
+            var ta = document.createElement("textarea");
+            ta.className = "boardtext boardedit";
+            ta.rows = 2;
+            ta.maxLength = 280;
+            ta.value = draft !== null ? draft : e.text;
+            ta.setAttribute("aria-label", "Edit your note");
+            li.appendChild(ta);
+            var erow = document.createElement("div");
+            erow.className = "boardacts";
+            var save = document.createElement("button");
+            save.type = "button";
+            save.className = "boardbtn2 boardbtn-sm";
+            save.textContent = "Save";
+            save.addEventListener("click", function () { boardSaveEdit(key, ta); });
+            var cancel = document.createElement("button");
+            cancel.type = "button";
+            cancel.className = "boardbtn2 boardbtn-sm";
+            cancel.textContent = "Cancel";
+            cancel.addEventListener("click", function () {
+              boardEditingKey = null;
+              boardRenderList();
+            });
+            erow.appendChild(save);
+            erow.appendChild(cancel);
+            li.appendChild(erow);
+          } else {
+            var msg = document.createElement("p");
+            msg.className = "boardmsg";
+            msg.textContent = e.text;
+            li.appendChild(msg);
+            if (boardIsMine(e)) {
+              var acts = document.createElement("div");
+              acts.className = "boardacts";
+              if (boardConfirmKey === key) {
+                var q = document.createElement("span");
+                q.className = "boardconfirm";
+                q.textContent = "Delete this note?";
+                var del = document.createElement("button");
+                del.type = "button";
+                del.className = "boardbtn2 boardbtn-sm boardbtn-danger";
+                del.textContent = "Delete";
+                del.addEventListener("click", function () { boardDelete(key); });
+                var keep = document.createElement("button");
+                keep.type = "button";
+                keep.className = "boardbtn2 boardbtn-sm";
+                keep.textContent = "Keep it";
+                keep.addEventListener("click", function () {
+                  boardConfirmKey = null;
+                  boardRenderList();
+                });
+                acts.appendChild(q);
+                acts.appendChild(del);
+                acts.appendChild(keep);
+              } else {
+                var ed = document.createElement("button");
+                ed.type = "button";
+                ed.className = "boardbtn2 boardbtn-sm";
+                ed.textContent = "Edit";
+                ed.setAttribute("aria-label", "Edit your note");
+                ed.addEventListener("click", function () {
+                  boardEditingKey = key;
+                  boardConfirmKey = null;
+                  boardRenderList();
+                  var t = boardListEl.querySelector("textarea.boardedit");
+                  if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+                });
+                var db = document.createElement("button");
+                db.type = "button";
+                db.className = "boardbtn2 boardbtn-sm boardbtn-danger";
+                db.textContent = "Delete";
+                db.setAttribute("aria-label", "Delete your note");
+                db.addEventListener("click", function () {
+                  boardConfirmKey = key;
+                  boardEditingKey = null;
+                  boardRenderList();
+                });
+                acts.appendChild(ed);
+                acts.appendChild(db);
+              }
+              li.appendChild(acts);
+            }
+          }
           boardListEl.appendChild(li);
         });
+        if (boardEditingKey && !editAlive) boardEditingKey = null;
+        if (boardConfirmKey && !boardItems[boardConfirmKey]) boardConfirmKey = null;
         if (boardEmptyEl) {
           boardEmptyEl.hidden = items.length > 0;
           if (!items.length) boardEmptyEl.textContent = "No notes yet — be the first to post one.";
         }
+        if (boardBadgeEl) {
+          boardBadgeEl.textContent = String(items.length);
+          boardBadgeEl.hidden = items.length === 0;
+        }
+      }
+      // ----- Realtime sync -----
+      // The old single "value" listener was the refresh bug: once its
+      // error callback fired (the database-rules lockout did exactly
+      // that), Firebase cancelled it for good while boardAttached stayed
+      // true — the list then only ever updated on a full page reload.
+      // Child listeners instead push each new / changed / removed note
+      // into boardItems the moment it lands, and any listener error now
+      // tears the set down so the connection watcher can re-attach it.
+      function boardChildUpsert(snap) {
+        var v = null;
+        try { v = snap.val(); } catch (e) { v = null; }
+        if (v && typeof v.text === "string") boardItems[snap.key] = v;
+        else delete boardItems[snap.key];
+        boardRenderList();
+      }
+      function boardChildRemoved(snap) {
+        delete boardItems[snap.key];
+        if (boardEditingKey === snap.key) boardEditingKey = null;
+        if (boardConfirmKey === snap.key) boardConfirmKey = null;
+        boardRenderList();
+      }
+      function boardDetach() {
+        if (boardQuery) { try { boardQuery.off(); } catch (e) { /* already gone */ } }
+        boardQuery = null;
+        boardRef = null;
+        boardAttached = false;
+      }
+      function boardListenError() {
+        boardDetach();
+        boardNote("Couldn't load the board just now — check your connection and reload.");
       }
       function boardAttach() {
         if (boardAttached || !liveDb) return;
-        boardAttached = true;
         try {
           boardRef = liveDb.ref("board");
-          boardRef.orderByChild("ts").limitToLast(50).on("value", boardRender, function () {
-            boardNote("Couldn't load the board just now — check your connection and reload.");
+          boardQuery = boardRef.orderByChild("ts").limitToLast(50);
+          boardQuery.on("child_added", boardChildUpsert, boardListenError);
+          boardQuery.on("child_changed", boardChildUpsert, boardListenError);
+          boardQuery.on("child_removed", boardChildRemoved, boardListenError);
+          boardAttached = true;
+        } catch (e) { boardDetach(); }
+      }
+      // Firebase reports its own socket state on .info/connected; when
+      // it comes back up and the board listeners are down (cancelled by
+      // an earlier error), re-attach so live updates resume on their own.
+      var boardWatchingConn = false;
+      function boardWatchConnection() {
+        if (boardWatchingConn || !liveDb) return;
+        boardWatchingConn = true;
+        try {
+          liveDb.ref(".info/connected").on("value", function (s) {
+            if (s && s.val() === true && !boardAttached) {
+              liveEnsureAuth(function (ok) { if (ok) boardAttach(); });
+            }
           });
-        } catch (e) { boardRef = null; }
+        } catch (e) { boardWatchingConn = false; }
+      }
+      // ----- Edit / delete writes (own notes only, name-matched) -----
+      function boardWithRef(failMsg, fn) {
+        if (!liveReady || !liveDb) { boardNote(failMsg); return; }
+        liveEnsureAuth(function (ok) {
+          if (!ok) { boardNote(failMsg); return; }
+          boardAttach();
+          if (!boardRef) { boardNote(failMsg); return; }
+          fn();
+        });
+      }
+      function boardSaveEdit(key, ta) {
+        var cur = boardItems[key];
+        if (!cur || !boardIsMine(cur)) { boardEditingKey = null; boardRenderList(); return; }
+        var text = (ta ? ta.value : "").trim().slice(0, 280);
+        if (!text) { boardNote("Write something first — or delete the note instead."); return; }
+        boardWithRef("Couldn't save your edit — check your connection and try again.", function () {
+          var latest = boardItems[key];
+          if (!latest || !boardIsMine(latest)) { boardEditingKey = null; boardRenderList(); return; }
+          try {
+            var req = boardRef.child(key).update({ text: text, edited: true });
+            var done = function () { boardEditingKey = null; boardNote(""); boardRenderList(); };
+            var fail = function () { boardNote("Couldn't save your edit — check your connection and try again."); };
+            if (req && typeof req.then === "function") req.then(done, fail);
+            else done();
+          } catch (e) {
+            boardNote("Couldn't save your edit — check your connection and try again.");
+          }
+        });
+      }
+      function boardDelete(key) {
+        var cur = boardItems[key];
+        if (!cur || !boardIsMine(cur)) { boardConfirmKey = null; boardRenderList(); return; }
+        boardWithRef("Couldn't delete that note — check your connection and try again.", function () {
+          var latest = boardItems[key];
+          if (!latest || !boardIsMine(latest)) { boardConfirmKey = null; boardRenderList(); return; }
+          try {
+            var req = boardRef.child(key).remove();
+            var done = function () {
+              boardConfirmKey = null;
+              delete boardItems[key];
+              boardNote("");
+              boardRenderList();
+            };
+            var fail = function () { boardNote("Couldn't delete that note — check your connection and try again."); };
+            if (req && typeof req.then === "function") req.then(done, fail);
+            else done();
+          } catch (e) {
+            boardNote("Couldn't delete that note — check your connection and try again.");
+          }
+        });
       }
       function boardPostNow(text) {
         if (!liveProfile) { // a name is mandatory — hold the note, ask first
@@ -3497,6 +3716,7 @@
       }
       boardRefreshWho();
       boardCountUpdate();
+      boardWatchConnection();
       if (liveReady && liveDb) {
         liveEnsureAuth(function (ok) {
           if (ok) boardAttach();
