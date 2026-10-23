@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-10-23-1610-clean -->
+<!-- build-2026-10-23-1700-board-route -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -658,6 +658,51 @@
         border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2);
         color: var(--ink); font: inherit; font-weight: 600;
       }
+
+      /* ---------- Group board ---------- */
+      .boardwho { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 4px; font-size: 0.95rem; }
+      .boardwho .bname { font-weight: 700; }
+      .boarddot {
+        width: 12px; height: 12px; border-radius: 50%; flex: none; display: inline-block;
+        border: 2px solid #ffffff; box-shadow: 0 1px 3px rgba(25, 35, 20, 0.45);
+      }
+      .boardbtn2 {
+        appearance: none; cursor: pointer; min-height: 40px; padding: 7px 14px;
+        border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2);
+        color: var(--ink); font: inherit; font-size: 0.88rem; font-weight: 600;
+      }
+      .boardlabel { display: block; font-weight: 600; font-size: 0.92rem; margin: 10px 0 5px; }
+      .boardtext {
+        width: 100%; font: inherit; color: var(--ink); resize: vertical;
+        background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius-sm); padding: 10px 12px; min-height: 54px;
+      }
+      .boardtext:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+      .boardrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+      .boardcount { color: var(--ink-soft); font-size: 0.85rem; }
+      .boardnote { margin: 8px 0 0; font-size: 0.9rem; font-weight: 600; color: var(--c-dining); }
+      .boardlist { list-style: none; margin: 14px 0 0; padding: 0; }
+      .boardlist li { padding: 10px 0; border-top: 1px solid var(--line); }
+      .boardlist li:first-child { border-top: 0; padding-top: 2px; }
+      .boardmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 2px; font-size: 0.85rem; color: var(--ink-soft); }
+      .boardmeta .bname { font-weight: 700; color: var(--ink); font-size: 0.92rem; }
+      .boardmsg { margin: 0; overflow-wrap: break-word; white-space: pre-wrap; }
+      .boardempty { color: var(--ink-soft); margin: 12px 0 0; }
+
+      /* ---------- Route mode ---------- */
+      .routebar {
+        margin: -4px 0 var(--s-4); background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius); padding: 12px var(--s-4); box-shadow: var(--shadow);
+      }
+      .routebar[hidden] { display: none; }
+      .routerow { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
+      .routelabel { font-weight: 700; font-size: 0.95rem; }
+      .routestatus { margin: 8px 0 0; font-size: 0.95rem; }
+      .routestatus strong { color: var(--accent); font-weight: 700; }
+      .pin.route-from { box-shadow: 0 0 0 3px var(--accent), 0 4px 10px rgba(30, 40, 20, 0.5); z-index: 6; }
+      .pin.route-to { box-shadow: 0 0 0 3px var(--gold), 0 4px 10px rgba(30, 40, 20, 0.5); z-index: 6; }
+      .tpin.route-from .tnum { box-shadow: 0 0 0 3px var(--accent); }
+      .tpin.route-to .tnum { box-shadow: 0 0 0 3px var(--gold); }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -794,6 +839,25 @@
         <p class="onote" id="originNote" role="status" hidden>Not a known room number</p>
         <p class="ofrom" id="originLabel">From: <strong>Lobby</strong></p>
         <ul class="walklist" id="walkList"></ul>
+        </div>
+      </section>
+
+      <section class="grounds" aria-label="Group message board">
+        <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="boardBody"><span>Group board</span><span class="chev" aria-hidden="true"></span></button></h2>
+        <div class="foldbody" id="boardBody" hidden>
+        <p class="gsub">Short notes for the whole group — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it.</p>
+        <form id="boardForm">
+          <div class="boardwho" id="boardWho"></div>
+          <label class="boardlabel" for="boardText">Your note</label>
+          <textarea class="boardtext" id="boardText" rows="2" maxlength="280" placeholder="e.g. Pool at 3 — bring sunscreen" aria-describedby="boardCount"></textarea>
+          <div class="boardrow">
+            <span class="boardcount" id="boardCount">280</span>
+            <button type="submit" class="gpsbtn" id="boardPost">Post note</button>
+          </div>
+          <p class="boardnote" id="boardNote" role="status" hidden></p>
+        </form>
+        <ul class="boardlist" id="boardList"></ul>
+        <p class="boardempty" id="boardEmpty">No notes yet — be the first to post one.</p>
         </div>
       </section>
 
@@ -2603,6 +2667,8 @@
         if (refocus && listToggleEl) listToggleEl.focus();
       }
       function showDetail(i, fromMap) {
+        // In Route mode, taps pick route endpoints instead of opening details.
+        if (typeof routeState !== "undefined" && routeState && routeState.active) { routePick(i); return; }
         if (i === selectedIdx) { deselect(false); return; }
         selectedIdx = i;
         var p = PLACES[i];
@@ -2965,7 +3031,15 @@
       }
       function liveOpenDlg(mode) {
         liveDlgMode = mode;
-        liveDlgTitle.textContent = mode === "edit" ? "Your live dot" : "Join the live group";
+        if (mode === "board") {
+          liveDlgTitle.textContent = "Your name for the board";
+          liveDlgIntro.textContent = "A name is required to post on the group board — every note shows who wrote it. The color tags your notes.";
+          liveDlgNote.textContent = "Your name and color are saved on this device and shown with your notes. (Same name and color as your Live group dot, if you use it.)";
+        } else {
+          liveDlgTitle.textContent = mode === "edit" ? "Your live dot" : "Join the live group";
+          liveDlgIntro.textContent = "Pick the name and dot color your group will see on the map.";
+          liveDlgNote.textContent = "Your dot shows on everyone's map while this is on. Turn it off anytime to disappear.";
+        }
         liveNameInput.value = liveProfile ? liveProfile.name : "";
         liveDlgErr.hidden = true;
         liveDlgPickColor(liveProfile ? liveProfile.color : LIVE_DEFAULT_COLOR);
@@ -2996,6 +3070,10 @@
         liveCloseDlg();
         if (mode === "join") liveStartSharing();
         else if (liveState.sharing) liveWriteNow();
+        // The group board keys off the same saved profile: refresh its
+        // "posting as" line, and release a note that was held for a name.
+        if (typeof boardRefreshWho === "function") boardRefreshWho();
+        if (mode === "board" && typeof boardAfterProfile === "function") boardAfterProfile();
       });
       liveEditBtn.addEventListener("click", function () { liveOpenDlg("edit"); });
 
@@ -3228,6 +3306,412 @@
         }
         layoutDots();
         liveCountEl.textContent = liveState.sharing && count > 0 ? "· " + count : "";
+      }
+
+      // ---------- Group board: shared notes on the Firebase `board` node ----------
+      // A name is MANDATORY — no anonymous posts. Notes are only ever
+      // written under the saved live-group profile (name + color); with no
+      // profile set, the typed note is held, the name dialog opens in
+      // "board" mode, and the note posts only once a name exists. Every
+      // rendered note shows its author's name and color dot.
+      var boardRef = null;
+      var boardAttached = false;
+      var boardPendingText = "";
+      var boardForm = document.getElementById("boardForm");
+      var boardTextEl = document.getElementById("boardText");
+      var boardCountEl = document.getElementById("boardCount");
+      var boardNoteEl = document.getElementById("boardNote");
+      var boardWhoEl = document.getElementById("boardWho");
+      var boardListEl = document.getElementById("boardList");
+      var boardEmptyEl = document.getElementById("boardEmpty");
+
+      function boardNote(msg) {
+        if (!boardNoteEl) return;
+        boardNoteEl.textContent = msg || "";
+        boardNoteEl.hidden = !msg;
+      }
+      function boardRefreshWho() {
+        if (!boardWhoEl) return;
+        boardWhoEl.innerHTML = "";
+        if (liveProfile) {
+          var lead = document.createElement("span");
+          lead.textContent = "Posting as";
+          var dot = document.createElement("span");
+          dot.className = "boarddot";
+          dot.style.background = liveProfile.color;
+          var nm = document.createElement("span");
+          nm.className = "bname";
+          nm.textContent = liveProfile.name;
+          var chg = document.createElement("button");
+          chg.type = "button";
+          chg.className = "boardbtn2";
+          chg.textContent = "Change";
+          chg.setAttribute("aria-label", "Change the name and color your notes show");
+          chg.addEventListener("click", function () { liveOpenDlg("board"); });
+          boardWhoEl.appendChild(lead);
+          boardWhoEl.appendChild(dot);
+          boardWhoEl.appendChild(nm);
+          boardWhoEl.appendChild(chg);
+        } else {
+          var msg = document.createElement("span");
+          msg.textContent = "A name is required to post — every note shows who wrote it.";
+          var setBtn = document.createElement("button");
+          setBtn.type = "button";
+          setBtn.className = "boardbtn2";
+          setBtn.textContent = "Set your name";
+          setBtn.addEventListener("click", function () { liveOpenDlg("board"); });
+          boardWhoEl.appendChild(msg);
+          boardWhoEl.appendChild(setBtn);
+        }
+      }
+      function boardTime(ts) {
+        if (typeof ts !== "number" || !isFinite(ts)) return "";
+        var d = new Date(ts);
+        var time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        if (d.toDateString() === new Date().toDateString()) return time;
+        return d.toLocaleDateString([], { month: "short", day: "numeric" }) + " · " + time;
+      }
+      // Names and note text are rendered with textContent only, never
+      // innerHTML — board content is written by anyone in the group.
+      function boardRender(snap) {
+        if (!boardListEl) return;
+        var v = null;
+        try { v = snap.val(); } catch (e) { v = null; }
+        var items = [];
+        if (v) {
+          for (var k in v) {
+            if (!Object.prototype.hasOwnProperty.call(v, k)) continue;
+            var e = v[k];
+            if (e && typeof e.text === "string" && e.text) items.push(e);
+          }
+        }
+        items.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+        items = items.slice(0, 50);
+        boardListEl.innerHTML = "";
+        items.forEach(function (e) {
+          var li = document.createElement("li");
+          var meta = document.createElement("div");
+          meta.className = "boardmeta";
+          var dot = document.createElement("span");
+          dot.className = "boarddot";
+          dot.style.background = liveValidColor(e.color);
+          var nm = document.createElement("span");
+          nm.className = "bname";
+          nm.textContent = typeof e.name === "string" && e.name ? e.name : "Guest";
+          var tm = document.createElement("span");
+          tm.textContent = boardTime(e.ts);
+          meta.appendChild(dot);
+          meta.appendChild(nm);
+          meta.appendChild(tm);
+          var msg = document.createElement("p");
+          msg.className = "boardmsg";
+          msg.textContent = e.text;
+          li.appendChild(meta);
+          li.appendChild(msg);
+          boardListEl.appendChild(li);
+        });
+        if (boardEmptyEl) {
+          boardEmptyEl.hidden = items.length > 0;
+          if (!items.length) boardEmptyEl.textContent = "No notes yet — be the first to post one.";
+        }
+      }
+      function boardAttach() {
+        if (boardAttached || !liveDb) return;
+        boardAttached = true;
+        try {
+          boardRef = liveDb.ref("board");
+          boardRef.orderByChild("ts").limitToLast(50).on("value", boardRender, function () {
+            boardNote("Couldn't load the board just now — check your connection and reload.");
+          });
+        } catch (e) { boardRef = null; }
+      }
+      function boardPostNow(text) {
+        if (!liveProfile) { // a name is mandatory — hold the note, ask first
+          boardPendingText = text;
+          liveOpenDlg("board");
+          return;
+        }
+        if (!liveReady || !liveDb) {
+          boardNote("The board couldn't connect — check your connection and try again.");
+          return;
+        }
+        liveEnsureAuth(function (ok) {
+          if (!ok) { boardNote("Couldn't connect — check your connection, then try again."); return; }
+          boardAttach();
+          if (!boardRef) { boardNote("Couldn't post just now — try again in a moment."); return; }
+          try {
+            var req = boardRef.push({
+              name: liveProfile.name,
+              color: liveProfile.color,
+              text: text,
+              ts: firebase.database.ServerValue.TIMESTAMP
+            });
+            if (req && typeof req.then === "function") {
+              req.then(function () {
+                if (boardTextEl) boardTextEl.value = "";
+                boardCountUpdate();
+                boardNote("");
+              }, function () {
+                boardNote("Couldn't post — check your connection and try again.");
+              });
+            } else {
+              if (boardTextEl) boardTextEl.value = "";
+              boardCountUpdate();
+              boardNote("");
+            }
+          } catch (e) {
+            boardNote("Couldn't post — check your connection and try again.");
+          }
+        });
+      }
+      // Called by the name dialog after a "board"-mode save: a note that
+      // was held for a name can go out now that the profile exists.
+      function boardAfterProfile() {
+        if (!boardPendingText) return;
+        var t = boardPendingText;
+        boardPendingText = "";
+        boardPostNow(t);
+      }
+      function boardCountUpdate() {
+        if (!boardCountEl || !boardTextEl) return;
+        boardCountEl.textContent = String(280 - boardTextEl.value.length);
+      }
+      if (boardTextEl) boardTextEl.addEventListener("input", boardCountUpdate);
+      if (boardForm) {
+        boardForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          var text = boardTextEl ? boardTextEl.value.trim().slice(0, 280) : "";
+          if (!text) {
+            boardNote("Write a note first, then post it.");
+            if (boardTextEl) boardTextEl.focus();
+            return;
+          }
+          boardNote("");
+          if (!liveProfile) { // no name yet — mandatory before anything posts
+            boardPendingText = text;
+            liveOpenDlg("board");
+            return;
+          }
+          boardPostNow(text);
+        });
+      }
+      boardRefreshWho();
+      boardCountUpdate();
+      if (liveReady && liveDb) {
+        liveEnsureAuth(function (ok) {
+          if (ok) boardAttach();
+          else boardNote("The board couldn't connect just now — check your connection and reload to read the group's notes.");
+        });
+      } else {
+        boardNote("The board couldn't connect just now — the rest of the map works as usual.");
+      }
+
+      // ---------- Route mode: tap two pins for a walking route ----------
+      // Toggled by the Route chip. While active, pin / town-pin / list-row
+      // taps pick the From and To endpoints instead of opening details
+      // (see the hook at the top of showDetail), and the From/To selects in
+      // the route bar do the same job. The path is drawn inside the world
+      // SVG — cream casing with a dashed rust centerline, like the map's
+      // own walking paths — so it pans and zooms with the drawing.
+      // Distance is the pin-to-pin distance in the map's own units,
+      // scaled by the Getting Around panel's headline calibration, and
+      // the time uses that panel's stroll-to-brisk pace range
+      // (55–79 m/min) and the same ≈ formatting.
+      var routeState = { active: false, from: -1, to: -1 };
+      var routeLayer = null;
+      var ROUTE_NS = "http://www.w3.org/2000/svg";
+
+      var routeChip = document.createElement("button");
+      routeChip.type = "button";
+      routeChip.className = "chip routechip";
+      routeChip.id = "routeChip";
+      routeChip.setAttribute("aria-pressed", "false");
+      routeChip.textContent = "Route";
+      chipsEl.appendChild(routeChip);
+
+      var routeBar = document.createElement("div");
+      routeBar.className = "routebar";
+      routeBar.id = "routeBar";
+      routeBar.hidden = true;
+      routeBar.innerHTML =
+        '<div class="routerow">' +
+        '<label class="routelabel" for="routeFrom">From</label>' +
+        '<select class="ocontrol" id="routeFrom" aria-label="Route starts at"></select>' +
+        '<label class="routelabel" for="routeTo">To</label>' +
+        '<select class="ocontrol" id="routeTo" aria-label="Route ends at"></select>' +
+        '<button type="button" class="gpsstop" id="routeClear">Clear route</button>' +
+        "</div>" +
+        '<p class="routestatus" id="routeStatus" role="status">Tap two pins on the map — or pick From and To here.</p>';
+      chipsEl.insertAdjacentElement("afterend", routeBar);
+      var routeFromSel = document.getElementById("routeFrom");
+      var routeToSel = document.getElementById("routeTo");
+      var routeStatusEl = document.getElementById("routeStatus");
+      var routeClearBtn = document.getElementById("routeClear");
+      [routeFromSel, routeToSel].forEach(function (selEl) {
+        if (!selEl) return;
+        var o0 = document.createElement("option");
+        o0.value = "-1";
+        o0.textContent = "Pick a place…";
+        selEl.appendChild(o0);
+        PLACES.forEach(function (p, i) {
+          var o = document.createElement("option");
+          o.value = String(i);
+          o.textContent = p.bnum ? p.name : (i + 1) + ". " + p.name;
+          selEl.appendChild(o);
+        });
+      });
+
+      function routeEnsureLayer() {
+        if (routeLayer) return routeLayer;
+        var svg = worldEl.querySelector("svg");
+        if (!svg) return null;
+        routeLayer = document.createElementNS(ROUTE_NS, "g");
+        routeLayer.setAttribute("pointer-events", "none");
+        svg.appendChild(routeLayer);
+        return routeLayer;
+      }
+      function routeDot(pt, color) {
+        var c = document.createElementNS(ROUTE_NS, "circle");
+        c.setAttribute("cx", pt.x);
+        c.setAttribute("cy", pt.y);
+        c.setAttribute("r", "7");
+        c.setAttribute("fill", color);
+        c.setAttribute("stroke", "#fffdf8");
+        c.setAttribute("stroke-width", "2.5");
+        routeLayer.appendChild(c);
+      }
+      function routePath(a, b) {
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var len = Math.sqrt(dx * dx + dy * dy) || 1;
+        var off = Math.min(46, len * 0.14);
+        var cx = (a.x + b.x) / 2 - (dy / len) * off;
+        var cy = (a.y + b.y) / 2 + (dx / len) * off;
+        var d = "M " + a.x + " " + a.y + " Q " + cx.toFixed(1) + " " + cy.toFixed(1) + " " + b.x + " " + b.y;
+        var casing = document.createElementNS(ROUTE_NS, "path");
+        casing.setAttribute("d", d);
+        casing.setAttribute("fill", "none");
+        casing.setAttribute("stroke", "#fff6dd");
+        casing.setAttribute("stroke-width", "9");
+        casing.setAttribute("stroke-linecap", "round");
+        casing.setAttribute("opacity", "0.95");
+        routeLayer.appendChild(casing);
+        var center = document.createElementNS(ROUTE_NS, "path");
+        center.setAttribute("d", d);
+        center.setAttribute("fill", "none");
+        center.setAttribute("stroke", "#b3541e");
+        center.setAttribute("stroke-width", "2.6");
+        center.setAttribute("stroke-dasharray", "8 6");
+        center.setAttribute("stroke-linecap", "round");
+        routeLayer.appendChild(center);
+      }
+      // Pin-to-pin distance in viewBox units, scaled exactly the way the
+      // Getting Around panel calibrates its headline figure (lobby →
+      // beach ≈ 350 m over the same two anchor points), so a route's
+      // distance agrees with the numbers the panel and legend publish.
+      var ROUTE_SF = 350 / Math.sqrt(Math.pow(634 - 417, 2) + Math.pow(352 - 108, 2));
+      function routeMeters(i, j) {
+        var a = pinBase[i], b = pinBase[j];
+        var dx = a.x - b.x, dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy) * ROUTE_SF;
+      }
+      // Same shape as the Getting Around panel's fmtWalk, as plain text.
+      function routeFmt(m) {
+        if (m < 25) return "≈10–20 m · under 1 min";
+        var disp = Math.round(m / 10) * 10;
+        var lo = Math.round(disp / 79), hi = Math.round(disp / 55), t;
+        if (hi <= 1 && lo < 1) t = "under 1 min";
+        else {
+          if (lo < 1) lo = 1;
+          t = lo === hi ? lo + " min" : lo + "–" + hi + " min";
+        }
+        return "≈" + disp + " m · " + t;
+      }
+      function routeDraw() {
+        pinEls.forEach(function (el, j) {
+          if (!el) return;
+          el.classList.toggle("route-from", routeState.active && j === routeState.from);
+          el.classList.toggle("route-to", routeState.active && j === routeState.to);
+        });
+        townEls.forEach(function (el, j) {
+          if (!el) return;
+          el.classList.toggle("route-from", routeState.active && j === routeState.from);
+          el.classList.toggle("route-to", routeState.active && j === routeState.to);
+        });
+        var layer = routeEnsureLayer();
+        if (layer) { while (layer.firstChild) layer.removeChild(layer.firstChild); }
+        if (!routeStatusEl) return;
+        if (routeState.from < 0) {
+          routeStatusEl.textContent = "Tap two pins on the map — or pick From and To here.";
+          return;
+        }
+        var a = pinBase[routeState.from];
+        if (routeState.to < 0) {
+          if (layer) routeDot(a, "#0e6e6e");
+          routeStatusEl.innerHTML = "From <strong>" + PLACES[routeState.from].name + "</strong> — now tap where you're headed, or pick it under To.";
+          return;
+        }
+        var b = pinBase[routeState.to];
+        if (layer) {
+          routePath(a, b);
+          routeDot(a, "#0e6e6e");
+          routeDot(b, "#a67c1a");
+        }
+        routeStatusEl.innerHTML = "<strong>" + PLACES[routeState.from].name + " → " + PLACES[routeState.to].name + "</strong> · " + routeFmt(routeMeters(routeState.from, routeState.to)) + " walk";
+      }
+      function routeFrame() {
+        if (routeState.from < 0 || routeState.to < 0) return;
+        var a = pinBase[routeState.from], b = pinBase[routeState.to];
+        var x = Math.min(a.x, b.x) - 70, y = Math.min(a.y, b.y) - 70;
+        var w = Math.max(Math.abs(a.x - b.x) + 140, 200);
+        var h = Math.max(Math.abs(a.y - b.y) + 140, 200);
+        frameRect(x, y, w, h, true);
+      }
+      function routeSync(frameIt) {
+        if (routeFromSel) routeFromSel.value = String(routeState.from);
+        if (routeToSel) routeToSel.value = String(routeState.to);
+        routeDraw();
+        if (frameIt) routeFrame();
+      }
+      function routePick(i) {
+        if (routeState.from < 0 || routeState.to >= 0) {
+          routeState.from = i;
+          routeState.to = -1;
+        } else if (i !== routeState.from) {
+          routeState.to = i;
+        }
+        routeSync(routeState.to >= 0);
+      }
+      routeChip.addEventListener("click", function () {
+        routeState.active = !routeState.active;
+        routeChip.setAttribute("aria-pressed", routeState.active ? "true" : "false");
+        routeBar.hidden = !routeState.active;
+        if (routeState.active) {
+          if (selectedIdx >= 0) deselect(false);
+          routeDraw();
+        } else {
+          routeState.from = -1;
+          routeState.to = -1;
+          routeSync(false);
+        }
+      });
+      if (routeClearBtn) {
+        routeClearBtn.addEventListener("click", function () {
+          routeState.from = -1;
+          routeState.to = -1;
+          routeSync(false);
+        });
+      }
+      if (routeFromSel) {
+        routeFromSel.addEventListener("change", function () {
+          routeState.from = parseInt(routeFromSel.value, 10);
+          routeSync(true);
+        });
+      }
+      if (routeToSel) {
+        routeToSel.addEventListener("change", function () {
+          routeState.to = parseInt(routeToSel.value, 10);
+          routeSync(true);
+        });
       }
     </script>
     <script>
