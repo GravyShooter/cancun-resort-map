@@ -510,6 +510,8 @@
       @media (prefers-reduced-motion: reduce) { .foldtoggle .chev { transition: none; } }
       .mapcapwrap { border-top: 1px solid var(--line); }
       .legendtoggle { padding: 10px 14px; font-size: 0.92rem; font-weight: 600; }
+      .towntoggle { padding: 4px 0 2px; font-size: 0.95rem; }
+      .towntoggle[aria-expanded="true"] { margin-bottom: 2px; }
       .listtoggle {
         padding: 10px; font-family: var(--font-display);
         font-size: 1.15rem; font-weight: 600;
@@ -723,8 +725,11 @@
           </div>
         </div>
         <div class="townstrip">
-          <p class="ts-title"><strong>Down the beach to Puerto Morelos town</strong> — the beach keeps going south past the resort: about 3.2 km (≈40-minute walk, or a 10-minute taxi) to the town strip and these seven spots, pins 38–44.</p>
-          <div class="ts-pins" id="townPins"></div>
+          <button type="button" class="foldtoggle towntoggle" aria-expanded="false" aria-controls="townBody"><span><strong>Puerto Morelos town spots</strong> · pins 38–44</span><span class="chev" aria-hidden="true"></span></button>
+          <div class="foldbody" id="townBody" hidden>
+            <p class="ts-title"><strong>Down the beach to Puerto Morelos town</strong> — the beach keeps going south past the resort: about 3.2 km (≈40-minute walk, or a 10-minute taxi) to the town strip and these seven spots.</p>
+            <div class="ts-pins" id="townPins"></div>
+          </div>
         </div>
         <div class="mapcapwrap">
           <button type="button" class="foldtoggle legendtoggle" aria-expanded="false" aria-controls="legendBody"><span>Map legend &amp; how this map works</span><span class="chev" aria-hidden="true"></span></button>
@@ -2594,15 +2599,12 @@
         if (p.menu) {
           html += "<h3>" + (p.menuLabel || "Full menu") + "</h3>";
           if (p.menuNote) html += '<p class="menunote">' + p.menuNote + "</p>";
+          // Every menu group starts collapsed — tap a group to open its dishes.
           p.menu.forEach(function (g) {
-            if (g.fold) {
-              html += '<details class="mfold"><summary>' + g.h + ' <span class="foldn">(' + g.items.length + " items)</span></summary>" + dishList(g.items) + "</details>";
-            } else {
-              html += '<h4 class="mgroup">' + g.h + "</h4>" + dishList(g.items);
-            }
+            html += '<details class="mfold"><summary>' + g.h + ' <span class="foldn">(' + g.items.length + " items)</span></summary>" + dishList(g.items) + "</details>";
           });
         } else if (p.dishes) {
-          html += "<h3>" + (p.dishesLabel || "On the menu") + "</h3>" + dishList(p.dishes);
+          html += '<details class="mfold"><summary>' + (p.dishesLabel || "On the menu") + ' <span class="foldn">(' + p.dishes.length + " items)</span></summary>" + dishList(p.dishes) + "</details>";
         }
         if (p.note) html += '<p class="dnote">' + p.note + "</p>";
         if (p.url) html += '<a class="dlink" href="' + p.url + '" target="_blank" rel="noopener">' + (p.urlLabel || "Official restaurant page →") + "</a>";
