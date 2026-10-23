@@ -1805,14 +1805,14 @@
         { coords: quad(158, 455, 75, 45, 10), h: 30, tint: 0, label: "", num: 4 },
         { coords: quad(264, 465, 69, 45, 8), h: 30, tint: 2, label: "", num: 5 },
         { coords: quad(440, 356, 56, 27, 36), h: 26, tint: 0, label: "", num: 6 },
-        { coords: quad(395, 392, 56, 27, 36), h: 26, tint: 0, label: "", num: 6 },
-        { coords: quad(363, 401, 56, 27, 36), h: 26, tint: 1, label: "", num: 6 },
-        { coords: quad(373, 432, 56, 27, 36), h: 26, tint: 1, label: "", num: 6 },
+        { coords: quad(395, 392, 56, 27, 36), h: 24, tint: 2, label: "", num: 6 },
+        { coords: quad(363, 401, 56, 27, 36), h: 27, tint: 1, label: "", num: 6 },
+        { coords: quad(373, 432, 56, 27, 36), h: 25, tint: 3, label: "", num: 6 },
         { coords: quad(342, 450, 56, 27, 36), h: 26, tint: 2, label: "", num: 6 },
         { coords: quad(494, 315, 32, 50, -10), h: 30, tint: 0, label: "", num: 7, ec: true },
-        { coords: quad(503, 353, 32, 50, -10), h: 30, tint: 1, label: "", num: 7, ec: true },
+        { coords: quad(503, 353, 32, 50, -10), h: 27, tint: 1, label: "", num: 7, ec: true },
         { coords: quad(526, 398, 32, 50, -10), h: 30, tint: 2, label: "", num: 7, ec: true },
-        { coords: quad(552, 440, 32, 50, -10), h: 30, tint: 0, label: "", num: 7, ec: true },
+        { coords: quad(552, 440, 32, 50, -10), h: 27, tint: 0, label: "", num: 7, ec: true },
         { coords: quad(499, 506, 54, 40, 14), h: 28, tint: 2, label: "", num: 9, ec: true },
         { coords: quad(586, 501, 95, 50, 8), h: 30, tint: 1, label: "", num: 8, ec: true }
       ];
@@ -2093,26 +2093,44 @@
           s += '<path d="' + d + '" fill="none" stroke="#b3541e" stroke-width="2.2" stroke-dasharray="7 5" opacity="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
         });
 
-        // 3D buildings, north first so southern ones overlap correctly
-        var sorted = BUILDINGS.slice().sort(function (a, b) { return b.coords[2][1] - a.coords[2][1]; });
+        // 3D buildings, painted back-to-front: northern buildings first,
+        // so each southern building's walls and roof overlap the block
+        // behind it instead of disappearing under it. Depth key is the
+        // footprint's south edge.
+        var sorted = BUILDINGS.slice().sort(function (a, b) {
+          return Math.max(a.coords[2][1], a.coords[3][1]) - Math.max(b.coords[2][1], b.coords[3][1]);
+        });
         sorted.forEach(function (b) {
           var nw = b.coords[0], ne = b.coords[1], se = b.coords[2], sw = b.coords[3];
           var h = b.h;
           function P(p, dy) { return p[0].toFixed(1) + "," + (p[1] + (dy || 0)).toFixed(1); }
-          // Ground shadow
-          s += '<polygon points="' + [nw, ne, se, sw].map(function (p) { return (p[0] + h * 0.45).toFixed(1) + "," + (p[1] + h * 0.5).toFixed(1); }).join(" ") + '" fill="#2e4a26" opacity="0.28"/>';
-          // South wall (front) + east wall
-          s += '<polygon points="' + P(sw) + " " + P(se) + " " + P(se, -h) + " " + P(sw, -h) + '" fill="#b08d57"/>';
-          s += '<polygon points="' + P(se) + " " + P(ne) + " " + P(ne, -h) + " " + P(se, -h) + '" fill="#c39f66"/>';
-          // Windows on the front wall
+          // Soft ground shadow, thrown down-right with the sun
+          s += '<polygon points="' + [nw, ne, se, sw].map(function (p) { return (p[0] + h * 0.38).toFixed(1) + "," + (p[1] + h * 0.42).toFixed(1); }).join(" ") + '" fill="#2e4a26" opacity="0.22"/>';
+          // South wall (front, shaded) + east wall (sunlit) — a clear
+          // value gap between the two faces is what sells the depth
+          s += '<polygon points="' + P(sw) + " " + P(se) + " " + P(se, -h) + " " + P(sw, -h) + '" fill="#9c7743"/>';
+          s += '<polygon points="' + P(se) + " " + P(ne) + " " + P(ne, -h) + " " + P(se, -h) + '" fill="#cfa96e"/>';
+          // Windows on the front wall, rotated to the wall's own angle;
+          // tall blocks get two floors of them
           var wdt = Math.hypot(se[0] - sw[0], se[1] - sw[1]), nw2 = Math.max(2, Math.floor(wdt / 26));
-          for (var wi = 1; wi <= nw2; wi++) {
-            var wxp = sw[0] + (se[0] - sw[0]) * (wi / (nw2 + 1)), wyp = sw[1] + (se[1] - sw[1]) * (wi / (nw2 + 1));
-            s += '<rect x="' + (wxp - 3).toFixed(1) + '" y="' + (wyp - h * 0.66).toFixed(1) + '" width="6" height="' + (h * 0.36).toFixed(1) + '" fill="rgba(70,48,22,0.4)"/>';
-          }
-          // Roof
-          s += '<polygon points="' + P(nw, -h) + " " + P(ne, -h) + " " + P(se, -h) + " " + P(sw, -h) + '" fill="' + ROOFS[b.tint] + '" stroke="#7d6240" stroke-width="1.6"/>';
-          s += '<polygon points="' + P(nw, -h) + " " + P(ne, -h) + " " + P(se, -h) + " " + P(sw, -h) + '" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1" transform="translate(-2 -2)"/>';
+          var wang = Math.atan2(se[1] - sw[1], se[0] - sw[0]) * 180 / Math.PI;
+          (h >= 24 ? [0.32, 0.70] : [0.48]).forEach(function (rf) {
+            for (var wi = 1; wi <= nw2; wi++) {
+              var wxp = sw[0] + (se[0] - sw[0]) * (wi / (nw2 + 1)), wyp = sw[1] + (se[1] - sw[1]) * (wi / (nw2 + 1)) - h * rf;
+              s += '<rect x="-3" y="-2.6" width="6" height="5.2" rx="1" fill="rgba(52,36,16,0.55)" transform="translate(' + wxp.toFixed(1) + " " + wyp.toFixed(1) + ") rotate(" + wang.toFixed(1) + ')"/>';
+            }
+          });
+          // Dark edge where the two walls meet, and along the base, so
+          // neighbouring blocks separate instead of merging into one slab
+          s += '<line x1="' + se[0].toFixed(1) + '" y1="' + se[1].toFixed(1) + '" x2="' + se[0].toFixed(1) + '" y2="' + (se[1] - h).toFixed(1) + '" stroke="rgba(84,60,26,0.65)" stroke-width="1.6"/>';
+          s += '<line x1="' + sw[0].toFixed(1) + '" y1="' + sw[1].toFixed(1) + '" x2="' + se[0].toFixed(1) + '" y2="' + se[1].toFixed(1) + '" stroke="rgba(46,64,32,0.45)" stroke-width="1.6"/>';
+          // Roof slab: firm dark rim + an inset parapet line, so every
+          // block reads as its own building even in a touching chain
+          var roof = [nw, ne, se, sw].map(function (p) { return [p[0], p[1] - h]; });
+          s += '<polygon points="' + pts(roof) + '" fill="' + ROOFS[b.tint] + '" stroke="#6e5326" stroke-width="2"/>';
+          var rcx = (roof[0][0] + roof[2][0]) / 2, rcy = (roof[0][1] + roof[2][1]) / 2;
+          var inset = roof.map(function (p) { return [rcx + (p[0] - rcx) * 0.84, rcy + (p[1] - rcy) * 0.84]; });
+          s += '<polygon points="' + pts(inset) + '" fill="rgba(255,255,255,0.20)" stroke="rgba(110,83,38,0.55)" stroke-width="1"/>';
           if (b.label) {
             s += '<text class="lbl" x="' + (((nw[0] + se[0]) / 2) + (b.lx || 0)).toFixed(1) + '" y="' + ((nw[1] + se[1]) / 2 - h + 4).toFixed(1) + '" font-size="13" font-weight="700" fill="#54401e" text-anchor="middle">' + b.label + "</text>";
           }
