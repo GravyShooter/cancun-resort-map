@@ -18,8 +18,8 @@
     <title>SpudMaps: Excellence Edition</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Cormorant+Garamond:wght@600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Cormorant+Garamond:wght@600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Cormorant+Garamond:wght@600;700&family=Public+Sans:wght@400;500;600;700;800&family=Shrikhand&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Cormorant+Garamond:wght@600;700&family=Public+Sans:wght@400;500;600;700;800&family=Shrikhand&display=swap" rel="stylesheet" /></noscript>
     <style>
       :root {
         color-scheme: light dark;
@@ -152,8 +152,8 @@
         .installcta { display: none; }
       }
       header.hero h1 {
-        font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-        font-weight: 700;
+        font-family: "Shrikhand", Georgia, "Times New Roman", serif;
+        font-weight: 400;
         font-size: clamp(2.6rem, 7vw, 3.9rem);
         line-height: 1.05;
         margin: 0;
@@ -201,6 +201,8 @@
         display: inline-flex; align-items: center; gap: 7px;
       }
       .chip .cdot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+      .chip .cicon { display: inline-flex; flex: none; align-items: center; }
+      .chip .cicon svg { width: 15px; height: 15px; display: block; }
       .chip .n { color: var(--ink-soft); font-size: 0.8rem; }
       .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
       .chip[aria-pressed="true"] .n { color: inherit; opacity: 0.75; }
@@ -643,11 +645,50 @@
         .pin, .skip { transition: none; }
       }
       @media print {
-        .chips, .mapbox, .toolbar, .skip, .gpscard, .townstrip, .installhint, .installcta, .livedlg, .livelegend, .livenote { display: none; }
+        .chips, .grouptools, .mapbox, .toolbar, .skip, .gpscard, .townstrip, .installhint, .installcta, .livedlg, .livelegend, .livenote { display: none; }
         #detail { max-height: none; overflow: visible; position: static; }
         .foldbody[hidden] { display: block !important; }
         #detail details.mfold { border: 0; padding: 0; }
         body { background: #fff; }
+      }
+
+      /* ---------- Group tools: action row, distinct from the filter chips ---------- */
+      .grouptools {
+        margin: 0 0 var(--s-4);
+        background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius); box-shadow: var(--shadow);
+        padding: var(--s-3) var(--s-4) var(--s-4);
+      }
+      .grouptools-title {
+        font-family: var(--font-display); font-weight: 700; font-size: 1.08rem;
+        color: var(--spud); margin: 0 0 var(--s-2);
+      }
+      .grouptools-row { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: stretch; }
+      .gticon { display: inline-flex; flex: none; }
+      .gticon svg { width: 19px; height: 19px; display: block; }
+      /* Live group as a big action button (pressed state styled further below) */
+      .grouptools .chip.livechip {
+        min-height: 52px; padding: 10px 20px; font-size: 1rem; font-weight: 700;
+        border: 2px solid var(--accent); border-radius: 14px;
+        background: var(--panel); color: var(--accent);
+      }
+      .grouptools .chip.livechip .cdot { width: 12px; height: 12px; }
+      .grouptools .chip.liveedit {
+        min-height: 52px; min-width: 52px; padding: 10px 14px; font-size: 1.05rem;
+        border: 2px solid var(--line); border-radius: 14px;
+        background: var(--panel-2); color: var(--ink);
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      /* Route stays with the filters but reads as an action, not a filter */
+      .chip.routechip {
+        background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+        font-weight: 700; box-shadow: var(--shadow);
+      }
+      .chip.routechip[aria-pressed="true"] {
+        background: var(--spud); border-color: var(--spud); color: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        .chip.routechip[aria-pressed="true"] { color: #2a1a08; }
       }
 
       /* ---------- Live group: shared location dots ---------- */
@@ -755,15 +796,23 @@
         border-radius: var(--radius-sm); padding: 10px 12px; min-height: 54px;
       }
       .boardtext:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
-      .boardrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+      .boardrow { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+      .boardrow .gpsbtn { margin-left: auto; }
       .boardcount { color: var(--ink-soft); font-size: 0.85rem; }
       .boardnote { margin: 8px 0 0; font-size: 0.9rem; font-weight: 600; color: var(--c-dining); }
-      .boardlist { list-style: none; margin: 14px 0 0; padding: 0; }
-      .boardlist li { padding: 10px 0; border-top: 1px solid var(--line); }
-      .boardlist li:first-child { border-top: 0; padding-top: 2px; }
-      .boardmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 2px; font-size: 0.85rem; color: var(--ink-soft); }
-      .boardmeta .bname { font-weight: 700; color: var(--ink); font-size: 0.92rem; }
+      .boardlist { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+      .boardlist li { display: flex; flex-direction: column; align-items: flex-start; }
+      .boardlist li.bmine { align-items: flex-end; }
+      .boardbubble {
+        max-width: 84%; padding: 8px 12px 7px;
+        border: 1px solid var(--line); border-radius: 18px; border-bottom-left-radius: 6px;
+        background: var(--panel-2);
+      }
+      .boardlist li.bmine .boardbubble { border-bottom-left-radius: 18px; border-bottom-right-radius: 6px; }
+      .boardbubble.editing { width: 84%; }
+      .boardbname { display: block; font-size: 0.78rem; font-weight: 700; line-height: 1.25; margin-bottom: 1px; }
       .boardmsg { margin: 0; overflow-wrap: break-word; white-space: pre-wrap; }
+      .boardbtime { display: block; margin-top: 3px; font-size: 0.72rem; color: var(--ink-soft); text-align: right; }
       .boardempty { color: var(--ink-soft); margin: 12px 0 0; }
       .boardbadge {
         display: inline-block; min-width: 26px; text-align: center; vertical-align: 3px;
@@ -777,6 +826,23 @@
       .boardbtn-danger { color: var(--c-dining); border-color: var(--c-dining); }
       .boardconfirm { font-size: 0.88rem; font-weight: 600; color: var(--c-dining); }
       .boardedit { margin-top: 4px; }
+
+      /* ---------- GIF picker (GIPHY) ---------- */
+      .gifpanel { margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+      .gifbar { display: flex; align-items: center; gap: 8px; }
+      .gifsearch {
+        flex: 1; min-width: 0; font: inherit; color: var(--ink); min-height: 40px;
+        background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px;
+      }
+      .gifsearch:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+      .gifgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; max-height: 300px; overflow-y: auto; }
+      .gifgrid:empty { margin-top: 0; }
+      .gifcell { appearance: none; cursor: pointer; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: var(--panel-2); line-height: 0; }
+      .gifcell img { width: 100%; height: 92px; object-fit: cover; }
+      .gifcell:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+      .gifstatus { margin: 10px 0 0; font-size: 0.88rem; color: var(--ink-soft); }
+      .gifcredit { margin: 8px 0 0; font-size: 0.7rem; color: var(--ink-soft); text-align: right; }
+      .boardgif { display: block; width: 250px; max-width: 100%; height: auto; border-radius: 10px; }
 
       /* ---------- Route mode ---------- */
       .routebar {
@@ -792,6 +858,43 @@
       .pin.route-to { box-shadow: 0 0 0 3px var(--gold), 0 4px 10px rgba(30, 40, 20, 0.5); z-index: 6; }
       .tpin.route-from .tnum { box-shadow: 0 0 0 3px var(--accent); }
       .tpin.route-to .tnum { box-shadow: 0 0 0 3px var(--gold); }
+
+      /* ---------- Compact top stack on phones: the map peeks into view on load ---------- */
+      @media (max-width: 560px) {
+        .wrap { padding: 6px 10px 40px; }
+        header.hero { padding: 8px 12px 6px; margin-bottom: 4px; }
+        .hero-logo { width: 32px; height: 32px; border-radius: 10px; margin-bottom: 5px; }
+        header.hero h1 { font-size: 1.7rem; line-height: 1.02; }
+        .brand-sub { margin-top: 3px; font-size: 0.86rem; letter-spacing: 0.18em; line-height: 1.3; }
+        .brand-rule { display: none; }
+        header.hero .sub { margin-top: 4px; font-size: 0.88rem; line-height: 1.3; }
+        .wedding-line { margin-top: 4px; padding: 3px 12px; font-size: 0.84rem; line-height: 1.3; }
+        .installcta { margin-top: 5px; min-height: 44px; padding: 8px 18px; font-size: 0.95rem; }
+        /* You-are-here: title and Find me share a row, readout sits beneath */
+        .gpscard { padding: 5px var(--s-3); margin-bottom: 6px; gap: 3px var(--s-3); }
+        .gpsmain { display: contents; }
+        .gpscard h2 { order: 1; font-size: 1.02rem; }
+        .gpsbtns { order: 2; margin-left: auto; }
+        .gpscard .gpsread { order: 3; flex: 1 1 100%; font-size: 0.88rem; }
+        .gpsbtn { min-height: 44px; padding: 9px 18px; }
+        .gpsstop { min-height: 44px; padding: 8px 14px; }
+        .installhint { margin-bottom: 6px; padding: 0 var(--s-3); }
+        .installhint .foldtoggle { min-height: 44px; }
+        .toolbar { padding-top: 2px; }
+        .toolbar .thint { display: none; }
+        .chips { padding: 4px 0 6px; gap: 4px; }
+        .chip { min-height: 44px; padding: 6px 11px; font-size: 0.85rem; gap: 6px; }
+        /* Group tools: title inline with its action row */
+        .grouptools {
+          display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--s-3);
+          padding: 6px var(--s-3); margin-bottom: 4px;
+        }
+        .grouptools-title { margin: 0; font-size: 0.98rem; }
+        .grouptools-row { flex: 1 1 auto; justify-content: flex-end; }
+        .grouptools .chip.livechip { min-height: 44px; padding: 8px 16px; font-size: 0.95rem; }
+        .grouptools .chip.liveedit { min-height: 44px; min-width: 44px; padding: 8px 12px; }
+        .livenote, .livelegend { margin-bottom: 2px; }
+      }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -868,6 +971,11 @@
 
       <nav class="chips" id="chips" aria-label="Filter places by category"></nav>
 
+      <section class="grouptools" id="groupTools" aria-labelledby="groupToolsTitle">
+        <h2 class="grouptools-title" id="groupToolsTitle">Group tools</h2>
+        <div class="grouptools-row" id="groupToolsRow"></div>
+      </section>
+
       <div class="mapbox">
         <div class="scene" id="scene" tabindex="0" role="group" aria-label="Drawn overview of the resort grounds: 3D buildings, pools, gardens, beach and sea, with numbered place pins. Drag to pan, scroll or pinch to zoom; the Puerto Morelos town strip is drawn at the south end of the map.">
           <div class="maptools jumps" role="group" aria-label="Jump to an area of the map">
@@ -935,11 +1043,21 @@
           <label class="boardlabel" for="boardText">Your note</label>
           <textarea class="boardtext" id="boardText" rows="2" maxlength="280" placeholder="e.g. Pool at 3 — bring sunscreen" aria-describedby="boardCount"></textarea>
           <div class="boardrow">
+            <button type="button" class="boardbtn2" id="boardGifBtn" aria-expanded="false" aria-controls="gifPanel">GIF</button>
             <span class="boardcount" id="boardCount">280</span>
             <button type="submit" class="gpsbtn" id="boardPost">Post note</button>
           </div>
           <p class="boardnote" id="boardNote" role="status" hidden></p>
         </form>
+        <div class="gifpanel" id="gifPanel" hidden>
+          <div class="gifbar">
+            <input type="search" class="gifsearch" id="gifSearch" placeholder="Search GIFs" aria-label="Search GIFs" />
+            <button type="button" class="boardbtn2 boardbtn-sm" id="gifClose">Close</button>
+          </div>
+          <div class="gifgrid" id="gifGrid"></div>
+          <p class="gifstatus" id="gifStatus" role="status" hidden></p>
+          <p class="gifcredit">Powered by GIPHY</p>
+        </div>
         <ul class="boardlist" id="boardList"></ul>
         <p class="boardempty" id="boardEmpty">No notes yet — be the first to post one.</p>
         </div>
@@ -2838,13 +2956,25 @@
       var counts = { all: PLACES.length };
       PLACES.forEach(function (p) { counts[p.cat] = (counts[p.cat] || 0) + 1; });
       counts.club = PLACES.filter(function (p) { return p.club; }).length;
+      var CHIP_ICONS = {
+        all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg>',
+        sights: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3.8 2.4 5 5.5.7-4 3.8 1 5.5-4.9-2.7-4.9 2.7 1-5.5-4-3.8 5.5-.7z"/></svg>',
+        dining: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3v4a2.3 2.3 0 0 0 4.6 0V3"/><path d="M6.8 9.3V21"/><path d="M16.8 3v18"/><path d="M16.8 3c2.1 2.2 3 5 2.5 7.8-.4 2-1.4 3.2-2.5 3.7"/></svg>',
+        bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 5h15L12 13.5 4.5 5z"/><path d="M12 13.5V20"/><path d="M8.5 20.5h7"/></svg>',
+        pools: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8.5c2-2.2 4.2-2.2 6.3 0 2.1 2.2 4.2 2.2 6.3 0 1.9-2 3.9-2.1 5.4-.5"/><path d="M2.5 15c2-2.2 4.2-2.2 6.3 0 2.1 2.2 4.2 2.2 6.3 0 1.9-2 3.9-2.1 5.4-.5"/></svg>',
+        wellness: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5c-3.8 0-7-2.3-8.5-6 2.3.2 4.2.7 5.7 1.7C8.4 13.4 9.2 9.8 12 6.5c2.8 3.3 3.6 6.9 2.8 9.7 1.5-1 3.4-1.5 5.7-1.7-1.5 3.7-4.7 6-8.5 6z"/></svg>',
+        club: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5 8 12l4-6 4 6 4.5-3.5-1.2 8H4.7L3.5 8.5z"/><path d="M5 20h14"/></svg>',
+        lodging: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20.5v-15A1.5 1.5 0 0 1 7.5 4h6A1.5 1.5 0 0 1 15 5.5v15"/><path d="M15 10h3.5A1.5 1.5 0 0 1 20 11.5v9"/><path d="M3.5 20.5h17"/><path d="M9 8h2.5M9 11.5h2.5M9 15h2.5"/></svg>',
+        offsite: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.8-5.6-6.8-10.5a6.8 6.8 0 1 1 13.6 0C18.8 15.4 12 21 12 21z"/><circle cx="12" cy="10.3" r="2.4"/></svg>'
+      };
       FILTERS.forEach(function (f) {
         var c = document.createElement("button");
         c.type = "button"; c.className = "chip"; c.dataset.filter = f;
         c.setAttribute("aria-pressed", f === "all" ? "true" : "false");
         var label = f === "all" ? "Everything" : CATS[f].label;
         var dot = f === "all" ? "" : '<span class="cdot" style="background:' + CATS[f].color + '"></span>';
-        c.innerHTML = dot + label + ' <span class="n">' + (counts[f] || 0) + "</span>";
+        var icon = CHIP_ICONS[f] ? '<span class="cicon" aria-hidden="true">' + CHIP_ICONS[f] + "</span>" : "";
+        c.innerHTML = dot + icon + label + ' <span class="n">' + (counts[f] || 0) + "</span>";
         c.addEventListener("click", function () { setFilter(f); });
         chipsEl.appendChild(c);
       });
@@ -3011,10 +3141,17 @@
       liveChipTxt.textContent = "Live group";
       var liveCountEl = document.createElement("span");
       liveCountEl.className = "n livecount";
+      var liveChipIcon = document.createElement("span");
+      liveChipIcon.className = "gticon";
+      liveChipIcon.setAttribute("aria-hidden", "true");
+      liveChipIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21.2S5.8 15.6 5.8 10.6a6.2 6.2 0 1 1 12.4 0c0 5-6.2 10.6-6.2 10.6z"/><circle cx="12" cy="10.5" r="2.3" fill="currentColor" stroke="none"/></svg>';
+      liveChip.appendChild(liveChipIcon);
       liveChip.appendChild(liveChipDot);
       liveChip.appendChild(liveChipTxt);
       liveChip.appendChild(liveCountEl);
-      chipsEl.appendChild(liveChip);
+      var groupToolsEl = document.getElementById("groupTools");
+      var groupToolsRow = document.getElementById("groupToolsRow");
+      groupToolsRow.appendChild(liveChip);
 
       var liveEditBtn = document.createElement("button");
       liveEditBtn.type = "button";
@@ -3024,14 +3161,14 @@
       liveEditBtn.setAttribute("aria-label", "Edit your live name and dot color");
       liveEditBtn.title = "Edit name / color";
       liveEditBtn.hidden = true;
-      chipsEl.appendChild(liveEditBtn);
+      groupToolsRow.appendChild(liveEditBtn);
 
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
       liveLegendEl.textContent = "Colored dots are your group, live. Turn off Live group to disappear.";
       liveLegendEl.hidden = true;
-      chipsEl.insertAdjacentElement("afterend", liveLegendEl);
+      groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
       liveNoteEl.className = "livenote";
       liveNoteEl.id = "liveNote";
@@ -3513,7 +3650,7 @@
         for (var k in boardItems) {
           if (!Object.prototype.hasOwnProperty.call(boardItems, k)) continue;
           var e = boardItems[k];
-          if (e && typeof e.text === "string" && e.text) items.push({ key: k, note: e });
+          if (e && ((typeof e.text === "string" && e.text) || (typeof e.gif === "string" && e.gif))) items.push({ key: k, note: e });
         }
         items.sort(function (a, b) { return (b.note.ts || 0) - (a.note.ts || 0); });
         return items.slice(0, 50);
@@ -3532,22 +3669,24 @@
         boardListEl.innerHTML = "";
         items.forEach(function (it) {
           var e = it.note, key = it.key;
+          var mine = boardIsMine(e);
           var li = document.createElement("li");
-          var meta = document.createElement("div");
-          meta.className = "boardmeta";
-          var dot = document.createElement("span");
-          dot.className = "boarddot";
-          dot.style.background = liveValidColor(e.color);
+          li.className = mine ? "bmine" : "btheirs";
+          // Chat bubble tinted with the author's color: a light wash of
+          // the color over the panel color (adapts to light/dark), with
+          // the name in a deeper cut of the same color so it stays
+          // readable even for the pale palette colors.
+          var bcolor = liveValidColor(e.color);
+          var bubble = document.createElement("div");
+          bubble.className = "boardbubble";
+          bubble.style.background = "color-mix(in srgb, " + bcolor + " 16%, var(--panel))";
+          bubble.style.borderColor = "color-mix(in srgb, " + bcolor + " 38%, var(--panel))";
           var nm = document.createElement("span");
-          nm.className = "bname";
+          nm.className = "boardbname";
+          nm.style.color = "color-mix(in srgb, " + bcolor + " 72%, var(--ink))";
           nm.textContent = typeof e.name === "string" && e.name ? e.name : "Guest";
-          var tm = document.createElement("span");
-          tm.textContent = boardTime(e.ts) + (e.edited ? " · edited" : "");
-          meta.appendChild(dot);
-          meta.appendChild(nm);
-          meta.appendChild(tm);
-          li.appendChild(meta);
-          if (boardEditingKey === key && boardIsMine(e)) {
+          bubble.appendChild(nm);
+          if (boardEditingKey === key && mine) {
             editAlive = true;
             var ta = document.createElement("textarea");
             ta.className = "boardtext boardedit";
@@ -3555,7 +3694,9 @@
             ta.maxLength = 280;
             ta.value = draft !== null ? draft : e.text;
             ta.setAttribute("aria-label", "Edit your note");
-            li.appendChild(ta);
+            bubble.classList.add("editing");
+            bubble.appendChild(ta);
+            li.appendChild(bubble);
             var erow = document.createElement("div");
             erow.className = "boardacts";
             var save = document.createElement("button");
@@ -3575,11 +3716,26 @@
             erow.appendChild(cancel);
             li.appendChild(erow);
           } else {
-            var msg = document.createElement("p");
-            msg.className = "boardmsg";
-            msg.textContent = e.text;
-            li.appendChild(msg);
-            if (boardIsMine(e)) {
+            if (typeof e.gif === "string" && e.gif) {
+              var gimg = document.createElement("img");
+              gimg.className = "boardgif";
+              gimg.src = e.gif;
+              gimg.alt = "GIF posted by " + (typeof e.name === "string" && e.name ? e.name : "Guest");
+              gimg.loading = "lazy";
+              bubble.appendChild(gimg);
+            }
+            if (e.text) {
+              var msg = document.createElement("p");
+              msg.className = "boardmsg";
+              msg.textContent = e.text;
+              bubble.appendChild(msg);
+            }
+            var tm = document.createElement("span");
+            tm.className = "boardbtime";
+            tm.textContent = boardTime(e.ts) + (e.edited ? " · edited" : "");
+            bubble.appendChild(tm);
+            li.appendChild(bubble);
+            if (mine) {
               var acts = document.createElement("div");
               acts.className = "boardacts";
               if (boardConfirmKey === key) {
@@ -3609,6 +3765,14 @@
                 ed.textContent = "Edit";
                 ed.setAttribute("aria-label", "Edit your note");
                 ed.addEventListener("click", function () {
+                  if (typeof e.gif === "string" && e.gif) {
+                    // Editing a GIF note means picking a replacement GIF.
+                    boardGifReplaceKey = key;
+                    boardConfirmKey = null;
+                    boardNote("Pick a GIF to replace this one.");
+                    gifOpenPicker();
+                    return;
+                  }
                   boardEditingKey = key;
                   boardConfirmKey = null;
                   boardRenderList();
@@ -3794,6 +3958,11 @@
       // Called by the name dialog after a "board"-mode save: a note that
       // was held for a name can go out now that the profile exists.
       function boardAfterProfile() {
+        if (boardPendingGif) {
+          var g = boardPendingGif;
+          boardPendingGif = "";
+          boardGifPostNow(g);
+        }
         if (!boardPendingText) return;
         var t = boardPendingText;
         boardPendingText = "";
@@ -3820,6 +3989,136 @@
             return;
           }
           boardPostNow(text);
+        });
+      }
+      // ---------- GIF picker: GIPHY trending + search, one tap posts ----------
+      // A GIF note is a normal board note with empty text and a `gif`
+      // image URL, so it rides the same realtime sync, name gate, and
+      // own-notes-only edit/delete rules as a text note. Editing a GIF
+      // note reopens this picker and swaps the image.
+      var GIPHY_KEY = "Z5Botjctlvb3pgE9HyrzFKN2RrFBkr5L";
+      var boardPendingGif = "";
+      var boardGifReplaceKey = null;
+      var gifPanelEl = document.getElementById("gifPanel");
+      var gifGridEl = document.getElementById("gifGrid");
+      var gifSearchEl = document.getElementById("gifSearch");
+      var gifStatusEl = document.getElementById("gifStatus");
+      var gifBtnEl = document.getElementById("boardGifBtn");
+      var gifHasLoaded = false;
+      var gifSearchTimer = null;
+      function gifStatus(msg) {
+        if (!gifStatusEl) return;
+        gifStatusEl.textContent = msg || "";
+        gifStatusEl.hidden = !msg;
+      }
+      function gifLoad(query) {
+        if (!gifGridEl) return;
+        gifStatus("Loading GIFs…");
+        var url = query
+          ? "https://api.giphy.com/v1/gifs/search?api_key=" + GIPHY_KEY + "&limit=18&offset=0&q=" + encodeURIComponent(query)
+          : "https://api.giphy.com/v1/gifs/trending?api_key=" + GIPHY_KEY + "&limit=18&offset=0";
+        fetch(url).then(function (r) {
+          if (!r.ok) throw new Error("giphy " + r.status);
+          return r.json();
+        }).then(function (data) {
+          gifRenderResults(data && data.data ? data.data : []);
+        }).catch(function () {
+          gifStatus("Couldn't load GIFs — check your connection and try again.");
+        });
+      }
+      function gifRenderResults(list) {
+        if (!gifGridEl) return;
+        gifGridEl.innerHTML = "";
+        list.forEach(function (g) {
+          var imgs = g && g.images ? g.images : {};
+          var thumb = imgs.fixed_width_small || imgs.preview_gif || imgs.fixed_width;
+          var full = imgs.fixed_height || imgs.fixed_width || imgs.original;
+          if (!thumb || !thumb.url || !full || !full.url) return;
+          var cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "gifcell";
+          cell.setAttribute("aria-label", "Post GIF" + (g.title ? ": " + g.title : ""));
+          var im = document.createElement("img");
+          im.src = thumb.url;
+          im.alt = "";
+          im.loading = "lazy";
+          cell.appendChild(im);
+          cell.addEventListener("click", function () { boardGifPick(full.url); });
+          gifGridEl.appendChild(cell);
+        });
+        gifStatus(gifGridEl.children.length ? "" : "No GIFs found — try a different search.");
+      }
+      function gifOpenPicker() {
+        if (!gifPanelEl) return;
+        gifPanelEl.hidden = false;
+        if (gifBtnEl) gifBtnEl.setAttribute("aria-expanded", "true");
+        if (!gifHasLoaded) { gifHasLoaded = true; gifLoad(""); }
+        if (gifPanelEl.scrollIntoView) gifPanelEl.scrollIntoView({ block: "nearest" });
+      }
+      function gifClosePicker() {
+        if (!gifPanelEl) return;
+        gifPanelEl.hidden = true;
+        boardGifReplaceKey = null;
+        if (gifBtnEl) gifBtnEl.setAttribute("aria-expanded", "false");
+      }
+      function boardGifPick(url) {
+        if (boardGifReplaceKey) { boardGifReplace(boardGifReplaceKey, url); return; }
+        if (!liveProfile) { // same name gate as text notes — hold it, ask first
+          boardPendingGif = url;
+          liveOpenDlg("board");
+          return;
+        }
+        boardGifPostNow(url);
+      }
+      function boardGifPostNow(url) {
+        boardWithRef("Couldn't post that GIF — check your connection and try again.", function () {
+          try {
+            var req = boardRef.push({
+              name: liveProfile.name,
+              color: liveProfile.color,
+              text: "",
+              gif: url,
+              ts: firebase.database.ServerValue.TIMESTAMP
+            });
+            var done = function () { boardNote(""); gifClosePicker(); };
+            var fail = function () { boardNote("Couldn't post that GIF — check your connection and try again."); };
+            if (req && typeof req.then === "function") req.then(done, fail);
+            else done();
+          } catch (e) {
+            boardNote("Couldn't post that GIF — check your connection and try again.");
+          }
+        });
+      }
+      function boardGifReplace(key, url) {
+        var cur = boardItems[key];
+        if (!cur || !boardIsMine(cur)) { boardGifReplaceKey = null; return; }
+        boardWithRef("Couldn't save that GIF — check your connection and try again.", function () {
+          var latest = boardItems[key];
+          if (!latest || !boardIsMine(latest)) { boardGifReplaceKey = null; return; }
+          try {
+            var req = boardRef.child(key).update({ gif: url, edited: true });
+            var done = function () { boardGifReplaceKey = null; boardNote(""); gifClosePicker(); boardRenderList(); };
+            var fail = function () { boardNote("Couldn't save that GIF — check your connection and try again."); };
+            if (req && typeof req.then === "function") req.then(done, fail);
+            else done();
+          } catch (e) {
+            boardNote("Couldn't save that GIF — check your connection and try again.");
+          }
+        });
+      }
+      if (gifBtnEl) {
+        gifBtnEl.addEventListener("click", function () {
+          if (gifPanelEl && gifPanelEl.hidden) gifOpenPicker();
+          else gifClosePicker();
+        });
+      }
+      var gifCloseEl = document.getElementById("gifClose");
+      if (gifCloseEl) gifCloseEl.addEventListener("click", gifClosePicker);
+      if (gifSearchEl) {
+        gifSearchEl.addEventListener("input", function () {
+          if (gifSearchTimer) clearTimeout(gifSearchTimer);
+          var q = gifSearchEl.value.trim();
+          gifSearchTimer = setTimeout(function () { gifLoad(q); }, 350);
         });
       }
       boardRefreshWho();
@@ -3854,7 +4153,7 @@
       routeChip.className = "chip routechip";
       routeChip.id = "routeChip";
       routeChip.setAttribute("aria-pressed", "false");
-      routeChip.textContent = "Route";
+      routeChip.innerHTML = '<span class="gticon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="19" r="2.6" fill="currentColor"/><circle cx="18" cy="5" r="2.6" fill="currentColor"/><path d="M8.6 19H15a3 3 0 0 0 0-6h-6a3 3 0 0 1 0-6h.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span>Route</span>';
       chipsEl.appendChild(routeChip);
 
       var routeBar = document.createElement("div");
@@ -3870,7 +4169,7 @@
         '<button type="button" class="gpsstop" id="routeClear">Clear route</button>' +
         "</div>" +
         '<p class="routestatus" id="routeStatus" role="status">Tap two pins on the map — or pick From and To here.</p>';
-      chipsEl.insertAdjacentElement("afterend", routeBar);
+      document.getElementById("groupTools").insertAdjacentElement("afterend", routeBar);
       var routeFromSel = document.getElementById("routeFrom");
       var routeToSel = document.getElementById("routeTo");
       var routeStatusEl = document.getElementById("routeStatus");
