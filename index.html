@@ -513,6 +513,46 @@
       .know li { margin: 5px 0; }
       .know li::marker { color: var(--accent); }
       .know p.intro { margin: 0 0 8px; color: var(--ink-soft); }
+      /* Spud Lord appeal popup — Wikipedia-fundraiser parody, app palette */
+      .spudpop {
+        position: fixed; top: 12px; left: 50%; z-index: 95;
+        width: min(560px, calc(100vw - 20px));
+        background: var(--panel); color: var(--ink);
+        border: 1px solid var(--line); border-top: 4px solid var(--gold);
+        border-radius: var(--radius); box-shadow: var(--shadow);
+        padding: 22px 24px 16px;
+        opacity: 0; transform: translate(-50%, -10px);
+        transition: opacity 0.35s ease, transform 0.35s ease;
+      }
+      .spudpop[hidden] { display: none; }
+      .spudpop.show { opacity: 1; transform: translate(-50%, 0); }
+      @media (prefers-reduced-motion: reduce) { .spudpop { transition: none; } }
+      .spudpop h2 {
+        font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+        font-weight: 600; font-size: 1.65rem; line-height: 1.15; margin: 0 30px 8px 0;
+      }
+      .spudpop p { margin: 0 0 10px; font-size: 0.98rem; line-height: 1.55; }
+      .spudpop .spudx {
+        appearance: none; cursor: pointer; position: absolute; top: 6px; right: 6px;
+        width: 44px; height: 44px; border: 0; background: none; color: var(--ink-soft);
+        font-size: 1.5rem; line-height: 1; font-weight: 600; border-radius: 999px;
+      }
+      .spudpop .spudx:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+      .spudpop .givebtn {
+        display: block; text-align: center; margin-top: 14px;
+        min-height: 52px; padding: 14px 22px;
+        border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+        border-radius: 999px; font-weight: 700; font-size: 1.05rem; text-decoration: none;
+      }
+      .spudpop .givebtn:hover { text-decoration: underline; }
+      .spudpop .givebtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .spudpop .fineprint { text-align: center; color: var(--ink-soft); font-size: 0.82rem; margin: 8px 0 0; }
+      .spudpop .nobtn {
+        appearance: none; cursor: pointer; display: block; margin: 2px auto 0;
+        min-height: 44px; padding: 8px 12px; background: none; border: 0;
+        font: inherit; font-size: 0.92rem; color: var(--ink-soft); text-decoration: underline;
+      }
+      .spudpop .nobtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
 
       /* Collapsible sections: header-row toggle with chevron, body hidden until tapped */
       .foldtoggle {
@@ -943,6 +983,16 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
       </footer>
+    </div>
+
+    <div class="spudpop" id="spudPop" role="dialog" aria-labelledby="spudPopTitle" hidden>
+      <button type="button" class="spudx" id="spudPopClose" aria-label="Dismiss this appeal">&times;</button>
+      <h2 id="spudPopTitle">A personal appeal from the Spud Lord</h2>
+      <p>Dear resort map reader, please don't scroll past this one-minute read. 98% of our readers don't give; they look the other way. If everyone using this map right now gave the price of one poolside beer, the Spud Lord's tab would be covered for the entire trip.</p>
+      <p>This map was built with love and an unreasonable number of late nights — every pin checked, every menu typed in — so nobody in this crew has to wander the resort lost. It will always be free. The beer, regrettably, is not.</p>
+      <a class="givebtn" id="spudPopGive" href="https://cash.app/$chr1sdy3r" target="_blank" rel="noopener">Buy the Spud Lord a beer</a>
+      <p class="fineprint">via Cash App · $chr1sdy3r</p>
+      <button type="button" class="nobtn" id="spudPopNo">No thanks, I'll get lost instead</button>
     </div>
 
     <script>
@@ -4252,6 +4302,39 @@
           var open = btn.getAttribute("aria-expanded") === "true";
           btn.setAttribute("aria-expanded", open ? "false" : "true");
           if (body) body.hidden = open;
+        });
+      })();
+    </script>
+    <script>
+      // ---------- Spud Lord appeal popup: shows once, dismissal remembered 7 days ----------
+      (function () {
+        "use strict";
+        var KEY = "spudAppealDismissedAt";
+        var WEEK = 7 * 24 * 60 * 60 * 1000;
+        var pop = document.getElementById("spudPop");
+        if (!pop) return;
+        var dismissedAt = 0;
+        try { dismissedAt = parseInt(localStorage.getItem(KEY) || "0", 10) || 0; } catch (e) { /* storage unavailable: show it */ }
+        if (dismissedAt && (Date.now() - dismissedAt) < WEEK) return;
+        function remember() {
+          try { localStorage.setItem(KEY, String(Date.now())); } catch (e) { /* private mode etc. */ }
+        }
+        function dismiss() {
+          remember();
+          pop.classList.remove("show");
+          pop.hidden = true;
+        }
+        setTimeout(function () {
+          pop.hidden = false;
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { pop.classList.add("show"); });
+          });
+        }, 3500);
+        document.getElementById("spudPopClose").addEventListener("click", dismiss);
+        document.getElementById("spudPopNo").addEventListener("click", dismiss);
+        document.getElementById("spudPopGive").addEventListener("click", remember);
+        document.addEventListener("keydown", function (e) {
+          if (!pop.hidden && (e.key === "Escape" || e.key === "Esc")) dismiss();
         });
       })();
     </script>
