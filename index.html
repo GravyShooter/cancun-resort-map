@@ -701,6 +701,22 @@
       .chip.liveedit[hidden] { display: none; }
       .livelegend { margin: -4px 0 10px; font-size: 0.88rem; color: var(--ink-soft); }
       .livenote { margin: -4px 0 10px; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+      /* Active users: compact row of name pills inside the Group tools panel,
+         shown only while Live group is on. Tap a name to center that dot. */
+      .liveusers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s-3); }
+      .liveusers[hidden] { display: none; }
+      .liveuser {
+        appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+        min-height: 36px; padding: 6px 12px; border-radius: 999px;
+        border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+        font: inherit; font-size: 0.88rem; font-weight: 600; line-height: 1.2;
+      }
+      .liveuser .udot {
+        width: 11px; height: 11px; border-radius: 50%; flex: none;
+        border: 2px solid #ffffff; box-shadow: 0 1px 3px rgba(25, 35, 20, 0.45);
+      }
+      .liveuser:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+      .liveusers-empty { font-size: 0.88rem; color: var(--ink-soft); align-self: center; }
       .livedot {
         position: absolute; z-index: 6; width: 18px; height: 18px;
         border-radius: 50%; border: 2.5px solid #ffffff;
@@ -3163,6 +3179,75 @@
       liveEditBtn.hidden = true;
       groupToolsRow.appendChild(liveEditBtn);
 
+      // Active users row: lives inside the Group tools panel, under the
+      // action row. Filled by liveRenderUsers() from the same presence data
+      // that draws the dots; tapping a name centers the map on that dot.
+      var liveUsersEl = document.createElement("div");
+      liveUsersEl.className = "liveusers";
+      liveUsersEl.id = "liveUsers";
+      liveUsersEl.setAttribute("role", "group");
+      liveUsersEl.setAttribute("aria-label", "Group members on the map — tap a name to center the map on them");
+      liveUsersEl.hidden = true;
+      groupToolsEl.appendChild(liveUsersEl);
+      var liveUsersSig = "";
+
+      function liveCenterOn(x, y) {
+        var u = unit();
+        var vw = sceneEl.clientWidth, vh = sceneEl.clientHeight;
+        view.k = Math.max(fitScale(), Math.min(KMAX, Math.max(view.k, 2)));
+        view.tx = vw / 2 - x * u * view.k;
+        view.ty = vh / 2 - y * u * view.k;
+        clampView(); applyView(true);
+        try {
+          var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          sceneEl.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+        } catch (e) { /* scrolling to the map is a nicety, never fatal */ }
+      }
+      function liveRenderUsers(want) {
+        if (!liveState.sharing) {
+          if (!liveUsersEl.hidden) liveUsersEl.hidden = true;
+          liveUsersSig = "";
+          return;
+        }
+        var keys = Object.keys(want).sort(function (a, b) {
+          if (a === "__me") return -1;
+          if (b === "__me") return 1;
+          return want[a].name < want[b].name ? -1 : 1;
+        });
+        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color; }).join(";");
+        if (sig === liveUsersSig && !liveUsersEl.hidden) return;
+        liveUsersSig = sig;
+        liveUsersEl.innerHTML = "";
+        liveUsersEl.hidden = false;
+        if (!keys.length) {
+          var em = document.createElement("span");
+          em.className = "liveusers-empty";
+          em.textContent = "No one's on the map yet.";
+          liveUsersEl.appendChild(em);
+          return;
+        }
+        keys.forEach(function (k) {
+          var w = want[k];
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "liveuser";
+          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name));
+          var d = document.createElement("span");
+          d.className = "udot";
+          d.style.background = w.color;
+          d.setAttribute("aria-hidden", "true");
+          var t = document.createElement("span");
+          t.textContent = w.me && liveProfile ? liveProfile.name : w.name;
+          b.appendChild(d);
+          b.appendChild(t);
+          b.addEventListener("click", function () {
+            var rec = liveState.dotEls[k];
+            if (rec) liveCenterOn(rec.x, rec.y);
+          });
+          liveUsersEl.appendChild(b);
+        });
+      }
+
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
@@ -3497,6 +3582,8 @@
         liveCountEl.textContent = "";
         liveLegendEl.hidden = true;
         liveEditBtn.hidden = true;
+        liveUsersEl.hidden = true;
+        liveUsersSig = "";
       }
       liveChip.addEventListener("click", function () {
         if (!liveReady) return;
@@ -3563,6 +3650,7 @@
         }
         layoutDots();
         liveCountEl.textContent = liveState.sharing && count > 0 ? "· " + count : "";
+        liveRenderUsers(want);
       }
 
       // ---------- Group board: shared notes on the Firebase `board` node ----------
