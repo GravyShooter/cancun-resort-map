@@ -191,10 +191,17 @@
       .tsbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
       .toolbar .thint { font-size: 0.88rem; color: var(--ink-soft); }
 
-      /* Filter chips */
-      .chips { display: flex; gap: var(--s-2); flex-wrap: wrap; padding: var(--s-3) 0 var(--s-4); }
+      /* Filter chips: one horizontally scrollable row (swipe to see more) */
+      .chips {
+        display: flex; gap: var(--s-2); flex-wrap: nowrap;
+        overflow-x: auto; overflow-y: hidden;
+        padding: var(--s-3) 0 var(--s-4);
+        scrollbar-width: none; -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      .chips::-webkit-scrollbar { display: none; }
       .chip {
-        appearance: none; cursor: pointer;
+        appearance: none; cursor: pointer; flex: none; white-space: nowrap;
         border: 1px solid var(--line); background: var(--panel);
         color: var(--ink); border-radius: 999px;
         padding: 8px 14px; min-height: 44px; font: inherit; font-size: 0.9rem; font-weight: 500;
