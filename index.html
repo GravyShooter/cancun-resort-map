@@ -1076,7 +1076,7 @@
           <span class="lkey"><span class="sw sand"></span> Beach</span>
           <span class="lkey"><span class="sw bldg"></span> Buildings (3D)</span>
           <span class="lkey"><span class="sw sea"></span> Sea, shallows to reef</span>
-          <p class="capnote"><strong>Traced from the resort's official map.</strong> The grounds are drawn from the official June 2026 resort map, in that map's own tilted orientation: entrance and lobby at the top, Buildings 1–3 down the west side, the spa island and lazy river at the center, Buildings 4–5 along the bottom, Building 6 stepping diagonally, Building 7 down the oceanfront, Building 8 at the bottom-right, and the beach and sea down the right side. Building footprints, pool shapes, and spacing follow the official map's proportions — it is a stylized drawing, not a survey: lobby to beach is ≈350 m, about a 5-minute stroll, and an ≈100 m scale bar sits at the lower-left of the grounds. Buildings stand up in 3D with sunlit roofs and shaded sides, pools sit on pale stone decks, and the sea bands from pale shallows out to the dashed reef line. Every pin is also in the numbered list below, in the same order. <strong>Zoom in</strong> on the restaurant row, the lobby plaza, the pools, the beach or the spa island and the drawing fills in with detail — named restaurant buildings with their terraces, loungers and swim-up bars on the pool decks, palapa rows on the sand, and the spa island's gardens; zoom back out and it clears away. <strong>Moving around the map:</strong> drag to pan, scroll or pinch to zoom, or use the + / − and reset buttons on the map — the <strong>Town strip</strong> button jumps straight to Puerto Morelos at the south end, where pins 38–44 sit on a schematic strip of the town (compressed, not to scale, past a break in the beach).</p>
+          <p class="capnote"><strong>Traced from the resort's official map.</strong> The grounds are drawn from the official June 2026 resort map, in that map's own tilted orientation: entrance and lobby at the top, Buildings 1–3 down the west side, the spa island and lazy river at the center, Buildings 4–5 along the bottom, Building 6 stepping diagonally, Building 7 down the oceanfront, Building 8 at the bottom-right, and the beach and sea down the right side. Building footprints, pool shapes, and spacing follow the official map's proportions — it is a stylized drawing, not a survey: lobby to beach is ≈350 m, about a 5-minute stroll, and an ≈100 m scale bar sits at the lower-left of the grounds. Buildings stand up in 3D with sunlit roofs and shaded sides, pools sit on pale stone decks, and the sea bands from pale shallows out to the dashed reef line. Every pin is also in the numbered list below, in the same order. <strong>Zoom in</strong> on the restaurant row, the lobby plaza, the pools, the beach or the spa island and the drawing fills in with detail — named restaurant buildings with their terraces, loungers and swim-up bars on the pool decks, palapa rows on the sand, and the spa island's gardens; zoom back out and it clears away. <strong>October 2026 detail pass:</strong> every building footprint, pool, path, river branch and planting was re-measured against the official map and corrected where the zoomed drawing had drifted — no building sits in a pool or the river, no path runs through a building, no tree stands on a roof or on the sand, Building 7 and Building 8 stand back from the beach with the walkway and gardens between them and the sand, and the sand now runs unbroken into the wet sand and the sea with no grass strip in between. <strong>Flagged, not guessed:</strong> where the official map's own lines are ambiguous at this scale — the exact centerline of a path where it weaves between the Garibaldi Square venue blocks, and the precise tips of the lazy-river branches — the drawing follows the closest readable route on the official map rather than inventing one; the Las Olas palapa sits on the sand at the waterline, straddling the dry/wet sand seam, as it does on the official map. <strong>Moving around the map:</strong> drag to pan, scroll or pinch to zoom, or use the + / − and reset buttons on the map — the <strong>Town strip</strong> button jumps straight to Puerto Morelos at the south end, where pins 38–44 sit on a schematic strip of the town (compressed, not to scale, past a break in the beach).</p>
           </div>
         </div>
       </div>
@@ -2136,18 +2136,20 @@
       // anchor below sits where the official map puts it, converted into
       // viewBox units with a single affine fit (x' = 0.9x - 36, y' = 0.9y
       // over the map area of the photo). Rendering stays the 3D game style.
-      var GROUNDS = [[50,5],[234,0],[468,9],[540,54],[585,135],[581,270],[594,378],[585,491],[531,527],[261,540],[81,504],[18,405],[5,270],[14,153],[32,63],[50,5]];
-      var BEACH = [[569,162],[605,90],[612,270],[619,423],[599,504],[569,491],[565,288]];
-      var WETSAND = [[610,162],[632,86],[641,270],[650,423],[614,506],[594,493],[608,270]];
-      var SEA = [[635,0],[800,0],[800,540],[650,423],[641,270],[632,86],[628,27]];
+      var GROUNDS = [[50,5],[234,0],[468,9],[540,54],[585,135],[581,270],[594,378],[585,491],[545,545],[261,540],[81,504],[18,405],[5,270],[14,153],[32,63],[50,5]];
+      var BEACH = [[569,162],[612,58],[612,270],[619,423],[640,470],[636,520],[628,548],[600,545],[602,500],[600,455],[598,420],[588,288]];
+      var WETSAND = [[612,58],[632,86],[641,270],[650,423],[668,470],[662,522],[652,548],[628,548],[636,520],[640,470],[619,423],[612,270]];
+      var SEA = [[635,0],[800,0],[800,548],[652,548],[668,470],[650,423],[641,270],[632,86],[628,27]];
       var GARDENS = [
         [[99,194],[176,187],[180,221],[106,227]],
-        [[81,288],[149,284],[153,324],[88,329]],
-        [[90,410],[158,405],[162,446],[97,450]],
-        [[468,203],[540,198],[545,230],[473,234]],
-        [[351,243],[432,239],[437,270],[356,275]],
+        [[96,336],[150,332],[153,368],[100,372]],
+        [[86,408],[150,404],[152,428],[93,432]],
+        [[458,210],[492,206],[495,240],[463,244]],
+        [[351,262],[432,258],[437,288],[356,293]],
         [[194,410],[261,405],[266,432],[198,437]],
-        [[315,270],[378,266],[383,293],[320,297]]
+        [[315,270],[378,266],[383,293],[320,297]],
+        [[574,470],[594,468],[598,544],[578,546]],
+        [[572,458],[592,456],[596,484],[576,486]]
       ];
       // Buildings: rotated footprints from the official map + height (px)
       // + roof tint + label. The nine numbered accommodation buildings
@@ -2159,7 +2161,7 @@
         { coords: quad(489, 77, 34, 41, 18), h: 14, tint: 3, label: "" },
         { coords: quad(478, 104, 36, 32, 18), h: 12, tint: 2, label: "" },
         { coords: quad(451, 135, 40, 36, 18), h: 12, tint: 0, label: "" },
-        { coords: quad(478, 178, 43, 47, 15), h: 12, tint: 1, label: "" },
+        { coords: quad(472, 178, 43, 47, 15), h: 12, tint: 1, label: "" },
         { coords: quad(431, 174, 20, 15, 18), h: 10, tint: 1, label: "" },
         { coords: quad(387, 221, 86, 63, 12), h: 16, tint: 2, label: "Theater" },
         { coords: quad(363, 126, 41, 40, 20), h: 12, tint: 3, label: "" },
@@ -2167,64 +2169,64 @@
         { coords: quad(317, 177, 31, 18, 20), h: 10, tint: 1, label: "" },
         { coords: quad(311, 196, 31, 18, 20), h: 10, tint: 2, label: "" },
         { coords: quad(303, 213, 31, 18, 20), h: 10, tint: 0, label: "" },
-        { coords: quad(548, 151, 34, 50, 12), h: 14, tint: 0, label: "" },
-        { coords: quad(555, 183, 27, 25, 12), h: 10, tint: 2, label: "" },
-        { coords: quad(638, 317, 27, 31, 5), h: 12, tint: 0, label: "" },
+        { coords: quad(553, 149, 32, 46, 12), h: 14, tint: 0, label: "" },
+        { coords: quad(552, 183, 26, 24, 12), h: 10, tint: 2, label: "" },
+        { coords: quad(605, 315, 27, 31, 5), h: 12, tint: 0, label: "" },
         { coords: quad(228, 362, 50, 36, 10), h: 14, tint: 1, label: "Miilé Spa" },
         { coords: quad(237, 234, 57, 38, 18), h: 30, tint: 2, label: "", num: 1 },
-        { coords: quad(156, 286, 47, 58, 10), h: 30, tint: 1, label: "", num: 2 },
-        { coords: quad(117, 366, 42, 58, 8), h: 30, tint: 3, label: "", num: 3 },
+        { coords: quad(146, 246, 44, 54, 10), h: 30, tint: 1, label: "", num: 2 },
+        { coords: quad(110, 366, 42, 58, 8), h: 30, tint: 3, label: "", num: 3 },
         { coords: quad(158, 455, 75, 45, 10), h: 30, tint: 0, label: "", num: 4 },
         { coords: quad(264, 465, 69, 45, 8), h: 30, tint: 2, label: "", num: 5 },
-        { coords: quad(440, 356, 56, 27, 36), h: 26, tint: 0, label: "", num: 6 },
-        { coords: quad(395, 392, 56, 27, 36), h: 24, tint: 2, label: "", num: 6 },
-        { coords: quad(363, 401, 56, 27, 36), h: 27, tint: 1, label: "", num: 6 },
-        { coords: quad(373, 432, 56, 27, 36), h: 25, tint: 3, label: "", num: 6 },
-        { coords: quad(342, 450, 56, 27, 36), h: 26, tint: 2, label: "", num: 6 },
-        { coords: quad(494, 315, 32, 50, -10), h: 30, tint: 0, label: "", num: 7, ec: true },
-        { coords: quad(503, 353, 32, 50, -10), h: 27, tint: 1, label: "", num: 7, ec: true },
-        { coords: quad(526, 398, 32, 50, -10), h: 30, tint: 2, label: "", num: 7, ec: true },
-        { coords: quad(552, 440, 32, 50, -10), h: 27, tint: 0, label: "", num: 7, ec: true },
-        { coords: quad(499, 506, 54, 40, 14), h: 28, tint: 2, label: "", num: 9, ec: true },
-        { coords: quad(586, 501, 95, 50, 8), h: 30, tint: 1, label: "", num: 8, ec: true }
+        { coords: quad(420, 366, 56, 27, 36), h: 26, tint: 0, label: "", num: 6 },
+        { coords: quad(381, 388, 56, 27, 36), h: 24, tint: 2, label: "", num: 6 },
+        { coords: quad(349, 397, 56, 27, 36), h: 27, tint: 1, label: "", num: 6 },
+        { coords: quad(334, 404, 56, 27, 36), h: 25, tint: 3, label: "", num: 6 },
+        { coords: quad(332, 474, 56, 27, 36), h: 26, tint: 2, label: "", num: 6 },
+        { coords: quad(544, 313, 28, 46, -4), h: 30, tint: 0, label: "", num: 7, ec: true },
+        { coords: quad(549, 354, 28, 46, -4), h: 27, tint: 1, label: "", num: 7, ec: true },
+        { coords: quad(537, 397, 28, 46, -4), h: 30, tint: 2, label: "", num: 7, ec: true },
+        { coords: quad(538, 441, 28, 46, -4), h: 27, tint: 0, label: "", num: 7, ec: true },
+        { coords: quad(448, 492, 52, 38, 14), h: 28, tint: 2, label: "", num: 9, ec: true },
+        { coords: quad(545, 484, 76, 44, 8), h: 30, tint: 1, label: "", num: 8, ec: true }
       ];
       var ROOFS = ["#ecd9ab", "#e6cf9e", "#dfc491", "#f0deb2"];
       var POOLS = [
-        ["Main Pool 1", [[509,122],[549,113],[569,144],[565,207],[554,270],[572,288],[540,302],[518,270],[504,198],[502,144]]],
+        ["Main Pool 1", [[509,122],[545,115],[532,140],[528,205],[538,268],[534,282],[520,288],[510,272],[504,198],[502,144]]],
         ["Main Pool 2", [[446,318],[494,310],[528,326],[532,354],[505,376],[464,371],[440,352]]],
-        ["EC Pool 1", [[574,389],[610,385],[626,410],[621,450],[594,457],[574,432]]],
-        ["EC Pool 2", [[493,511],[533,506],[551,522],[540,542],[504,542],[491,527]]],
+        ["EC Pool 1", [[556,389],[590,385],[597,410],[596,450],[572,457],[556,432]]],
+        ["EC Pool 2", [[498,508],[534,508],[550,522],[542,540],[506,540],[494,524]]],
         ["", [[296,344],[312,344],[312,356],[296,356]]],
         ["", [[253,404],[269,404],[269,416],[253,416]]]
       ];
-      var RIVER = [[149,297],[198,275],[270,279],[320,306],[324,356],[288,405],[216,419],[158,396],[140,347]];
+      var RIVER = [[149,297],[198,275],[270,279],[320,306],[324,356],[288,405],[216,419],[162,396],[146,347]];
       // Lazy-river branches: east to Main Pool 2 past Building 6, and south
       // toward the Excellence Club pool.
       var RIVER2 = [
-        [[330,310],[378,317],[423,338]],
-        [[216,419],[290,436],[380,452],[470,466],[500,500]]
+        [[330,310],[378,317],[418,332]],
+        [[216,419],[268,428],[344,442],[410,456],[462,464],[496,474],[500,490]]
       ];
       var PATHS = [
-        [[419,140],[396,194],[383,248],[405,297],[455,329],[522,306]],
-        [[387,144],[450,135],[513,153],[554,180]],
-        [[351,234],[306,270],[261,302]],
-        [[189,423],[261,446],[369,459],[477,486],[540,468]],
-        [[585,171],[590,252],[594,342],[599,432]],
-        [[234,270],[270,243],[306,225]],
+        [[296,172],[268,214],[330,244],[352,282],[405,297],[430,290],[478,296],[522,306]],
+        [[387,152],[418,150]],
+        [[330,238],[306,270],[261,302]],
+        [[189,423],[261,436],[310,438],[369,452],[430,462],[490,452],[505,450]],
+        [[572,182],[566,252],[584,342],[610,432],[600,478],[598,520]],
+        [[234,270],[262,268],[292,240],[306,225]],
         [[216,261],[221,297]],
-        [[96,232],[80,312],[84,392],[118,442]]
+        [[96,232],[76,312],[78,398],[118,442]]
       ];
       // Pin anchors (viewBox units) measured from the official map, in
       // PLACES order. Off-property places (indices 37–43) sit in the town
       // strip via TX/TY instead and keep a placeholder here.
       var PINXY = [
-        [417,108],[338,155],[387,221],[517,228],[650,521],[455,52],[431,174],[478,104],
-        [548,151],[311,196],[451,135],[303,213],[317,177],[555,183],[489,77],[638,309],
-        [482,276],[478,178],[386,257],[363,126],[374,78],[469,252],[267,401],[566,266],
-        [599,443],[536,207],[488,343],[369,315],[599,420],[518,530],[671,41],[622,216],
-        [634,352],[228,362],[286,312],[348,104],[460,45],[0,0],[0,0],[0,0],
-        [0,0],[0,0],[0,0],[0,0],[237,234],[156,286],[117,366],[158,455],
-        [264,465],[390,395],[526,398],[586,501],[499,506]
+        [417,108],[338,155],[387,221],[488,232],[620,524],[455,52],[431,174],[478,104],
+        [553,149],[311,196],[451,135],[303,213],[317,177],[552,183],[489,77],[605,308],
+        [482,276],[472,178],[386,257],[363,126],[374,78],[469,252],[267,401],[549,264],
+        [604,428],[536,207],[488,343],[369,315],[578,421],[520,524],[598,110],[600,212],
+        [604,352],[228,362],[286,312],[348,104],[460,45],[0,0],[0,0],[0,0],
+        [0,0],[0,0],[0,0],[0,0],[237,234],[146,246],[110,366],[158,455],
+        [264,465],[363,401],[543,377],[545,484],[448,492]
       ];
       // Schematic town-strip projection (relative positions follow the real
       // lat/lng of the seven off-property spots, compressed into the zone)
@@ -2322,13 +2324,13 @@
         s += "</g>";
         // Reef + surf lines
         s += '<path d="M 690 8 L 684 150 L 692 300 L 686 450 L 690 535" fill="none" stroke="#083f5e" stroke-width="3" stroke-dasharray="7 6" opacity="0.55"/>';
-        s += '<path d="M 645 108 L 652 270 L 662 423" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round" opacity="0.8"/>';
+        s += '<path d="M 646 108 L 653 270 L 665 423 L 676 478" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round" opacity="0.8"/>';
         s += '<text class="lbl" x="748" y="270" font-size="21" font-weight="700" fill="#eafcff" stroke="rgba(8,63,94,0.55)" transform="rotate(90 748 270)" text-anchor="middle" letter-spacing="4">CARIBBEAN SEA</text>';
         s += '<text class="lbl" x="700" y="88" font-size="12.5" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" text-anchor="middle">reef line</text>';
 
         // Beach continues south, off the resort, toward town
-        s += '<polygon points="575,530 655,530 640,615 590,615" fill="#eed9a4"/>';
-        s += '<path d="M 618 530 L 616 630" stroke="#b3541e" stroke-width="2.4" stroke-dasharray="8 7" fill="none" opacity="0.75"/>';
+        s += '<polygon points="600,545 652,545 640,615 605,615" fill="#eed9a4"/>';
+        s += '<path d="M 626 545 L 622 630" stroke="#b3541e" stroke-width="2.4" stroke-dasharray="8 7" fill="none" opacity="0.75"/>';
         s += '<text class="lbl" x="415" y="600" font-size="13.5" font-weight="700" fill="#5c4a1e" text-anchor="middle">beach continues to Puerto Morelos · ≈3.2 km ↓</text>';
 
         // ---- South extension: compressed coast, a map break, then the Puerto
@@ -2401,17 +2403,45 @@
         GARDENS.forEach(function (g, gi) {
           s += '<polygon points="' + pts(g) + '" fill="' + (gi % 2 ? "#66a04c" : "#5d9247") + '" stroke="#4c7d3a" stroke-width="1.5"/>';
         });
+        // Garden planting — canopy trees and flowering shrubs are drawn
+        // here, with the gardens and BEFORE the pools and buildings, so a
+        // tree can never land on a rooftop or in a pool: taller things
+        // always paint over the planting, never the other way round. The
+        // two beach garden strips (indices 7–8) get shrubs only.
+        var tr = rng(7);
+        GARDENS.forEach(function (g, gi) {
+          if (gi < 7) {
+            var w = g[1][0] - g[0][0], d = g[3][1] - g[0][1];
+            var n = Math.max(3, Math.round(w * d / 900));
+            for (var ti = 0; ti < n; ti++) {
+              var tx = g[0][0] + 5 + tr() * (w - 10);
+              var ty = g[0][1] + 5 + tr() * (d - 10);
+              var r = 7 + tr() * 6;
+              s += '<circle cx="' + (tx + 3).toFixed(1) + '" cy="' + (ty + 4).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#2e4a26" opacity="0.22"/>';
+              s += '<circle cx="' + tx.toFixed(1) + '" cy="' + ty.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#4d8a48"/>';
+              s += '<circle cx="' + (tx - r * 0.3).toFixed(1) + '" cy="' + (ty - r * 0.3).toFixed(1) + '" r="' + (r * 0.62).toFixed(1) + '" fill="#6cab5e"/>';
+            }
+          }
+          var gcx = (g[0][0] + g[1][0] + g[2][0] + g[3][0]) / 4, gcy = (g[0][1] + g[1][1] + g[2][1] + g[3][1]) / 4;
+          var gw = Math.abs(g[1][0] - g[0][0]) * 0.36, gh = Math.abs(g[3][1] - g[0][1]) * 0.36;
+          var fr2 = rng(90 + gi);
+          for (var si = 0; si < 12; si++) {
+            var sx = gcx + (fr2() - 0.5) * 2 * gw, sy = gcy + (fr2() - 0.5) * 2 * gh;
+            s += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="' + (3 + fr2() * 1.8).toFixed(1) + '" fill="#3f7d3c"/>';
+            s += '<circle cx="' + (sx + 1).toFixed(1) + '" cy="' + (sy - 1).toFixed(1) + '" r="' + (1.4 + fr2() * 1.2).toFixed(1) + '" fill="' + FLOWERS[Math.floor(fr2() * FLOWERS.length)] + '"/>';
+          }
+        });
 
         // Garibaldi Square plaza: patterned stone paving rings under the fountain
         s += '<circle cx="338" cy="155" r="30" fill="url(#pavePat)" stroke="#c2b184" stroke-width="1.6"/>';
         s += '<circle cx="338" cy="155" r="20" fill="none" stroke="#c2b184" stroke-width="1.3" opacity="0.8"/>';
         s += '<text class="lbl" x="288" y="208" font-size="12.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Garibaldi Square</text>';
-        // Parking strip along the west side, beside Building 2 (69 on the official map)
-        s += '<polygon points="' + pts(quad(128, 266, 86, 20, 28)) + '" fill="#59755c" stroke="#42563f" stroke-width="1.4"/>';
+        // Parking strip along the west side, south of Building 2 (69 on the official map)
+        s += '<polygon points="' + pts(quad(102, 318, 70, 20, 28)) + '" fill="#59755c" stroke="#42563f" stroke-width="1.4"/>';
         for (var pki = 0; pki < 4; pki++) {
-          s += '<line x1="' + (96 + pki * 12).toFixed(1) + '" y1="' + (246 + pki * 6.5).toFixed(1) + '" x2="' + (104 + pki * 12).toFixed(1) + '" y2="' + (262 + pki * 6.5) + '" stroke="#e8f0e4" stroke-width="1.3" opacity="0.6"/>';
+          s += '<line x1="' + (76 + pki * 13).toFixed(1) + '" y1="' + (298 + pki * 6.5).toFixed(1) + '" x2="' + (84 + pki * 13).toFixed(1) + '" y2="' + (314 + pki * 6.5) + '" stroke="#e8f0e4" stroke-width="1.3" opacity="0.6"/>';
         }
-        s += '<text class="lbl" x="128" y="266" font-size="11.5" font-weight="700" fill="#eef3e6" stroke="rgba(30,50,25,0.5)" text-anchor="middle" transform="rotate(-62 128 266)">Parking</text>';
+        s += '<text class="lbl" x="102" y="318" font-size="11.5" font-weight="700" fill="#eef3e6" stroke="rgba(30,50,25,0.5)" text-anchor="middle" transform="rotate(-62 102 318)">Parking</text>';
 
         // Beach + wet sand
         s += '<polygon points="' + pts(BEACH) + '" fill="#eed9a4"/>';
@@ -2446,14 +2476,14 @@
             s += '<text class="lbl" x="' + cx.toFixed(1) + '" y="' + (cy + 4).toFixed(1) + '" font-size="12" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" text-anchor="middle">' + p[0] + "</text>";
           }
         });
-        s += '<text class="lbl" x="118" y="318" font-size="12" font-weight="700" fill="#0b5d75" text-anchor="middle">Main Pool 3 · Lazy River</text>';
+        s += '<text class="lbl" x="232" y="264" font-size="12" font-weight="700" fill="#0b5d75" text-anchor="middle">Main Pool 3 · Lazy River</text>';
 
         // Reflecting ponds tucked into the garden beds
         s += pond(455, 215, 11, 8);
-        s += pond(105, 330, 10, 7);
+        s += pond(124, 350, 10, 7);
         // Waterfalls where the lazy-river branches spill into the pools
         s += falls(425, 340);
-        s += falls(500, 505);
+        s += falls(498, 500);
         s += falls(320, 306);
 
         // Walking paths: casing, sandy surface, dashed center
@@ -2514,14 +2544,14 @@
         // Ceremony gazebos: the stone gazebo in the gardens west of Main
         // Pool 1 (where the official map places it), the beach gazebo on the
         // sand at the south end
-        [[517, 228, "#7d2a3c"], [650, 521, "#a5834e"]].forEach(function (g) {
+        [[488, 232, "#7d2a3c"], [620, 524, "#a5834e"]].forEach(function (g) {
           var gx = g[0], gy = g[1];
           s += '<ellipse cx="' + (gx + 4) + '" cy="' + (gy + 4) + '" rx="13" ry="6" fill="#2e4a26" opacity="0.25"/>';
           s += '<polygon points="' + (gx - 12) + "," + (gy - 8) + " " + (gx + 12) + "," + (gy - 8) + " " + gx + "," + (gy - 22) + '" fill="' + g[2] + '"/>';
           s += '<rect x="' + (gx - 9) + '" y="' + (gy - 8) + '" width="18" height="4" fill="#f3e9cf" stroke="#a5834e" stroke-width="1"/>';
         });
-        s += '<text class="lbl" x="517" y="254" font-size="12" font-weight="700" fill="#7d2a3c" text-anchor="middle">Stone Gazebo ♥</text>';
-        s += '<text class="lbl" x="650" y="545" font-size="12" font-weight="700" fill="#7d2a3c" text-anchor="middle">Beach Gazebo ♥</text>';
+        s += '<text class="lbl" x="488" y="258" font-size="12" font-weight="700" fill="#7d2a3c" text-anchor="middle">Stone Gazebo ♥</text>';
+        s += '<text class="lbl" x="620" y="550" font-size="12" font-weight="700" fill="#7d2a3c" text-anchor="middle">Beach Gazebo ♥</text>';
 
         // Palapas along the beach
         [[600,150],[608,205],[602,262],[610,318],[606,375],[612,430],[608,485]].forEach(function (pp) {
@@ -2529,84 +2559,50 @@
           s += '<rect x="' + (pp[0] - 1) + '" y="' + (pp[1] - 5) + '" width="2" height="6" fill="#8a6d3f"/>';
         });
 
-        // Trees: canopy clusters in the gardens + palms along the sand
-        var tr = rng(7);
-        GARDENS.forEach(function (g) {
-          var w = g[1][0] - g[0][0], d = g[3][1] - g[0][1];
-          var n = Math.max(3, Math.round(w * d / 900));
-          for (var ti = 0; ti < n; ti++) {
-            var tx = g[0][0] + 5 + tr() * (w - 10);
-            var ty = g[0][1] + 5 + tr() * (d - 10);
-            var r = 7 + tr() * 6;
-            s += '<circle cx="' + (tx + 3).toFixed(1) + '" cy="' + (ty + 4).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#2e4a26" opacity="0.22"/>';
-            s += '<circle cx="' + tx.toFixed(1) + '" cy="' + ty.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#4d8a48"/>';
-            s += '<circle cx="' + (tx - r * 0.3).toFixed(1) + '" cy="' + (ty - r * 0.3).toFixed(1) + '" r="' + (r * 0.62).toFixed(1) + '" fill="#6cab5e"/>';
-          }
-        });
-        for (var qi = 0; qi < 8; qi++) {
-          var qx = 598 + (qi % 2) * 9, qy = 120 + qi * 56;
-          s += palm(qx, qy, 0.9);
-        }
+        // (Garden trees and shrubs are planted earlier, with the gardens
+        // themselves, so they can never cover a roof or a pool. No palms
+        // stand on the beach — the sand stays sand.)
 
         // ---- Landscaping & courtyard richness (drawn over the grounds) ----
         // Fountains: Garibaldi Square plaza + the lobby arrival court
         s += fountain(338, 155, 11);
         s += fountain(402, 98, 8);
 
-        // Excellence Club courtyard at EC Pool 2, by Building 9: loungers,
-        // umbrellas and garden planting around the pool
-        [[478, 512, 0], [478, 536, 0], [566, 514, 90], [566, 536, 90]].forEach(function (L, li) {
-          s += lounger(L[0], L[1], L[2], li % 2 ? "#bc4b1f" : "#0e7a86");
-        });
-        [[474, 524], [570, 525]].forEach(function (U) {
-          s += umbrella(U[0], U[1], "#f3e9cf");
-        });
-        s += flowerBed(472, 556, 6, 26, 31);
-        s += flowerBed(574, 554, 5, 20, 37);
+        // Excellence Club planting: flower beds south of Building 9 and
+        // in the beach garden strip east of Building 8
+        s += flowerBed(470, 536, 6, 26, 31);
+        s += flowerBed(590, 522, 5, 10, 37);
         // A few loungers on the sand among the palapas
         [[622, 240], [624, 360], [620, 470]].forEach(function (bl, bli) {
           s += lounger(bl[0], bl[1], 90, bli % 2 ? "#7d5608" : "#0e7a86");
         });
 
-        // Palms framing every building, planted at its front corners
-        BUILDINGS.forEach(function (b, bi) {
-          s += palm(b.coords[3][0] - 10, b.coords[3][1] + 4, 0.85 + (bi % 3) * 0.12);
-          s += palm(b.coords[2][0] + 10, b.coords[2][1] + 4, 0.8 + ((bi + 1) % 3) * 0.12);
+        // Palms stand on open ground only — fixed spots on the lawns and
+        // in the beach garden strips, each one clear of every rooftop,
+        // pool and the sand itself
+        [[395, 168], [250, 180], [455, 298], [60, 360], [326, 516]].forEach(function (pp3, pi3) {
+          s += palm(pp3[0], pp3[1], 0.85 + (pi3 % 3) * 0.07);
         });
-        // Palm clusters along the lazy river and around the spa island
-        [[150, 300], [300, 340], [155, 410], [285, 415], [322, 300], [228, 290]].forEach(function (pp2, pi2) {
+        // Palm clusters along the lazy river and around the spa island,
+        // planted on the banks — never in the water
+        [[300, 340], [108, 424], [348, 282], [228, 306]].forEach(function (pp2, pi2) {
           s += palm(pp2[0], pp2[1], 0.9 + (pi2 % 2) * 0.15);
         });
 
         // Shade trees overhanging the garden paths + specimen trees on the open lawns
-        s += canopy(300, 190, 14, 0);
-        s += canopy(455, 215, 13, 1);
-        s += canopy(200, 428, 13, 2);
-        s += canopy(82, 238, 15, 1);
+        s += canopy(188, 240, 14, 0);
+        s += canopy(74, 228, 15, 1);
         s += canopy(330, 520, 14, 0);
-        s += canopy(468, 192, 13, 2);
-        s += canopy(478, 540, 15, 1);
+        s += canopy(478, 532, 13, 1);
 
         // Flower beds edging the main garden paths
-        [[370, 170], [360, 280], [440, 320], [250, 430], [520, 300], [380, 460]].forEach(function (fb, fbi) {
+        [[370, 170], [360, 280], [438, 296], [210, 445], [520, 300], [415, 478]].forEach(function (fb, fbi) {
           s += flowerBed(fb[0], fb[1], 3, 13, 51 + fbi * 7);
-        });
-        // Flowering shrubs scattered through the garden beds
-        GARDENS.forEach(function (g, gi) {
-          var gcx = (g[0][0] + g[1][0] + g[2][0] + g[3][0]) / 4, gcy = (g[0][1] + g[1][1] + g[2][1] + g[3][1]) / 4;
-          var gw = Math.abs(g[1][0] - g[0][0]) * 0.36, gh = Math.abs(g[3][1] - g[0][1]) * 0.36;
-          var fr2 = rng(90 + gi);
-          for (var si = 0; si < 12; si++) {
-            var sx = gcx + (fr2() - 0.5) * 2 * gw, sy = gcy + (fr2() - 0.5) * 2 * gh;
-            s += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="' + (3 + fr2() * 1.8).toFixed(1) + '" fill="#3f7d3c"/>';
-            s += '<circle cx="' + (sx + 1).toFixed(1) + '" cy="' + (sy - 1).toFixed(1) + '" r="' + (1.4 + fr2() * 1.2).toFixed(1) + '" fill="' + FLOWERS[Math.floor(fr2() * FLOWERS.length)] + '"/>';
-          }
         });
 
         // Area labels
         s += '<text class="lbl" x="228" y="318" font-size="12" font-weight="700" fill="#3c5a30" text-anchor="middle">Spa island</text>';
-        s += '<text class="lbl" x="520" y="562" font-size="12" font-weight="700" fill="#0b5d75" text-anchor="middle">Excellence Club pools</text>';
-        s += '<text class="lbl" x="618" y="380" font-size="11.5" font-weight="700" fill="#7d2a3c" text-anchor="middle" letter-spacing="2.5" transform="rotate(90 618 380)">EXCELLENCE CLUB OCEANFRONT</text>';
+        s += '<text class="lbl" x="610" y="400" font-size="11.5" font-weight="700" fill="#7d2a3c" text-anchor="middle" letter-spacing="2.5" transform="rotate(90 610 400)">EXCELLENCE CLUB OCEANFRONT</text>';
 
         // Two resort piers reaching into the sea, as on the official map —
         // one in front of Building 7, a second further south
@@ -2648,9 +2644,9 @@
         // Restaurant row: every venue is an overview building (positions
         // from the official map); at this zoom they gain name labels and
         // seating terraces.
-        [[489, 77, "The Kitchen Table"], [478, 104, "The Grill"], [548, 151, "Lobster House"],
-         [555, 183, "Oregano"], [451, 135, "Spice"], [431, 174, "Chez Isabelle"],
-         [478, 178, "Martini Bar"], [317, 177, "Flavor Market"], [311, 196, "Agave"],
+        [[489, 77, "The Kitchen Table"], [478, 104, "The Grill"], [553, 149, "Lobster House"],
+         [552, 183, "Oregano"], [451, 135, "Spice"], [431, 174, "Chez Isabelle"],
+         [472, 178, "Martini Bar"], [317, 177, "Flavor Market"], [311, 196, "Agave"],
          [303, 213, "Basmati"]].forEach(function (rn) {
           d += terrace(rn[0], rn[1] + 15, 30);
           d += dLabel(rn[0], rn[1] + 3, rn[2], 9);
@@ -2685,19 +2681,16 @@
           }
           return o;
         }
-        d += deckSet(520, 150, 5, 0);
-        d += deckSet(599, 372, 4, 1);
+        d += deckSet(536, 100, 4, 0);
         d += deckSet(463, 300, 4, 0);
-        d += deckSet(180, 330, 4, 1);
-        d += deckSet(545, 300, 3, 0);
-        d += deckSet(520, 478, 3, 1);
-        d += '<rect x="536" y="256" width="26" height="11" rx="2.5" fill="#7d5608" stroke="#54401e" stroke-width="1"/>';
+        d += deckSet(569, 370, 2, 0);
+        d += '<rect x="522" y="256" width="26" height="11" rx="2.5" fill="#7d5608" stroke="#54401e" stroke-width="1"/>';
         d += dLabel(549, 280, "Sol swim-up bar", 8.5, "#0b5d75");
         d += '<rect x="450" y="330" width="22" height="10" rx="2.5" fill="#7d5608" stroke="#54401e" stroke-width="1" opacity="0.9"/>';
         // Beach: a lounger paired with every palapa, in two loose rows
         [150, 205, 262, 318, 375, 430, 488].forEach(function (by, bi2) {
           d += lounger(606, by + 8, 90, bi2 % 2 ? "#7d5608" : "#0e7a86");
-          d += lounger(632, by + 22, 90, bi2 % 2 ? "#0e7a86" : "#bc4b1f");
+          d += lounger(616, by + 22, 90, bi2 % 2 ? "#0e7a86" : "#bc4b1f");
         });
         d += dLabel(618, 118, "Palapas & loungers", 9, "#8a6d2f");
         // Spa island: garden paths, planting and the temazcal, named
@@ -2767,7 +2760,7 @@
         // Display-only fan-out for the dense clusters, so pins stay tappable.
         var NUDGE = { 3: [-16, 6], 35: [-24, -16], 16: [-14, -22], 18: [0, 14], 29: [16, 14], 0: [-10, 10], 1: [-20, -14], 5: [-18, 18], 6: [-26, 10], 7: [24, 24], 9: [-18, 0], 10: [6, -10],
           11: [16, 8], 12: [14, -6], 13: [24, 8], 14: [26, -6], 17: [14, -4], 19: [-20, -10],
-          20: [-8, -20], 21: [-2, 18], 23: [26, 14], 24: [20, 16], 30: [14, -6], 36: [30, -14] };
+          20: [-8, -20], 21: [-2, 18], 24: [20, 16], 30: [-6, -4], 31: [18, -14], 36: [30, -14] };
         var TOWN_NUDGE = { 38: [-20, -8], 39: [26, 12] };
         var nd = p.offsite ? (TOWN_NUDGE[i] || [0, 0]) : (NUDGE[i] || [0, 0]);
         pinBase[i] = p.offsite
