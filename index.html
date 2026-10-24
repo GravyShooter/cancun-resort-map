@@ -310,6 +310,20 @@
       .mapcap .sw.path { background: #ecd9a0; border-style: dashed; border-color: #b3541e; }
       .mapcap .capnote { flex-basis: 100%; margin: 4px 0 0; }
 
+      /* SpudMaps rebrand notice — installed app only (shown by script) */
+      .rebanner {
+        margin: 0 0 var(--s-4); background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius); padding: 12px var(--s-4); box-shadow: var(--shadow);
+        display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); align-items: center; justify-content: space-between;
+      }
+      .rebanner p { margin: 0; font-size: 0.95rem; flex: 1 1 260px; }
+      .rebanner p strong { font-weight: 700; }
+      .rebanner-btn {
+        appearance: none; cursor: pointer; border: 0; border-radius: 999px;
+        background: var(--accent); color: var(--accent-ink);
+        font: inherit; font-weight: 700; padding: 12px 22px; min-height: 48px; flex: none;
+      }
+
       /* GPS status row */
       .gpscard {
         margin: 0 0 var(--s-4); background: var(--panel); border: 1px solid var(--line);
@@ -793,6 +807,27 @@
         <span class="wedding-line"><span class="dot"></span> Katherine &amp; Shane's wedding — at the Wedding Gazebo (pin 4)</span>
         <button type="button" class="installcta" id="installCta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5m0 0L8 10.5m4 4 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 16.5v1.7A1.8 1.8 0 0 0 6.3 20h11.4a1.8 1.8 0 0 0 1.8-1.8v-1.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg> Install as App</button>
       </header>
+
+      <aside class="rebanner" id="rebrandBanner" hidden aria-label="SpudMaps new look notice">
+        <p><strong>SpudMaps has a new look!</strong> If your home-screen icon or app name still shows the old branding, uninstall and reinstall the app to get the new one.</p>
+        <button type="button" class="rebanner-btn" id="rebrandDismiss">Got it</button>
+      </aside>
+      <script>
+        (function () {
+          try {
+            var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+            if (!standalone) return;
+            if (window.localStorage && localStorage.getItem("spudmaps-newlook-dismissed") === "1") return;
+            var banner = document.getElementById("rebrandBanner");
+            if (!banner) return;
+            banner.hidden = false;
+            document.getElementById("rebrandDismiss").addEventListener("click", function () {
+              banner.hidden = true;
+              try { localStorage.setItem("spudmaps-newlook-dismissed", "1"); } catch (e) {}
+            });
+          } catch (e) {}
+        })();
+      </script>
 
       <section class="gpscard" aria-label="Your live location">
         <div class="gpsmain">
@@ -4306,21 +4341,13 @@
       })();
     </script>
     <script>
-      // ---------- Spud Lord appeal popup: shows once, dismissal remembered 7 days ----------
+      // ---------- Spud Lord appeal popup: appears a few seconds after every page load ----------
+      // Dismissal closes it for this view only — nothing is stored, so it comes back on the next visit.
       (function () {
         "use strict";
-        var KEY = "spudAppealDismissedAt";
-        var WEEK = 7 * 24 * 60 * 60 * 1000;
         var pop = document.getElementById("spudPop");
         if (!pop) return;
-        var dismissedAt = 0;
-        try { dismissedAt = parseInt(localStorage.getItem(KEY) || "0", 10) || 0; } catch (e) { /* storage unavailable: show it */ }
-        if (dismissedAt && (Date.now() - dismissedAt) < WEEK) return;
-        function remember() {
-          try { localStorage.setItem(KEY, String(Date.now())); } catch (e) { /* private mode etc. */ }
-        }
         function dismiss() {
-          remember();
           pop.classList.remove("show");
           pop.hidden = true;
         }
@@ -4332,7 +4359,6 @@
         }, 3500);
         document.getElementById("spudPopClose").addEventListener("click", dismiss);
         document.getElementById("spudPopNo").addEventListener("click", dismiss);
-        document.getElementById("spudPopGive").addEventListener("click", remember);
         document.addEventListener("keydown", function (e) {
           if (!pop.hidden && (e.key === "Escape" || e.key === "Esc")) dismiss();
         });
