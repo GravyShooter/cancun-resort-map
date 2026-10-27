@@ -965,22 +965,43 @@
       .splash .splashskip { margin: 0; font-size: 0.82rem; color: var(--ink-soft); opacity: 0.75; }
       @media (prefers-reduced-motion: reduce) { .splash { transition: none; } }
 
-      /* ---------- Weather card (mirrors the GPS card) ---------- */
-      .wxcard { display: block; }
-      .wxdays { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s-3); flex-basis: 100%; }
+      /* ---------- Weather: tiny corner chip on the map + tap-to-expand forecast ---------- */
+      .wxoverlay { position: absolute; top: 10px; right: 10px; z-index: 9; }
+      .wxchip {
+        appearance: none; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px;
+        min-height: 40px; padding: 6px 13px 6px 11px;
+        border: 1px solid var(--line); border-radius: 999px;
+        background: var(--panel); color: var(--ink); box-shadow: var(--shadow);
+        font: inherit; font-weight: 800; font-size: 1rem; line-height: 1;
+      }
+      .wxchip .wxicon { font-size: 1.15rem; line-height: 1; }
+      .wxchip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .wxpop {
+        position: absolute; top: 58px; right: 10px; z-index: 9;
+        width: min(430px, calc(100vw - 52px));
+        max-height: calc(100% - 68px); overflow-y: auto; touch-action: pan-y;
+        background: var(--panel); color: var(--ink);
+        border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: var(--s-3) var(--s-4);
+      }
+      .wxpop h2 { font-family: var(--font-display); font-weight: 600; margin: 0 0 2px; font-size: 1.05rem; }
+      .wxpop .wxnowline { margin: 0; color: var(--ink-soft); font-size: 0.92rem; }
+      .wxpop .wxnowline strong { color: var(--ink); font-weight: 700; }
+      .wxdays { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s-3); }
       .wxdays:empty { display: none; }
       .wxday {
         background: var(--panel-2); border: 1px solid transparent; border-radius: var(--radius-sm);
-        padding: 7px 10px; font-size: 0.84rem; line-height: 1.35; text-align: center; min-width: 92px; flex: 1 1 92px;
+        padding: 7px 8px; font-size: 0.8rem; line-height: 1.35; text-align: center; min-width: 78px; flex: 1 1 78px;
       }
-      .wxday .wxdow { display: block; font-weight: 700; font-size: 0.88rem; }
+      .wxday .wxdow { display: block; font-weight: 700; font-size: 0.84rem; }
       .wxday .wxcond { display: block; color: var(--ink-soft); }
       .wxday .wxhi { font-weight: 700; }
       .wxday .wxlo { color: var(--ink-soft); }
-      .wxday .wxrain { display: block; color: var(--teal-deep); font-size: 0.78rem; }
+      .wxday .wxrain { display: block; color: var(--teal-deep); font-size: 0.76rem; }
       .wxday.wxfar { border-style: dashed; border-color: var(--line); }
-      .wxnote { flex-basis: 100%; margin: var(--s-2) 0 0; font-size: 0.85rem; color: var(--ink-soft); }
-      .wxsrc { flex-basis: 100%; margin: 2px 0 0; font-size: 0.78rem; color: var(--ink-soft); }
+      .wxnote { margin: var(--s-2) 0 0; font-size: 0.82rem; color: var(--ink-soft); }
+      .wxsrc { margin: 4px 0 0; font-size: 0.75rem; color: var(--ink-soft); }
 
       /* ---------- Open-now badge, favorites, share link ---------- */
       .opennow {
@@ -1167,16 +1188,6 @@
         </div>
       </section>
 
-      <section class="gpscard wxcard" aria-label="Resort weather">
-        <div class="gpsmain">
-          <h2>Weather · Puerto Morelos</h2>
-          <p class="gpsread" id="wxNow" aria-live="polite">Loading the latest forecast…</p>
-        </div>
-        <div class="wxdays" id="wxDays"></div>
-        <p class="wxnote" id="wxNote" hidden></p>
-        <p class="wxsrc">Forecast from Open-Meteo, fetched fresh each time the page opens · times and days are resort-local.</p>
-      </section>
-
     <aside class="installhint" id="installHint">
       <div class="ihhead">
         <button type="button" class="foldtoggle" aria-expanded="false" aria-controls="installBody"><span><strong>Use it like an app</strong> — install tip</span><span class="chev" aria-hidden="true"></span></button>
@@ -1217,6 +1228,16 @@
             <button type="button" class="mbtn" id="zoomIn" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></button>
             <button type="button" class="mbtn" id="zoomOut" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></button>
             <button type="button" class="mbtn" id="zoomReset" aria-label="Reset view" title="Reset view"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 10a5.9 5.9 0 1 1-1.72-4.18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M16.6 2.4v3.7h-3.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+          </div>
+          <div class="wxoverlay">
+            <button type="button" class="wxchip" id="wxChip" aria-expanded="false" aria-controls="wxPop" aria-label="Resort weather — tap for the full forecast"><span class="wxicon" id="wxIcon" aria-hidden="true">🌤️</span><span id="wxTemp">…</span></button>
+          </div>
+          <div class="wxpop" id="wxPop" hidden>
+            <h2>Weather · Puerto Morelos</h2>
+            <p class="wxnowline" id="wxNow" aria-live="polite">Loading the latest forecast…</p>
+            <div class="wxdays" id="wxDays"></div>
+            <p class="wxnote" id="wxNote" hidden></p>
+            <p class="wxsrc">Forecast from Open-Meteo, fetched fresh each time the page opens · times and days are resort-local.</p>
           </div>
         </div>
         <div class="townstrip">
@@ -3226,6 +3247,7 @@
 
       // Mouse wheel zoom (around the cursor)
       sceneEl.addEventListener("wheel", function (e) {
+        if (e.target.closest && e.target.closest(".wxpop")) return;
         e.preventDefault();
         var r = sceneEl.getBoundingClientRect();
         zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 1 / 1.15, false);
@@ -3237,7 +3259,7 @@
       var pointers = new Map();
       var dragDist = 0, pinchD = 0, suppressUntil = 0;
       sceneEl.addEventListener("pointerdown", function (e) {
-        if (e.target.closest && e.target.closest(".maptools")) return;
+        if (e.target.closest && e.target.closest(".maptools, .wxoverlay, .wxpop")) return;
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         dragDist = 0;
         if (pointers.size === 2) {
@@ -5603,10 +5625,44 @@
         var wxNow = document.getElementById("wxNow");
         var wxDays = document.getElementById("wxDays");
         var wxNote = document.getElementById("wxNote");
+        var wxChip = document.getElementById("wxChip");
+        var wxPop = document.getElementById("wxPop");
+        var wxIconEl = document.getElementById("wxIcon");
+        var wxTempEl = document.getElementById("wxTemp");
         function wxLabel(code) { return WMO[code] || "—"; }
+        function wxIcon(code) {
+          if (code === 0) return "☀️";
+          if (code === 1) return "🌤️";
+          if (code === 2) return "⛅";
+          if (code === 3) return "☁️";
+          if (code === 45 || code === 48) return "🌫️";
+          if (code >= 51 && code <= 57) return "🌦️";
+          if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return "🌧️";
+          if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "🌨️";
+          if (code >= 95) return "⛈️";
+          return "🌤️";
+        }
+        // Tiny corner chip: tap toggles the full forecast panel.
+        function setWxOpen(open) {
+          if (!wxChip || !wxPop) return;
+          wxPop.hidden = !open;
+          wxChip.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+        if (wxChip && wxPop) {
+          wxChip.addEventListener("click", function () { setWxOpen(wxPop.hidden); });
+          document.addEventListener("click", function (e) {
+            if (!wxPop.hidden && e.target.closest && !e.target.closest(".wxoverlay, .wxpop")) setWxOpen(false);
+          });
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && !wxPop.hidden) { setWxOpen(false); wxChip.focus(); }
+          });
+        }
         function renderWx(data) {
           if (!data || !data.current || !data.daily || !data.daily.time) throw new Error("bad wx payload");
           var c = data.current;
+          if (wxIconEl) wxIconEl.textContent = wxIcon(c.weather_code);
+          if (wxTempEl) wxTempEl.textContent = Math.round(c.temperature_2m) + "°";
+          if (wxChip) wxChip.setAttribute("aria-label", "Resort weather: " + Math.round(c.temperature_2m) + "°F, " + wxLabel(c.weather_code) + " — tap for the full forecast");
           wxNow.innerHTML = "<strong>" + Math.round(c.temperature_2m) + "°F · " + wxLabel(c.weather_code) + "</strong> · wind " + Math.round(c.wind_speed_10m) + " mph · humidity " + Math.round(c.relative_humidity_2m) + "%";
           var d = data.daily, html = "", far = false;
           var dowFmt = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/Cancun" });
@@ -5634,9 +5690,13 @@
           fetch("https://api.open-meteo.com/v1/forecast?latitude=20.8783&longitude=-86.8676&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FCancun&forecast_days=16")
             .then(function (r) { if (!r.ok) throw new Error("wx " + r.status); return r.json(); })
             .then(renderWx)
-            .catch(function () { if (wxNow) wxNow.textContent = "Couldn't load the forecast just now — it'll try again next time the page opens."; });
+            .catch(function () {
+              if (wxNow) wxNow.textContent = "Couldn't load the forecast just now — it'll try again next time the page opens.";
+              if (wxTempEl) wxTempEl.textContent = "—";
+            });
         } else if (wxNow) {
           wxNow.textContent = "Weather isn't available in this browser.";
+          if (wxTempEl) wxTempEl.textContent = "—";
         }
 
         // --- Room finder: room number -> its building, route from the lobby ---
