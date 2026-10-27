@@ -3874,6 +3874,15 @@
       // GPS starts reporting. Each fix is converted to map coordinates on
       // the device (liveXY); only name, color and map x/y are ever written
       // to the shared presence list — never raw lat/lng.
+      // App mode: true only inside the SpudMaps Live Android app, whose
+      // WebView appends "SpudMapsLive" to its user-agent string. Every
+      // app-mode branch is gated on this marker alone; on the web it is
+      // always false and behavior is unchanged. In app mode the native
+      // service is the only location writer, so the page's dialog is a
+      // save-only profile editor and the page never starts its own
+      // sharing (no watchPosition, no presence write) from it.
+      var IS_SPUDMAPS_APP = false;
+      try { IS_SPUDMAPS_APP = (navigator.userAgent || "").indexOf("SpudMapsLive") !== -1; } catch (e) { IS_SPUDMAPS_APP = false; }
       var LIVE_COLORS = ["#f43f5e", "#fb923c", "#facc15", "#4ade80", "#2dd4bf", "#60a5fa", "#a78bfa", "#f472b6"];
       var LIVE_DEFAULT_COLOR = "#2dd4bf";
       // Preset icons for the live-group dot: a fixed set, drawn as inline
@@ -4796,6 +4805,13 @@
           liveDlgTitle.textContent = "Your name for the board";
           liveDlgIntro.textContent = "A name is required to post on the group board — every note shows who wrote it. The color tags your notes.";
           liveDlgNote.textContent = "Your name, color and icon are saved on this device and shown with your notes. (Same name, color and icon as your Live group dot, if you use it.)";
+        } else if (mode === "app") {
+          // App mode (SpudMaps Live app only): the same dialog as the
+          // single profile editor, but save-only — saving never starts
+          // the page's own sharing; the app's service does the sharing.
+          liveDlgTitle.textContent = "Your live dot";
+          liveDlgIntro.textContent = "Pick the name, dot color and icon your group will see on the map.";
+          liveDlgNote.textContent = "Saved on this device — the app uses this name, color and icon for your dot. Sharing is controlled by the app, not this page.";
         } else {
           liveDlgTitle.textContent = mode === "edit" ? "Your live dot" : "Join the live group";
           liveDlgIntro.textContent = "Pick the name, dot color and icon your group will see on the map.";
@@ -4834,14 +4850,19 @@
         liveChipDot.style.background = liveProfile.color;
         var mode = liveDlgMode;
         liveCloseDlg();
-        if (mode === "join") liveStartSharing();
+        if (IS_SPUDMAPS_APP || mode === "app") {
+          // Save-only in app mode: never start the page's own sharing
+          // and never write presence from a dialog save — on the join,
+          // edit, board and app paths alike. The app's service is the
+          // only writer, so there are never two dots for one person.
+        } else if (mode === "join") liveStartSharing();
         else if (liveState.sharing) liveWriteNow();
         // The group board keys off the same saved profile: refresh its
         // "posting as" line, and release a note that was held for a name.
         if (typeof boardRefreshWho === "function") boardRefreshWho();
         if (mode === "board" && typeof boardAfterProfile === "function") boardAfterProfile();
       });
-      liveEditBtn.addEventListener("click", function () { liveOpenDlg("edit"); });
+      liveEditBtn.addEventListener("click", function () { liveOpenDlg(IS_SPUDMAPS_APP ? "app" : "edit"); });
 
       // ----- Firebase: silent anonymous sign-in + presence -----
       try {
@@ -4887,6 +4908,7 @@
 
       // ----- Writing own position (throttled by the caller) -----
       function liveWriteNow() {
+        if (IS_SPUDMAPS_APP) return; // app mode: the page never writes presence
         if (!liveMyRef || !liveProfile || !liveState.mePos) return;
         try {
           liveMyRef.set({
@@ -4942,6 +4964,13 @@
 
       // ----- Toggle on / off -----
       function liveStartSharing() {
+        if (IS_SPUDMAPS_APP) {
+          // Defense in depth: in app mode the page never shares, even
+          // if some path still calls this — the app's service is the
+          // only writer. Just offer the save-only profile dialog.
+          liveOpenDlg("app");
+          return;
+        }
         if (!liveReady) {
           liveNote("Live group couldn't connect — the rest of the map works as usual.", true);
           return;
@@ -5032,6 +5061,14 @@
         liveUsersSig = "";
       }
       liveChip.addEventListener("click", function () {
+        if (IS_SPUDMAPS_APP) {
+          // In the app the chip is the profile editor, not a sharing
+          // toggle: open the dialog save-only. The profile is stored
+          // on this device, so this works even if Live couldn't load,
+          // and it never starts the page's own sharing.
+          liveOpenDlg("app");
+          return;
+        }
         if (!liveReady) {
           liveNote("Live group couldn't load just now — the rest of the map works as usual.", true);
           return;
