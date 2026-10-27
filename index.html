@@ -790,6 +790,15 @@
       .liveuser .uicon svg { width: 14px; height: 14px; display: block; }
       .liveuser:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
       .liveusers-empty { font-size: 0.88rem; color: var(--ink-soft); align-self: center; }
+      /* Stale (last-seen) members: faded pill, desaturated icon, with the
+         last-seen time shown next to the name. Still tappable to center. */
+      .liveuser.stale { opacity: 0.68; }
+      .liveuser.stale .uicon { filter: grayscale(0.85) saturate(0.35); opacity: 0.75; }
+      .liveuser .useen { font-size: 0.78rem; font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
+      /* Bluetooth proximity badge: "near <name> · ~Nm" on a member with
+         no live dot. Proximity-only rows aren't buttons (no position). */
+      .liveuser .uprox { font-size: 0.78rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
+      .liveuser.proxonly { cursor: default; }
       .livedot {
         position: absolute; z-index: 6; width: 30px; height: 30px;
         border-radius: 50%; border: 2.5px solid #ffffff;
@@ -813,6 +822,19 @@
         overflow: hidden; text-overflow: ellipsis;
       }
       .livedot { animation: livepulse 2.4s ease-out infinite; }
+      /* Stale (last-seen) dot: no pulse, faded + desaturated so it reads
+         clearly as "where they were", not "where they are". */
+      .livedot.stale {
+        animation: none;
+        opacity: 0.55;
+        filter: grayscale(0.8) saturate(0.35);
+        box-shadow: 0 2px 6px rgba(25, 35, 20, 0.35);
+      }
+      .livedot.stale .lname {
+        background: rgba(18, 24, 28, 0.62);
+        font-weight: 600;
+        max-width: 210px;
+      }
       @keyframes livepulse {
         0% { box-shadow: 0 0 0 2.5px #ffffff, 0 0 0 5px rgba(255, 255, 255, 0.55), 0 2px 6px rgba(25, 35, 20, 0.5); }
         70% { box-shadow: 0 0 0 2.5px #ffffff, 0 0 0 14px rgba(255, 255, 255, 0), 0 2px 6px rgba(25, 35, 20, 0.5); }
@@ -3969,6 +3991,7 @@
       var liveState = {
         sharing: false,
         entries: {},      // uid -> latest presence snapshot entry
+        proximity: {},    // observerUid -> { observedUid -> Bluetooth proximity record }
         dotEls: {},       // uid (or "__me") -> { el, label, x, y }
         mePos: null,      // { x, y, near } from the latest local GPS fix
         lastFix: null,    // { lat, lng } of the latest local GPS fix
@@ -3979,7 +4002,7 @@
       };
       var liveDb = null, liveAuth = null, liveUid = null;
       var liveReady = false, liveAuthFailed = false;
-      var livePresenceRef = null, liveMyRef = null;
+      var livePresenceRef = null, liveMyRef = null, liveProximityRef = null;
       var liveProfile = null;
       var liveAnchors = null;
 
@@ -3992,6 +4015,16 @@
       }
       function liveValidColor(c) {
         return LIVE_COLORS.indexOf(c) !== -1 ? c : LIVE_DEFAULT_COLOR;
+      }
+      // Staleness: an entry older than 120s is "last seen", not live.
+      // It stays on the map as a faded dot instead of being dropped.
+      function liveIsStale(updatedAt, now) {
+        return typeof updatedAt === "number" && isFinite(updatedAt) && (now - updatedAt > 120000);
+      }
+      function liveLastSeenText(updatedAt) {
+        if (typeof updatedAt !== "number" || !isFinite(updatedAt)) return "";
+        var d = new Date(updatedAt);
+        return "last seen " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
       }
       function liveValidIcon(id) {
         return (typeof id === "string" && LIVE_ICON_MAP[id]) ? id : LIVE_DEFAULT_ICON;
@@ -4156,23 +4189,115 @@
           sceneEl.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
         } catch (e) { /* scrolling to the map is a nicety, never fatal */ }
       }
+      // ----- Bluetooth proximity badges -----
+      // Bluetooth proximity gives a DISTANCE from the observing phone,
+      // not a position — so it is only ever shown as a "near <name> ·
+      // ~Nm" badge, never as a dot on the map.
+      // The companion app writes proximity/<observerUid>/<observedUid>
+      // = { distanceM, rssi, name, updatedAt } to the same database the
+      // presence listener reads; `name` is the observed member's display
+      // name, their only name source when they have no presence entry.
+      function liveObsHasLiveDot(obsUid, now) {
+        if (obsUid === liveUid) {
+          return !!(liveState.sharing && liveState.mePos && liveState.mePos.near <= 800);
+        }
+        var e = (liveState.entries || {})[obsUid];
+        if (!e || typeof e.x !== "number" || typeof e.y !== "number") return false;
+        if (typeof e.near === "number" && e.near > 800) return false;
+        return !liveIsStale(e.updatedAt, now);
+      }
+      function liveObsName(obsUid) {
+        if (obsUid === liveUid && liveProfile) return liveProfile.name;
+        var e = (liveState.entries || {})[obsUid];
+        return (e && typeof e.name === "string" && e.name) ? e.name : "Guest";
+      }
+      // Nearest fresh proximity sighting of observedUid, or null. Only
+      // observers who currently have a live (fresh, not faded) dot
+      // count, and only records under 120s old — liveIsStale, the same
+      // threshold as the dots. observerFilter, when given, restricts to
+      // those observer uids (used by the cluster member list).
+      function liveProxBadge(observedUid, now, observerFilter) {
+        var prox = liveState.proximity || {};
+        var best = null;
+        for (var obsUid in prox) {
+          if (!Object.prototype.hasOwnProperty.call(prox, obsUid)) continue;
+          if (obsUid === observedUid) continue;
+          if (observerFilter && !observerFilter[obsUid]) continue;
+          var recs = prox[obsUid];
+          if (!recs) continue;
+          var rec = recs[observedUid];
+          if (!rec || typeof rec.distanceM !== "number" || !isFinite(rec.distanceM)) continue;
+          if (typeof rec.updatedAt !== "number" || !isFinite(rec.updatedAt)) continue;
+          if (liveIsStale(rec.updatedAt, now)) continue;
+          if (!liveObsHasLiveDot(obsUid, now)) continue;
+          if (!best || rec.distanceM < best.dist) {
+            best = { obs: obsUid, dist: rec.distanceM, name: typeof rec.name === "string" ? rec.name : "" };
+          }
+        }
+        if (!best) return null;
+        return {
+          text: "near " + liveObsName(best.obs) + " · ~" + Math.round(best.dist) + "m",
+          name: best.name
+        };
+      }
+      // Every uid anyone holds a proximity record for — the candidate
+      // set for proximity-only rows; liveProxBadge does the filtering.
+      function liveProxObservedUids() {
+        var prox = liveState.proximity || {};
+        var out = {};
+        for (var obsUid in prox) {
+          if (!Object.prototype.hasOwnProperty.call(prox, obsUid)) continue;
+          var recs = prox[obsUid];
+          if (!recs) continue;
+          for (var obsd in recs) {
+            if (Object.prototype.hasOwnProperty.call(recs, obsd)) out[obsd] = true;
+          }
+        }
+        return Object.keys(out);
+      }
       function liveRenderUsers(want) {
         if (!liveState.sharing) {
           if (!liveUsersEl.hidden) liveUsersEl.hidden = true;
           liveUsersSig = "";
           return;
         }
+        var now = Date.now();
         var keys = Object.keys(want).sort(function (a, b) {
           if (a === "__me") return -1;
           if (b === "__me") return 1;
           return want[a].name < want[b].name ? -1 : 1;
         });
-        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon; }).join(";") + "|potato" + potatoStage();
+        // Proximity badges: a member with NO live dot (a faded
+        // last-seen row) gets a badge when a live-dot member's phone
+        // currently sees them nearby over Bluetooth.
+        var badges = {};
+        keys.forEach(function (k) {
+          if (k === "__me" || !want[k].stale) return;
+          var bg = liveProxBadge(k, now, null);
+          if (bg) badges[k] = bg.text;
+        });
+        // Proximity-only members: a fresh sighting but no presence
+        // entry at all (so no dot, not even a faded one). They still
+        // get a row — faded, name from the record — plus the badge,
+        // instead of being silently dropped.
+        var proxRows = [];
+        liveProxObservedUids().forEach(function (uid) {
+          if (uid === liveUid || want[uid]) return;
+          var bg = liveProxBadge(uid, now, null);
+          if (!bg) return;
+          var pe = (liveState.entries || {})[uid];
+          var nm = (pe && typeof pe.name === "string" && pe.name) ? pe.name : (bg.name || "Guest");
+          proxRows.push({ uid: uid, name: nm, badge: bg.text });
+        });
+        proxRows.sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon + "|" + (want[k].stale ? "stale:" + want[k].updatedAt : "live") + "|" + (badges[k] || ""); }).join(";") +
+          "|prox" + proxRows.map(function (r) { return r.uid + "|" + r.name + "|" + r.badge; }).join(";") +
+          "|potato" + potatoStage();
         if (sig === liveUsersSig && !liveUsersEl.hidden) return;
         liveUsersSig = sig;
         liveUsersEl.innerHTML = "";
         liveUsersEl.hidden = false;
-        if (!keys.length) {
+        if (!keys.length && !proxRows.length) {
           var em = document.createElement("span");
           em.className = "liveusers-empty";
           em.textContent = "No one's on the map yet.";
@@ -4183,8 +4308,9 @@
           var w = want[k];
           var b = document.createElement("button");
           b.type = "button";
-          b.className = "liveuser";
-          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name));
+          b.className = "liveuser" + (w.stale ? " stale" : "");
+          var seenTxt = w.stale ? liveLastSeenText(w.updatedAt) : "";
+          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name) + (seenTxt ? " (" + seenTxt + ")" : "") + (badges[k] ? " (" + badges[k] + ")" : ""));
           var d = document.createElement("span");
           d.className = "uicon";
           d.style.borderColor = w.color;
@@ -4195,11 +4321,44 @@
           t.textContent = w.me && liveProfile ? liveProfile.name : w.name;
           b.appendChild(d);
           b.appendChild(t);
+          if (seenTxt) {
+            var s = document.createElement("span");
+            s.className = "useen";
+            s.textContent = "· " + seenTxt;
+            b.appendChild(s);
+          }
+          if (badges[k]) {
+            var px = document.createElement("span");
+            px.className = "uprox";
+            px.textContent = "· " + badges[k];
+            b.appendChild(px);
+          }
           b.addEventListener("click", function () {
             var rec = liveState.dotEls[k];
             if (rec) liveCenterOn(rec.x, rec.y);
           });
           liveUsersEl.appendChild(b);
+        });
+        proxRows.forEach(function (r) {
+          // No dot exists for this member, so the row is not a button:
+          // there is no position to center on — the badge is the display.
+          var row = document.createElement("span");
+          row.className = "liveuser stale proxonly";
+          var d2 = document.createElement("span");
+          d2.className = "uicon";
+          d2.style.borderColor = LIVE_DEFAULT_COLOR;
+          d2.style.color = LIVE_DEFAULT_COLOR;
+          d2.innerHTML = liveIconSvg(LIVE_DEFAULT_ICON);
+          d2.setAttribute("aria-hidden", "true");
+          var t2 = document.createElement("span");
+          t2.textContent = r.name;
+          var px2 = document.createElement("span");
+          px2.className = "uprox";
+          px2.textContent = "· " + r.badge;
+          row.appendChild(d2);
+          row.appendChild(t2);
+          row.appendChild(px2);
+          liveUsersEl.appendChild(row);
         });
       }
 
@@ -4253,7 +4412,7 @@
       var liveGrpTitle = document.createElement("h2");
       liveGrpTitle.id = "liveGrpTitle";
       var liveGrpIntro = document.createElement("p");
-      liveGrpIntro.textContent = "Everyone in this spot, live. Tap a name to center the map on them.";
+      liveGrpIntro.textContent = "Everyone in this spot. Faded names are last seen there. Tap a name to center the map on them.";
       var liveGrpList = document.createElement("div");
       liveGrpList.className = "members";
       var liveGrpBtns = document.createElement("div");
@@ -4290,8 +4449,9 @@
         sorted.forEach(function (r) {
           var b = document.createElement("button");
           b.type = "button";
-          b.className = "liveuser";
-          b.setAttribute("aria-label", "Center the map on " + (r.me ? "you" : liveDisplayName(r)));
+          b.className = "liveuser" + (r.stale ? " stale" : "");
+          var seenTxtG = r.stale ? liveLastSeenText(r.updatedAt) : "";
+          b.setAttribute("aria-label", "Center the map on " + (r.me ? "you" : liveDisplayName(r)) + (seenTxtG ? " (" + seenTxtG + ")" : ""));
           var d = document.createElement("span");
           d.className = "uicon";
           d.style.borderColor = r.color;
@@ -4302,11 +4462,62 @@
           t.textContent = liveDisplayName(r) + (r.me ? " (you)" : "");
           b.appendChild(d);
           b.appendChild(t);
+          if (seenTxtG) {
+            var sg = document.createElement("span");
+            sg.className = "useen";
+            sg.textContent = "· " + seenTxtG;
+            b.appendChild(sg);
+          }
           b.addEventListener("click", function () {
             liveCloseGroup();
             liveCenterOn(r.x, r.y);
           });
           liveGrpList.appendChild(b);
+        });
+        // Proximity-only members seen over Bluetooth by someone in
+        // this cluster: appended with the same badge. They have no
+        // dot, so their rows don't center the map — there is no
+        // position to center on.
+        var nowG = Date.now();
+        var clusterUids = {};
+        sorted.forEach(function (r) {
+          var u = r.me ? liveUid : r.uid;
+          if (u) clusterUids[u] = true;
+        });
+        var proxExtra = [];
+        liveProxObservedUids().forEach(function (uid) {
+          if (clusterUids[uid]) return;
+          var dot = liveState.dotEls[uid === liveUid ? "__me" : uid];
+          if (dot && !dot.stale) return; // live dot elsewhere — no badge needed
+          var bg = liveProxBadge(uid, nowG, clusterUids);
+          if (!bg) return;
+          var pe = (liveState.entries || {})[uid];
+          var nm = (pe && typeof pe.name === "string" && pe.name) ? pe.name : (bg.name || "Guest");
+          proxExtra.push({
+            name: nm, badge: bg.text,
+            color: dot ? dot.color : (pe ? liveValidColor(pe.color) : LIVE_DEFAULT_COLOR),
+            icon: dot ? dot.icon : (pe ? liveValidIcon(pe.icon) : LIVE_DEFAULT_ICON)
+          });
+        });
+        proxExtra.sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+        proxExtra.forEach(function (r) {
+          var row = document.createElement("span");
+          row.className = "liveuser stale proxonly";
+          var d = document.createElement("span");
+          d.className = "uicon";
+          d.style.borderColor = r.color;
+          d.style.color = r.color;
+          d.innerHTML = liveIconSvg(r.icon);
+          d.setAttribute("aria-hidden", "true");
+          var t = document.createElement("span");
+          t.textContent = r.name;
+          var px = document.createElement("span");
+          px.className = "uprox";
+          px.textContent = "· " + r.badge;
+          row.appendChild(d);
+          row.appendChild(t);
+          row.appendChild(px);
+          liveGrpList.appendChild(row);
         });
         liveGrpReturnFocus = document.activeElement;
         liveGrpDlg.hidden = false;
@@ -4321,7 +4532,7 @@
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
-      liveLegendEl.textContent = "Icon dots are your group, live — each person's icon in their color. People together share one “N here” bubble — tap it to see who. Turn off Live group to disappear.";
+      liveLegendEl.textContent = "Icon dots are your group, live — each person's icon in their color. People together share one “N here” bubble — tap it to see who. A faded dot is where someone was last seen, with the time — their phone may be asleep or the page closed. Turn off Live group to disappear.";
       liveLegendEl.hidden = true;
       groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
@@ -4722,6 +4933,12 @@
         liveState.entries = v || {};
         liveRender();
       }
+      function liveOnProximity(snap) {
+        var v = null;
+        try { v = snap.val(); } catch (e) { v = null; }
+        liveState.proximity = v || {};
+        liveRender();
+      }
 
       // ----- Toggle on / off -----
       function liveStartSharing() {
@@ -4737,6 +4954,7 @@
           }
           liveState.sharing = true;
           liveState.entries = {};
+          liveState.proximity = {};
           liveState.mePos = null;
           liveState.lastFix = null;
           liveState.lastWrite = null;
@@ -4744,8 +4962,13 @@
           try {
             livePresenceRef = liveDb.ref("presence");
             liveMyRef = livePresenceRef.child(liveUid);
-            liveMyRef.onDisconnect().remove();
+            // No onDisconnect().remove(): if this phone sleeps or the
+            // page closes, the entry must persist so the group sees a
+            // faded last-seen dot. Only an explicit stop (liveStopSharing)
+            // deletes the entry.
             livePresenceRef.on("value", liveOnSnapshot, function () { /* a failed read keeps the last snapshot */ });
+            liveProximityRef = liveDb.ref("proximity");
+            liveProximityRef.on("value", liveOnProximity, function () { /* a failed read keeps the last snapshot */ });
           } catch (e) { /* listener attach failed — dots simply won't update */ }
           liveChip.setAttribute("aria-pressed", "true");
           liveLegendEl.hidden = false;
@@ -4781,10 +5004,15 @@
         try {
           if (livePresenceRef) livePresenceRef.off("value", liveOnSnapshot);
         } catch (e) {}
+        try {
+          if (liveProximityRef) liveProximityRef.off("value", liveOnProximity);
+        } catch (e) {}
         liveMyRef = null;
         livePresenceRef = null;
+        liveProximityRef = null;
         liveState.sharing = false;
         liveState.entries = {};
+        liveState.proximity = {};
         liveState.mePos = null;
         liveState.lastFix = null;
         liveState.lastWrite = null;
@@ -4841,19 +5069,23 @@
           if (uid === liveUid) continue;
           e = entries[uid];
           if (!e || typeof e.x !== "number" || typeof e.y !== "number") continue;
-          if (typeof e.updatedAt === "number" && now - e.updatedAt > 120000) continue;
+          // Entries older than 120s are NOT dropped: they render faded
+          // with a last-seen label (see the stale branch below).
           if (typeof e.near === "number" && e.near > 800) continue;
           want[uid] = {
             x: e.x, y: e.y, me: false,
             name: typeof e.name === "string" && e.name ? e.name : "Guest",
             color: liveValidColor(e.color),
-            icon: liveValidIcon(e.icon)
+            icon: liveValidIcon(e.icon),
+            stale: liveIsStale(e.updatedAt, now),
+            updatedAt: typeof e.updatedAt === "number" ? e.updatedAt : null
           };
         }
         if (liveState.sharing && liveState.mePos && liveState.mePos.near <= 800 && liveProfile) {
           want.__me = {
             x: liveState.mePos.x, y: liveState.mePos.y, me: true,
-            name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon)
+            name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
+            stale: false, updatedAt: null
           };
         }
         for (key in liveState.dotEls) {
@@ -4871,13 +5103,15 @@
           var w = want[key];
           var rec = liveState.dotEls[key];
           if (!rec) { rec = liveMakeDot(w.me); liveState.dotEls[key] = rec; }
-          rec.x = w.x; rec.y = w.y;
+          rec.x = w.x; rec.y = w.y; rec.uid = key;
           rec.name = w.name; rec.color = w.color; rec.icon = w.icon; rec.me = w.me;
+          rec.stale = !!w.stale; rec.updatedAt = w.updatedAt;
+          rec.el.classList.toggle("stale", !!w.stale);
           rec.el.style.background = "#fffdf8";
           rec.el.style.borderColor = w.color;
           rec.el.style.color = w.color;
           if (rec.iconEl) rec.iconEl.innerHTML = liveIconSvg(w.icon);
-          rec.label.textContent = w.name;
+          rec.label.textContent = w.stale ? (w.name + " · " + liveLastSeenText(w.updatedAt)) : w.name;
           rec.label.style.borderLeftColor = w.color;
         }
         layoutDots();
