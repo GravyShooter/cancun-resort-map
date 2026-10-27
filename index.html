@@ -3221,8 +3221,27 @@
         view.ty = vh / 2 - (y + h / 2) * u * view.k;
         clampView(); applyView(anim);
       }
-      function frameResort(anim) { frameRect(0, 0, VBW, 575, anim); }
-      function frameTown(anim) { frameRect(0, 630, VBW, 370, anim); }
+      // Jump framing for the two map areas: fit the area's height to the
+      // scene (with a small breathing margin) so it fills the view
+      // top-to-bottom and the neighbouring area stays out of frame (with
+      // contain-fit, a tall phone scene swallows the whole 800x1000
+      // drawing at once, so the resort frame and the town frame came out
+      // identical and neither button moved anything). Horizontally the
+      // area is centred: on a portrait phone the far sides of the drawing
+      // crop, and the full drawing is still one pinch or zoom-out away
+      // (the zoom floor stays fitScale()).
+      function frameArea(x, y, w, h, anim, margin) {
+        var vw = sceneEl.clientWidth, vh = sceneEl.clientHeight, u = unit();
+        view.k = Math.max(fitScale(), Math.min(KMAX, vh / (h * u * (margin || 1.14))));
+        view.tx = vw / 2 - (x + w / 2) * u * view.k;
+        view.ty = vh / 2 - (y + h / 2) * u * view.k;
+        clampView(); applyView(anim);
+      }
+      function frameResort(anim) { frameArea(0, 0, VBW, 575, anim); }
+      // The town strip gets a wider margin: its pins span nearly the whole
+      // framed width, so at the resort margin the easternmost pin grazed
+      // the scene edge on portrait phones.
+      function frameTown(anim) { frameArea(0, 630, VBW, 370, anim, 1.3); }
       function zoomAt(cx, cy, f, anim) {
         var u = unit();
         var k2 = Math.max(fitScale(), Math.min(KMAX, view.k * f));
