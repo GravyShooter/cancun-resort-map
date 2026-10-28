@@ -2692,7 +2692,7 @@
         { coords: quad(264, 468, 76, 38, 0), label: "", num: 5 },
         { coords: [[467.7,384.7],[422.4,351.8],[415.3,361.6],[412.8,359.7],[390.4,390.5],[358.0,367.0],[343.9,386.4],[363.3,400.5],[349.8,419.1],[347.6,417.6],[302.9,483.9],[324.4,498.4],[341.2,473.6],[366.5,490.7],[351.6,512.8],[374.9,528.4],[436.4,437.2],[413.1,421.6],[375.5,477.4],[350.1,460.3],[369.1,432.1],[366.4,430.3],[379.5,412.3],[386.0,417.0],[393.0,407.3],[394.7,408.5],[417.1,377.6],[453.6,404.2]], label: "", num: 6, at: [394, 475] },
         { coords: quad(368, 466, 13, 9, 36), tint: 0, label: "" },
-        { coords: [[550.9,353.1],[499.2,315.5],[485.1,334.9],[508.5,351.9],[498.3,366.0],[484.4,355.8],[470.3,375.3],[505.9,401.1],[499.2,410.4],[498.4,409.8],[484.3,429.3],[529.6,462.2],[543.7,442.7],[508.9,417.4],[515.6,408.2],[522.7,398.5],[529.7,388.7],[512.9,376.5],[523.1,362.5],[536.8,372.5]], label: "", num: 7, at: [518, 344] },
+        { coords: [[550.9,353.1],[517.0,328.4],[502.9,347.8],[508.5,351.9],[498.3,366.0],[484.4,355.8],[470.3,375.3],[505.9,401.1],[499.2,410.4],[498.4,409.8],[484.3,429.3],[529.6,462.2],[543.7,442.7],[508.9,417.4],[515.6,408.2],[522.7,398.5],[529.7,388.7],[512.9,376.5],[523.1,362.5],[536.8,372.5]], label: "", num: 7, at: [518, 344] },
         { coords: quad(430, 495, 25, 68, 32), label: "", num: 9 },
         { coords: quad(544, 500, 88, 28, 36), label: "", num: 8 }
       ];
@@ -3041,10 +3041,10 @@
         // Walking paths: casing, sandy surface, dashed center
         PATHS.forEach(function (p) {
           var d = "M " + pts(p).replace(/ /g, " L ");
-          s += '<path d="' + d + '" fill="none" stroke="#6b4f1d" stroke-width="13" opacity="0.18" stroke-linecap="round" stroke-linejoin="round" transform="translate(2 3)"/>';
-          s += '<path d="' + d + '" fill="none" stroke="#fff6dd" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>';
-          s += '<path d="' + d + '" fill="none" stroke="#ecd9a0" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>';
-          s += '<path d="' + d + '" fill="none" stroke="#b3541e" stroke-width="2.2" stroke-dasharray="7 5" opacity="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
+          s += '<path d="' + d + '" fill="none" stroke="#6b4f1d" stroke-width="6" opacity="0.18" stroke-linecap="round" stroke-linejoin="round" transform="translate(1 2)"/>';
+          s += '<path d="' + d + '" fill="none" stroke="#fff6dd" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>';
+          s += '<path d="' + d + '" fill="none" stroke="#ecd9a0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>';
+          s += '<path d="' + d + '" fill="none" stroke="#b3541e" stroke-width="1.2" stroke-dasharray="7 5" opacity="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
         });
 
         // Flat buildings, in the official map's own style: one flat
