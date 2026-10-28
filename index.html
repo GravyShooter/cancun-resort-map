@@ -2675,38 +2675,43 @@
         { coords: quad(228, 362, 50, 36, 10), h: 14, tint: 1, label: "Miilé Spa" },
         { coords: quad(362, 58, 36, 22, 18), h: 10, tint: 3, label: "" },
         { coords: quad(426, 48, 28, 20, 18), h: 12, tint: 1, label: "" },
-        { coords: quad(237, 234, 57, 38, 18), h: 30, tint: 2, label: "", num: 1 },
-        { coords: quad(146, 252, 34, 68, 10), h: 30, tint: 1, label: "", num: 2 },
+        { coords: quad(237, 234, 57, 38, 0), h: 30, tint: 2, label: "", num: 1 },
+        { coords: quad(146, 252, 34, 68, 25), h: 30, tint: 1, label: "", num: 2 },
         { coords: quad(84, 368, 10, 64, 8), h: 24, tint: 3, label: "" },
         { coords: quad(110, 368, 32, 80, 8), h: 30, tint: 3, label: "", num: 3 },
-        { coords: quad(96, 478, 26, 9, 26), h: 22, tint: 0, label: "" },
-        { coords: quad(158, 458, 78, 40, 26), h: 30, tint: 0, label: "", num: 4 },
-        { coords: quad(264, 468, 76, 38, 24), h: 30, tint: 2, label: "", num: 5 },
+        { coords: quad(96, 478, 26, 9, 43), h: 22, tint: 0, label: "" },
+        { coords: quad(158, 458, 78, 40, 43), h: 30, tint: 0, label: "", num: 4 },
+        { coords: quad(264, 468, 76, 38, 0), h: 30, tint: 2, label: "", num: 5 },
         { coords: quad(372, 392, 52, 24, 36), h: 26, tint: 0, label: "", num: 6 },
         { coords: quad(438, 378, 56, 24, 36), h: 24, tint: 2, label: "", num: 6 },
-        { coords: quad(336, 458, 80, 26, 36), h: 27, tint: 1, label: "", num: 6 },
-        { coords: quad(430, 430, 84, 26, 36), h: 25, tint: 3, label: "", num: 6 },
-        { coords: quad(366, 448, 13, 9, 36), h: 12, tint: 0, label: "" },
-        { coords: quad(518, 339, 64, 24, 10), h: 30, tint: 0, label: "", num: 7, ec: true },
-        { coords: quad(534, 382, 56, 24, 10), h: 27, tint: 1, label: "", num: 7, ec: true },
-        { coords: quad(538, 436, 56, 24, 10), h: 30, tint: 2, label: "", num: 7, ec: true },
-        { coords: quad(386, 458, 30, 18, 10), h: 22, tint: 2, label: "" },
-        { coords: quad(430, 495, 62, 25, 10), h: 28, tint: 2, label: "", num: 9, ec: true },
-        { coords: quad(544, 500, 88, 28, 10), h: 30, tint: 1, label: "", num: 8, ec: true }
+        { coords: quad(336, 458, 26, 80, 34), h: 27, tint: 1, label: "", num: 6 },
+        { coords: quad(394, 475, 28, 110, 34), h: 25, tint: 3, label: "", num: 6 },
+        { coords: quad(368, 466, 13, 9, 36), h: 12, tint: 0, label: "" },
+        { coords: quad(518, 344, 64, 24, 36), h: 30, tint: 0, label: "", num: 7, ec: true },
+        { coords: quad(500, 382, 56, 24, 36), h: 27, tint: 1, label: "", num: 7, ec: true },
+        { coords: quad(514, 436, 56, 24, 36), h: 30, tint: 2, label: "", num: 7, ec: true },
+        { coords: quad(430, 495, 25, 68, 32), h: 28, tint: 2, label: "", num: 9, ec: true },
+        { coords: quad(544, 500, 88, 28, 36), h: 30, tint: 1, label: "", num: 8, ec: true }
       ];
       var ROOFS = ["#ecd9ab", "#e6cf9e", "#dfc491", "#f0deb2"];
       var POOLS = [
         ["Main Pool 1", [[530,114],[556,102],[580,108],[586,126],[588,162],[584,196],[580,206],[588,232],[586,262],[574,286],[590,292],[590,304],[560,296],[552,302],[546,290],[550,262],[545,205],[576,195],[576,150],[570,128]]],
-        ["Main Pool 2", [[438,312],[450,294],[478,284],[506,282],[524,288],[518,300],[504,310],[478,322],[452,326],[438,320]]],
-        ["EC Pool 1", [[572,382],[586,378],[588,394],[586,418],[586,440],[580,456],[576,462],[570,446],[572,420],[566,398]]],
-        ["EC Pool 2", [[406,524],[466,522],[486,534],[482,548],[414,548],[402,538]]],
-        ["", [[478,362],[498,360],[502,390],[498,430],[502,470],[496,508],[484,510],[476,460],[474,410],[475,380]]]
+        ["Main Pool 2", [[455,308],[460,295],[473,287],[485,293],[498,291],[510,284],[522,287],[529,296],[521,309],[511,324],[500,330],[487,319],[476,311],[463,319]]],
+        ["EC Pool 1", [[570,368],[584,378],[589,394],[585,410],[574,427],[586,446],[590,463],[589,484],[571,476],[560,465],[553,449],[551,431],[550,408],[558,382]]],
+        ["EC Pool 2", [[432,455],[428,456],[387,522],[380,534],[383,548],[455,548],[476,542],[474,528],[463,521],[448,524],[432,543],[392,521],[433,459]]]
       ];
+      // Pool name labels: two lines, block centered on a pin-clear spot in
+      // the water instead of the polygon centroid. Lines are split so the
+      // number sits under the name; positions are viewBox units.
+      var POOL_LABEL_POS = {
+        "Main Pool 1": { lines: ["Main Pool", "1"], x: 550, y: 298 },
+        "Main Pool 2": { lines: ["Main Pool", "2"], x: 515, y: 300 },
+        "EC Pool 1": { lines: ["EC Pool", "1"], x: 570, y: 458 },
+        "EC Pool 2": { lines: ["EC Pool", "2"], x: 410, y: 540 }
+      };
       var RIVER = [[146,296],[205,270],[275,274],[328,290],[352,326],[356,360],[318,388],[274,414],[212,426],[166,410],[142,366],[140,322]];
       // The official map shows no lazy-river branches: the ring does not
       // connect to Main Pool 2, and no channel runs south of Building 6.
-      // The one extra water body in that sector is the N-S channel east of
-      // the long Building 6 block, drawn in POOLS above.
       var PATHS = [
         [[296,172],[268,214],[330,244],[352,282],[400,296],[430,288],[462,280],[490,262],[520,272],[540,284],[544,302],[552,322],[574,336],[586,340]],
         [[296,172],[318,161],[352,158],[387,152],[405,128],[417,112]],
@@ -2852,14 +2857,14 @@
         // map marks in the sea, each closed on one side by a pier
         s += '<path d="M 654 288 L 702 288 L 702 332" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round" opacity="0.85"/>';
         s += '<path d="M 702 480 L 702 548" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round" opacity="0.85"/>';
-        s += '<text class="lbl" x="748" y="270" font-size="21" font-weight="700" fill="#eafcff" stroke="rgba(8,63,94,0.55)" transform="rotate(90 748 270)" text-anchor="middle" letter-spacing="4">CARIBBEAN SEA</text>';
-        s += '<text class="lbl" x="716" y="200" font-size="11.5" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" text-anchor="middle" transform="rotate(90 716 200)" letter-spacing="2">SWIMMING ZONE</text>';
-        s += '<text class="lbl" x="720" y="520" font-size="11.5" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" text-anchor="middle" transform="rotate(90 720 520)" letter-spacing="2">SWIMMING ZONE</text>';
+        s += '<text class="lbl" x="748" y="270" font-size="21" font-weight="700" fill="#eafcff" stroke="rgba(8,63,94,0.55)" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" transform="rotate(90 748 270)" text-anchor="middle" letter-spacing="4">CARIBBEAN SEA</text>';
+        s += '<text class="lbl" x="716" y="200" font-size="14.5" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle" transform="rotate(90 716 200)" letter-spacing="2">SWIMMING ZONE</text>';
+        s += '<text class="lbl" x="720" y="520" font-size="14.5" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle" transform="rotate(90 720 520)" letter-spacing="2">SWIMMING ZONE</text>';
 
         // Beach continues south, off the resort, toward town
         s += '<polygon points="600,545 652,545 640,615 605,615" fill="#eed9a4"/>';
         s += '<path d="M 626 545 L 622 630" stroke="#b3541e" stroke-width="2.4" stroke-dasharray="8 7" fill="none" opacity="0.75"/>';
-        s += '<text class="lbl" x="415" y="600" font-size="13.5" font-weight="700" fill="#5c4a1e" text-anchor="middle">beach continues to Puerto Morelos · ≈3.2 km ↓</text>';
+        s += '<text class="lbl" x="415" y="600" font-size="14.5" font-weight="700" fill="#5c4a1e" text-anchor="middle">beach continues to Puerto Morelos · ≈3.2 km ↓</text>';
 
         // ---- South extension: compressed coast, a map break, then the Puerto
         // Morelos town strip (schematic — relative positions only, not to scale)
@@ -2871,7 +2876,7 @@
         }
         s += '<polyline points="' + zz1 + '" fill="none" stroke="#fffdf8" stroke-width="3" opacity="0.9"/>';
         s += '<polyline points="' + zz2 + '" fill="none" stroke="#fffdf8" stroke-width="3" opacity="0.9"/>';
-        s += '<text class="lbl" x="215" y="662" font-size="13" font-weight="700" fill="#3c5a30" text-anchor="middle">≈3.2 km of beach — not to scale</text>';
+        s += '<text class="lbl" x="215" y="662" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">≈3.2 km of beach — not to scale</text>';
         // Town ground, beach and sea edge
         s += '<rect x="30" y="688" width="530" height="312" fill="#e3d7ba" stroke="#c9b992" stroke-width="1.5"/>';
         s += '<polygon points="545,688 693,688 693,1000 545,1000" fill="#eed9a4"/>';
@@ -2881,10 +2886,10 @@
         s += '<rect x="500" y="688" width="42" height="312" fill="#bfb49c"/>';
         s += '<path d="M 521 688 L 521 1000" stroke="#fffdf8" stroke-width="2" stroke-dasharray="10 9" opacity="0.7"/>';
         s += '<rect x="30" y="752" width="470" height="32" fill="#bfb49c"/>';
-        s += '<text class="lbl" x="486" y="920" font-size="11" font-weight="600" fill="#5c4a1e" text-anchor="middle" transform="rotate(90 486 920)">Av. Rafael E. Melgar</text>';
+        s += '<text class="lbl" x="486" y="920" font-size="14.5" font-weight="600" fill="#5c4a1e" text-anchor="middle" transform="rotate(90 486 920)">Av. Rafael E. Melgar</text>';
         // Town square (zócalo)
         s += '<rect x="350" y="698" width="142" height="46" fill="#5d9247" stroke="#4c7d3a" stroke-width="1.5"/>';
-        s += '<text class="lbl" x="421" y="725" font-size="11.5" font-weight="700" fill="#f4f9ec" stroke="rgba(40,70,30,0.55)" text-anchor="middle">Town square</text>';
+        s += '<text class="lbl" x="421" y="725" font-size="14.5" font-weight="700" fill="#f4f9ec" stroke="rgba(40,70,30,0.55)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">Town square</text>';
         // Town blocks
         [[70,702,120,38],[210,702,110,38],[70,800,100,58],[190,800,90,58],[300,800,110,58],[70,880,130,58],[230,880,100,58],[360,880,110,58]].forEach(function (r, bi) {
           s += '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] + '" fill="' + ROOFS[bi % 4] + '" stroke="#7d6240" stroke-width="1.4"/>';
@@ -2894,7 +2899,7 @@
         [660, 700, 740].forEach(function (px2) {
           s += '<line x1="' + px2 + '" y1="841" x2="' + px2 + '" y2="852" stroke="#7d6240" stroke-width="2.5"/>';
         });
-        s += '<text class="lbl" x="707" y="818" font-size="12" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" text-anchor="middle">Town pier</text>';
+        s += '<text class="lbl" x="707" y="818" font-size="14.5" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">Town pier</text>';
         // Palapas on the town beach
         [[600, 750], [600, 940]].forEach(function (pp) {
           s += '<polygon points="' + (pp[0] - 8) + "," + (pp[1] - 4) + " " + (pp[0] + 8) + "," + (pp[1] - 4) + " " + pp[0] + "," + (pp[1] - 13) + '" fill="#c9a86a" stroke="#a5834e" stroke-width="1"/>';
@@ -2921,11 +2926,11 @@
         });
         s += '<line x1="78" y1="60" x2="125" y2="82" stroke="#e8f0e4" stroke-width="1.4"/>';
         s += '<line x1="164" y1="83" x2="211" y2="105" stroke="#e8f0e4" stroke-width="1.4"/>';
-        s += '<text class="lbl" x="142" y="140" font-size="11.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Tennis · Pickleball</text>';
+        s += '<text class="lbl" x="142" y="140" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Tennis · Pickleball</text>';
         // Entrance drive, slanting in from Hwy 307 to the lobby like the official map
         s += '<path d="M 432 -4 L 424 25 L 417 55 L 414 80" stroke="#b9b0a0" stroke-width="16" fill="none" stroke-linecap="round"/>';
         s += '<path d="M 432 -4 L 424 25 L 417 55 L 414 80" stroke="#fffdf8" stroke-width="2" stroke-dasharray="10 9" fill="none" opacity="0.8"/>';
-        s += '<text class="lbl" x="440" y="20" font-size="12.5" font-weight="600" fill="#3c5a30">Entrance · Hwy 307</text>';
+        s += '<text class="lbl" x="440" y="20" font-size="14.5" font-weight="600" fill="#3c5a30">Entrance · Hwy 307</text>';
 
         // Gardens
         GARDENS.forEach(function (g, gi) {
@@ -2963,7 +2968,7 @@
         // Garibaldi Square plaza: patterned stone paving rings under the fountain
         s += '<circle cx="338" cy="155" r="30" fill="url(#pavePat)" stroke="#c2b184" stroke-width="1.6"/>';
         s += '<circle cx="338" cy="155" r="20" fill="none" stroke="#c2b184" stroke-width="1.3" opacity="0.8"/>';
-        s += '<text class="lbl" x="288" y="208" font-size="12.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Garibaldi Square</text>';
+        s += '<text class="lbl" x="288" y="208" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Garibaldi Square</text>';
         // Parking strips along the west side, northwest of Building 2 (69 on the official map)
         s += '<polygon points="' + pts(quad(88, 223, 64, 18, 28)) + '" fill="#59755c" stroke="#42563f" stroke-width="1.4"/>';
         for (var pki = 0; pki < 4; pki++) {
@@ -2973,12 +2978,12 @@
         for (var pkj = 0; pkj < 4; pkj++) {
           s += '<line x1="' + (54 + pkj * 13).toFixed(1) + '" y1="' + (227 + pkj * 6.5).toFixed(1) + '" x2="' + (62 + pkj * 13).toFixed(1) + '" y2="' + (243 + pkj * 6.5) + '" stroke="#e8f0e4" stroke-width="1.3" opacity="0.6"/>';
         }
-        s += '<text class="lbl" x="83" y="235" font-size="11.5" font-weight="700" fill="#eef3e6" stroke="rgba(30,50,25,0.5)" text-anchor="middle" transform="rotate(-62 83 235)">Parking</text>';
+        s += '<text class="lbl" x="83" y="235" font-size="14.5" font-weight="700" fill="#eef3e6" stroke="rgba(30,50,25,0.5)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke" text-anchor="middle" transform="rotate(-62 83 235)">Parking</text>';
 
         // Beach + wet sand
         s += '<polygon points="' + pts(BEACH) + '" fill="#eed9a4"/>';
         s += '<polygon points="' + pts(WETSAND) + '" fill="#e0c48a"/>';
-        s += '<text class="lbl" x="604" y="330" font-size="13" font-weight="700" fill="#8a6d2f" transform="rotate(90 604 330)" text-anchor="middle" letter-spacing="3">THE BEACH</text>';
+        s += '<text class="lbl" x="604" y="330" font-size="14.5" font-weight="700" fill="#8a6d2f" transform="rotate(90 604 330)" text-anchor="middle" letter-spacing="3">THE BEACH</text>';
 
         // Games Area strip along the Theater's east side (42 on the official map)
         s += '<polygon points="440,232 452,234 450,310 438,308" fill="#d9c491" stroke="#bfa96f" stroke-width="1.2"/>';
@@ -3010,14 +3015,23 @@
         POOLS.forEach(function (p) {
           s += '<polygon points="' + pts(p[1]) + '" fill="url(#poolGrad)" stroke="#0d7d9e" stroke-width="2"/>';
           s += '<polygon points="' + pts(scaled(p[1], 0.58)) + '" fill="#0d6e99" opacity="0.5"/>';
-          if (p[0]) {
+          var pl = POOL_LABEL_POS[p[0]];
+          if (pl) {
+            // Baselines 14 apart, offset -2.2 / +11.8 from the center
+            // point so the glyph block itself is centered on it: at
+            // 13-unit Public Sans 700 the first line's glyphs rise 9.66
+            // above their baseline and the digit line sits on its
+            // baseline, so centering the baselines on the point would
+            // ride the block ~4.8 high.
+            s += '<text class="lbl" x="' + pl.x + '" y="' + (pl.y - 2.2).toFixed(1) + '" font-size="13" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" stroke-width="3.5" paint-order="stroke" text-anchor="middle" style="stroke:rgba(6,56,63,0.6);stroke-width:3.5px;paint-order:stroke"><tspan x="' + pl.x + '">' + pl.lines[0] + '</tspan><tspan x="' + pl.x + '" dy="14">' + pl.lines[1] + "</tspan></text>";
+          } else if (p[0]) {
             var cx = 0, cy = 0;
             p[1].forEach(function (c) { cx += c[0]; cy += c[1]; });
             cx /= p[1].length; cy /= p[1].length;
             s += '<text class="lbl" x="' + cx.toFixed(1) + '" y="' + (cy + 4).toFixed(1) + '" font-size="12" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" text-anchor="middle">' + p[0] + "</text>";
           }
         });
-        s += '<text class="lbl" x="232" y="264" font-size="12" font-weight="700" fill="#0b5d75" text-anchor="middle">Main Pool 3 · Lazy River</text>';
+        s += '<text class="lbl" x="232" y="264" font-size="13" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" stroke-width="3.5" paint-order="stroke" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">Main Pool 3 · Lazy River</text>';
         // Cielo Bar: the cross-shaped bar standing in EC Pool 1's waist
         s += '<g fill="#7d5608" stroke="#54401e" stroke-width="1"><rect x="577" y="413" width="7" height="22" rx="2"/><rect x="570" y="420" width="17" height="7" rx="2"/></g>';
 
@@ -3069,10 +3083,10 @@
           var inset = roof.map(function (p) { return [rcx + (p[0] - rcx) * 0.84, rcy + (p[1] - rcy) * 0.84]; });
           s += '<polygon points="' + pts(inset) + '" fill="rgba(255,255,255,0.20)" stroke="rgba(110,83,38,0.55)" stroke-width="1"/>';
           if (b.label) {
-            s += '<text class="lbl" x="' + (((nw[0] + se[0]) / 2) + (b.lx || 0)).toFixed(1) + '" y="' + ((nw[1] + se[1]) / 2 - h + 4).toFixed(1) + '" font-size="13" font-weight="700" fill="#54401e" text-anchor="middle">' + b.label + "</text>";
+            s += '<text class="lbl" x="' + (((nw[0] + se[0]) / 2) + (b.lx || 0)).toFixed(1) + '" y="' + ((nw[1] + se[1]) / 2 - h + 4).toFixed(1) + '" font-size="15" font-weight="700" fill="#54401e" text-anchor="middle" style="stroke:rgba(255,250,235,0.9);stroke-width:3.5px;paint-order:stroke">' + b.label + "</text>";
           }
           if (b.num) {
-            s += '<text class="lbl" x="' + ((nw[0] + se[0]) / 2).toFixed(1) + '" y="' + ((nw[1] + se[1]) / 2 - h + 7).toFixed(1) + '" font-size="18" font-weight="800" fill="' + (b.ec ? "#7d2a3c" : "#54401e") + '" text-anchor="middle">' + b.num + "</text>";
+            s += '<text class="lbl" x="' + ((nw[0] + se[0]) / 2).toFixed(1) + '" y="' + ((nw[1] + se[1]) / 2 - h + 7).toFixed(1) + '" font-size="18" font-weight="800" fill="' + (b.ec ? "#7d2a3c" : "#54401e") + '" text-anchor="middle" style="stroke:rgba(255,250,235,0.9);stroke-width:3.5px;paint-order:stroke">' + b.num + "</text>";
           }
         });
 
@@ -3085,8 +3099,8 @@
           s += '<polygon points="' + (gx - 12) + "," + (gy - 8) + " " + (gx + 12) + "," + (gy - 8) + " " + gx + "," + (gy - 22) + '" fill="' + g[2] + '"/>';
           s += '<rect x="' + (gx - 9) + '" y="' + (gy - 8) + '" width="18" height="4" fill="#f3e9cf" stroke="#a5834e" stroke-width="1"/>';
         });
-        s += '<text class="lbl" x="488" y="258" font-size="12" font-weight="700" fill="#7d2a3c" text-anchor="middle">Stone Gazebo ♥</text>';
-        s += '<text class="lbl" x="620" y="540" font-size="12" font-weight="700" fill="#7d2a3c" text-anchor="middle">Beach Gazebo ♥</text>';
+        s += '<text class="lbl" x="488" y="258" font-size="14.5" font-weight="700" fill="#7d2a3c" text-anchor="middle">Stone Gazebo ♥</text>';
+        s += '<text class="lbl" x="620" y="570" font-size="14.5" font-weight="700" fill="#7d2a3c" text-anchor="middle">Beach Gazebo ♥</text>';
 
         // Palapas along the beach
         [[600,150],[608,205],[602,262],[610,318],[606,375],[612,430],[608,485]].forEach(function (pp) {
@@ -3132,8 +3146,8 @@
         });
 
         // Area labels
-        s += '<text class="lbl" x="228" y="318" font-size="12" font-weight="700" fill="#3c5a30" text-anchor="middle">Spa island</text>';
-        s += '<text class="lbl" x="610" y="400" font-size="11.5" font-weight="700" fill="#7d2a3c" text-anchor="middle" letter-spacing="2.5" transform="rotate(90 610 400)">EXCELLENCE CLUB OCEANFRONT</text>';
+        s += '<text class="lbl" x="228" y="318" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Spa island</text>';
+        s += '<text class="lbl" x="610" y="400" font-size="14.5" font-weight="700" fill="#7d2a3c" text-anchor="middle" letter-spacing="2.5" transform="rotate(90 610 400)">EXCELLENCE CLUB OCEANFRONT</text>';
 
         // Two resort piers reaching into the sea, as on the official map —
         // one in front of Building 7, a second further south
@@ -3141,7 +3155,7 @@
         [668, 686, 700].forEach(function (ppx) {
           s += '<line x1="' + ppx + '" y1="343" x2="' + ppx + '" y2="353" stroke="#7d6240" stroke-width="2.5"/>';
         });
-        s += '<text class="lbl" x="680" y="322" font-size="12" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" text-anchor="middle">Pier</text>';
+        s += '<text class="lbl" x="680" y="322" font-size="12" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">Pier</text>';
         s += '<rect x="660" y="470" width="44" height="9" fill="#a5834e" stroke="#7d6240" stroke-width="1.2"/>';
         [672, 688, 700].forEach(function (ppx2) {
           s += '<line x1="' + ppx2 + '" y1="479" x2="' + ppx2 + '" y2="488" stroke="#7d6240" stroke-width="2.5"/>';
@@ -3149,8 +3163,8 @@
 
         // Scale bar: ≈100 m (lobby → beach ≈ 350 m across ≈330 units here)
         s += '<g><rect x="30" y="516" width="62" height="8" fill="#fffdf8" stroke="#54401e" stroke-width="1.2"/><rect x="61" y="516" width="31" height="8" fill="#54401e"/>'
-          + '<text class="lbl" x="30" y="508" font-size="11.5" font-weight="700" fill="#eef6e4" stroke="rgba(40,70,30,0.6)">0</text>'
-          + '<text class="lbl" x="92" y="508" font-size="11.5" font-weight="700" fill="#eef6e4" stroke="rgba(40,70,30,0.6)" text-anchor="end">≈100 m</text></g>';
+          + '<text class="lbl" x="30" y="508" font-size="14.5" font-weight="700" fill="#eef6e4" stroke="rgba(40,70,30,0.6)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke">0</text>'
+          + '<text class="lbl" x="92" y="508" font-size="14.5" font-weight="700" fill="#eef6e4" stroke="rgba(40,70,30,0.6)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke" text-anchor="end">≈100 m</text></g>';
 
         // Compass — north in the official map's tilted frame points up and
         // slightly west, so the needle leans left of straight up
@@ -3163,7 +3177,9 @@
         // it sits in one group so the overview stays clean.
         var d = '<g class="zoom-detail">';
         function dLabel(x, y, txt, size, fill, anchor) {
-          return '<text class="lbl" x="' + x + '" y="' + y + '" font-size="' + (size || 9.5) + '" font-weight="700" fill="' + (fill || "#54401e") + '" text-anchor="' + (anchor || "middle") + '">' + txt + "</text>";
+          var f = fill || "#54401e";
+          var halo = (f === "#ffffff") ? "rgba(6,56,63,0.75)" : "rgba(255,250,235,0.9)";
+          return '<text class="lbl" x="' + x + '" y="' + y + '" font-size="' + (size || 12) + '" font-weight="700" fill="' + f + '" stroke="' + halo + '" stroke-width="3.5" paint-order="stroke" style="stroke:' + halo + ';stroke-width:3.5px;paint-order:stroke" text-anchor="' + (anchor || "middle") + '">' + txt + "</text>";
         }
         function terrace(cx, cy, w) {
           var o = '<rect x="' + (cx - w / 2) + '" y="' + (cy - 5) + '" width="' + w + '" height="10" rx="2" fill="#f3e9cf" stroke="#c2b184" stroke-width="0.9" transform="rotate(18 ' + cx + " " + cy + ')"/>';
@@ -3180,24 +3196,24 @@
          [472, 178, "Martini Bar"], [317, 177, "Flavor Market"], [311, 196, "Agave"],
          [303, 213, "Basmati"]].forEach(function (rn) {
           d += terrace(rn[0], rn[1] + 15, 30);
-          d += dLabel(rn[0], rn[1] + 3, rn[2], 9);
+          d += dLabel(rn[0], rn[1] + 3, rn[2], 14.5);
         });
-        d += dLabel(363, 133, "Sports Bar", 8.5);
+        d += dLabel(363, 133, "Sports Bar", 14.5);
         // Lobby / Garibaldi / theater core: entrance portico, colonnade
         // columns edging the plaza, plaza paving rays, theater stage + seats
         d += '<rect x="396" y="80" width="36" height="9" rx="2" fill="#c39f66" stroke="#7d6240" stroke-width="1"/>';
-        d += dLabel(414, 140, "Lobby entrance", 9);
+        d += dLabel(414, 140, "Lobby entrance", 14.5);
         for (var ci = 0; ci < 5; ci++) {
           d += '<circle cx="' + (318 + ci * 10) + '" cy="' + (180 + ci * 2) + '" r="2.2" fill="#fffdf8" stroke="#a5834e" stroke-width="0.9"/>';
           d += '<circle cx="' + (318 + ci * 10) + '" cy="' + (134 - ci * 2) + '" r="2.2" fill="#fffdf8" stroke="#a5834e" stroke-width="0.9"/>';
         }
-        d += dLabel(338, 198, "Colonnade", 8.5, "#3c5a30");
+        d += dLabel(338, 198, "Colonnade", 14.5, "#3c5a30");
         for (var ri = 0; ri < 8; ri++) {
           var ra = ri * Math.PI / 4 + 0.4;
           d += '<line x1="' + (338 + Math.cos(ra) * 13) + '" y1="' + (155 + Math.sin(ra) * 13) + '" x2="' + (338 + Math.cos(ra) * 28) + '" y2="' + (155 + Math.sin(ra) * 28) + '" stroke="#c2b184" stroke-width="1.1" opacity="0.8"/>';
         }
         d += '<path d="M 361 246 L 413 246 L 413 256 L 361 256 Z" fill="#7d2a3c" opacity="0.85"/>';
-        d += dLabel(387, 254, "Stage", 8.5, "#ffffff");
+        d += dLabel(387, 254, "Stage", 14.5, "#ffffff");
         [24, 33, 42].forEach(function (sr) {
           d += '<path d="M ' + (387 - sr) + " " + (262 + sr * 0.55) + " A " + sr + " " + sr + " 0 0 1 " + (387 + sr) + " " + (262 + sr * 0.55) + '" fill="none" stroke="#a5834e" stroke-width="2.4" opacity="0.75"/>';
         });
@@ -3216,19 +3232,19 @@
         d += deckSet(470, 272, 4, 0);
         d += deckSet(578, 366, 2, 0);
         d += '<rect x="580" y="250" width="10" height="18" rx="2.5" fill="#7d5608" stroke="#54401e" stroke-width="1"/>';
-        d += dLabel(586, 282, "Sol bar", 8.5, "#0b5d75");
+        d += dLabel(586, 282, "Sol bar", 14.5, "#0b5d75");
         // Beach: a lounger paired with every palapa, in two loose rows
         [150, 205, 262, 318, 375, 430, 488].forEach(function (by, bi2) {
           d += lounger(606, by + 8, 90, bi2 % 2 ? "#7d5608" : "#0e7a86");
           d += lounger(616, by + 22, 90, bi2 % 2 ? "#0e7a86" : "#bc4b1f");
         });
-        d += dLabel(618, 118, "Palapas & loungers", 9, "#8a6d2f");
+        d += dLabel(618, 118, "Palapas & loungers", 14.5, "#8a6d2f");
         // Spa island: garden paths, planting and the temazcal, named
         d += flowerBed(205, 335, 5, 20, 61);
         d += flowerBed(255, 390, 5, 20, 67);
         d += flowerBed(205, 392, 4, 16, 71);
-        d += dLabel(192, 394, "Spa island gardens", 9, "#3c5a30");
-        d += dLabel(252, 318, "Temazcal", 8.5, "#54401e");
+        d += dLabel(192, 394, "Spa island gardens", 14.5, "#3c5a30");
+        d += dLabel(294, 336, "Temazcal", 14.5, "#54401e");
         d += "</g>";
         s += d;
 
@@ -4855,6 +4871,10 @@
           // and never write presence from a dialog save — on the join,
           // edit, board and app paths alike. The app's service is the
           // only writer, so there are never two dots for one person.
+          // Let the app know the profile was just saved so it can pick
+          // it up right away. The bridge exists only inside the app;
+          // optional chaining makes this a no-op everywhere else.
+          try { window.SpudMapsLive?.onProfileSaved?.(); } catch (e) {}
         } else if (mode === "join") liveStartSharing();
         else if (liveState.sharing) liveWriteNow();
         // The group board keys off the same saved profile: refresh its
