@@ -2683,17 +2683,24 @@
         { coords: quad(228, 362, 50, 36, 10), tint: 1, label: "Miilé Spa" },
         { coords: quad(362, 58, 36, 22, 18), tint: 3, label: "" },
         { coords: quad(426, 48, 28, 20, 18), tint: 1, label: "" },
-        { coords: quad(237, 234, 57, 38, 0), label: "", num: 1 },
-        { coords: quad(146, 252, 34, 68, 25), label: "", num: 2 },
-        { coords: quad(84, 368, 10, 64, 8), tint: 3, label: "" },
-        { coords: quad(110, 368, 32, 80, 8), label: "", num: 3 },
-        { coords: quad(96, 478, 26, 9, 43), tint: 0, label: "" },
-        { coords: quad(158, 458, 78, 40, 43), label: "", num: 4 },
-        { coords: quad(264, 468, 76, 38, 0), label: "", num: 5 },
-        { coords: [[467.7,384.7],[422.4,351.8],[415.3,361.6],[412.8,359.7],[390.4,390.5],[358.0,367.0],[343.9,386.4],[363.3,400.5],[349.8,419.1],[347.6,417.6],[302.9,483.9],[324.4,498.4],[341.2,473.6],[366.5,490.7],[351.6,512.8],[374.9,528.4],[436.4,437.2],[413.1,421.6],[375.5,477.4],[350.1,460.3],[369.1,432.1],[366.4,430.3],[379.5,412.3],[386.0,417.0],[393.0,407.3],[394.7,408.5],[417.1,377.6],[453.6,404.2]], label: "", num: 6, at: [394, 475] },
+        { coords: [[208.5, 222], [226, 222], [226, 214], [252, 214], [252, 222], [265.5, 222], [265.5, 247], [237, 247], [237, 254], [222, 254], [222, 247], [208.5, 247]], label: "", num: 1, at: [237, 234] },
+        { coords: [[140.0, 223.4], [149.8, 218.7], [171.3, 228.2], [160.7, 259.0], [157.3, 260.3], [142.9, 289.0], [121.2, 277.8], [127.9, 263.1], [131.3, 255.7], [127.4, 252.7]], label: "", num: 2 },
+        { coords: quad(88, 376, 13, 29, -7), tint: 3, label: "" },
+        { coords: quad(110, 368, 22, 80, -11), label: "", num: 3 },
+        { coords: quad(140, 475, 28, 8, 35), tint: 0, label: "" },
+        { coords: quad(158, 458, 78, 29, 35), label: "", num: 4 },
+        { coords: quad(247, 479, 76, 38, 0), label: "", num: 5 },
+        { coords: quad(372, 392, 52, 24, 36), label: "", part: 6 },
+        { coords: quad(438, 378, 56, 24, 36), label: "", part: 6 },
+        { coords: quad(336, 458, 26, 80, 34), label: "", part: 6 },
+        { coords: quad(394, 475, 28, 110, 34), label: "", num: 6, at: [394, 475] },
+        { coords: quad(382, 440, 13, 9, 36), tint: 0, label: "" },
         { coords: quad(368, 466, 13, 9, 36), tint: 0, label: "" },
-        { coords: [[550.9,353.1],[517.0,328.4],[502.9,347.8],[508.5,351.9],[498.3,366.0],[484.4,355.8],[470.3,375.3],[505.9,401.1],[499.2,410.4],[498.4,409.8],[484.3,429.3],[529.6,462.2],[543.7,442.7],[508.9,417.4],[515.6,408.2],[522.7,398.5],[529.7,388.7],[512.9,376.5],[523.1,362.5],[536.8,372.5]], label: "", num: 7, at: [518, 344] },
-        { coords: quad(430, 495, 25, 68, 32), label: "", num: 9 },
+        { coords: quad(348, 490, 13, 9, 36), tint: 0, label: "" },
+        { coords: [[517.0, 328.4], [550.9, 353.1], [536.8, 372.5], [502.9, 347.8]], label: "", num: 7, at: [518, 344] },
+        { coords: quad(490, 385, 56, 24, -54), label: "", part: 7 },
+        { coords: quad(522, 419, 56, 24, -54), label: "", part: 7 },
+        { coords: quad(430, 495, 21, 68, 22), label: "", num: 9 },
         { coords: quad(544, 500, 88, 28, 36), label: "", num: 8 }
       ];
       var ROOFS = ["#ecd9ab", "#e6cf9e", "#dfc491", "#f0deb2"];
@@ -2707,8 +2714,8 @@
       // the water instead of the polygon centroid. Lines are split so the
       // number sits under the name; positions are viewBox units.
       var POOL_LABEL_POS = {
-        "Main Pool 1": { lines: ["Main Pool", "1"], x: 550, y: 298 },
-        "Main Pool 2": { lines: ["Main Pool", "2"], x: 515, y: 300 },
+        "Main Pool 1": { lines: ["Main Pool", "1"], x: 549, y: 284 },
+        "Main Pool 2": { lines: ["Main", "Pool 2"], x: 450, y: 303 },
         "EC Pool 1": { lines: ["EC Pool", "1"], x: 570, y: 458 },
         "EC Pool 2": { lines: ["EC Pool", "2"], x: 410, y: 540 }
       };
@@ -2718,34 +2725,30 @@
       var PATHS = [
         [[296,172],[268,214],[330,244],[352,282],[400,296],[430,288],[462,280],[490,262],[520,272],[540,284],[544,302],[552,322],[574,336],[586,340]],
         [[296,172],[318,161],[352,158],[387,152],[405,128],[417,112]],
-        [[140,398],[202,432],[250,432],[290,424],[320,418],[360,430],[400,448],[430,464],[462,467]],
-        [[598,36],[592,110],[586,200],[588,288],[590,360],[592,420],[594,478],[596,520],[598,540]],
+        [[140,398],[202,432],[250,432],[290,424],[320,418],[345,410],[375,420],[374,432],[368,445],[353,470],[335,490],[330,515],[360,532],[378,532],[388,515],[397,500],[407,485],[412,477],[418,468],[422,462],[430,450],[472,450],[462,467]],
+        [[598,36],[600,110],[600,200],[600,288],[624,290],[624,335],[592,420],[594,478],[596,520],[598,540]],
         [[120,287],[164,288],[198,262],[238,258],[262,263],[300,246],[330,240]],
-        [[96,232],[72,300],[70,362],[76,402],[104,446],[124,500],[170,508],[240,508],[320,502],[394,486],[430,462]],
-        [[340,350],[344,378],[356,402],[372,424],[388,442],[392,446]],
-        [[462,467],[464,496],[470,516],[486,524],[496,502],[500,472],[540,468],[575,466],[591,464]],
-        [[344,378],[376,348],[420,342],[470,342],[505,350],[524,360]],
+        [[96,232],[72,300],[70,362],[76,402],[104,446],[124,500],[170,508],[240,508],[320,502],[360,542],[378,534],[409,486],[430,462]],
+        [[340,350],[334,376],[340,402],[365,424],[387,430],[370,428],[368,440],[375,450],[352,462],[350,470],[348,480],[334,488],[340,505],[345,520],[360,532]],
+        [[462,467],[464,496],[470,516],[486,524],[496,502],[500,472],[512,458],[552,462],[575,495],[594,495]],
+        [[344,378],[376,348],[420,342],[470,342],[505,350]],
         [[242,259],[234,268],[232,290],[230,318],[228,344]],
-        [[228,362],[258,354],[300,340],[318,342],[352,360],[356,378]],
-        [[228,384],[240,402],[249,418],[252,434],[256,441]],
+        [[228,362],[258,354],[300,340],[318,342],[352,360],[344,378]],
+        [[228,384],[240,402],[249,418],[252,434],[256,441],[256,431]],
         [[176,376],[160,384],[146,394],[140,398]],
         [[96,232],[98,178],[106,128],[114,86],[128,70],[160,74],[192,86]],
         [[114,86],[104,66],[92,64]],
         [[128,70],[96,44],[74,38]],
         [[596,520],[608,524],[618,524]],
-        [[594,478],[560,484],[548,494]],
-        [[92,256],[128,254]],
-        [[78,362],[93,366]],
-        [[262,222],[248,230]],
-        [[458,466],[450,480],[436,492]],
+        [[92,256],[122,254]],
+        [[458,466],[455,470]],
         [[168,506],[167,486]],
-        [[264,504],[264,487]],
+        [[247,504],[247,498]],
         [[490,262],[486,244],[478,224]],
         [[446,284],[445,266]],
-        [[470,516],[460,522],[452,525]],
-        [[228,344],[228,362],[228,384]],
+        [[470,516],[461,521]],
         [[120,287],[110,256],[98,240],[96,232]],
-        [[417,112],[405,128],[387,152],[406,176],[430,196],[462,212],[500,196],[528,156],[532,138]]
+        [[417,112],[405,128],[387,152],[406,176],[430,196],[462,212],[508,210],[528,156],[532,138]]
       ];
       // Pin anchors (viewBox units) measured from the official map, in
       // PLACES order. Off-property places (indices 37–43) sit in the town
@@ -2931,8 +2934,8 @@
         s += '<line x1="164" y1="83" x2="211" y2="105" stroke="#e8f0e4" stroke-width="1.4"/>';
         s += '<text class="lbl" x="142" y="140" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Tennis · Pickleball</text>';
         // Entrance drive, slanting in from Hwy 307 to the lobby like the official map
-        s += '<path d="M 432 -4 L 424 25 L 417 55 L 414 80" stroke="#b9b0a0" stroke-width="16" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M 432 -4 L 424 25 L 417 55 L 414 80" stroke="#fffdf8" stroke-width="2" stroke-dasharray="10 9" fill="none" opacity="0.8"/>';
+        s += '<path d="M 400 -4 L 395 30 L 390 60 L 390 80" stroke="#b9b0a0" stroke-width="16" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M 400 -4 L 395 30 L 390 60 L 390 80" stroke="#fffdf8" stroke-width="2" stroke-dasharray="10 9" fill="none" opacity="0.8"/>';
         s += '<text class="lbl" x="440" y="20" font-size="14.5" font-weight="600" fill="#3c5a30">Entrance · Hwy 307</text>';
 
         // Gardens
@@ -2971,7 +2974,7 @@
         // Garibaldi Square plaza: patterned stone paving rings under the fountain
         s += '<circle cx="338" cy="155" r="30" fill="url(#pavePat)" stroke="#c2b184" stroke-width="1.6"/>';
         s += '<circle cx="338" cy="155" r="20" fill="none" stroke="#c2b184" stroke-width="1.3" opacity="0.8"/>';
-        s += '<text class="lbl" x="288" y="208" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Garibaldi Square</text>';
+        s += '<text class="lbl" x="204" y="198" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Garibaldi Square</text>';
         // Parking strips along the west side, northwest of Building 2 (69 on the official map)
         s += '<polygon points="' + pts(quad(88, 223, 64, 18, 28)) + '" fill="#59755c" stroke="#42563f" stroke-width="1.4"/>';
         for (var pki = 0; pki < 4; pki++) {
@@ -2981,12 +2984,12 @@
         for (var pkj = 0; pkj < 4; pkj++) {
           s += '<line x1="' + (54 + pkj * 13).toFixed(1) + '" y1="' + (227 + pkj * 6.5).toFixed(1) + '" x2="' + (62 + pkj * 13).toFixed(1) + '" y2="' + (243 + pkj * 6.5) + '" stroke="#e8f0e4" stroke-width="1.3" opacity="0.6"/>';
         }
-        s += '<text class="lbl" x="83" y="235" font-size="14.5" font-weight="700" fill="#eef3e6" stroke="rgba(30,50,25,0.5)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke" text-anchor="middle" transform="rotate(-62 83 235)">Parking</text>';
+        s += '<text class="lbl" x="78" y="247" font-size="14.5" font-weight="700" fill="#eef3e6" stroke="rgba(30,50,25,0.5)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke" text-anchor="middle" transform="rotate(28 78 247)">Parking</text>';
 
         // Beach + wet sand
         s += '<polygon points="' + pts(BEACH) + '" fill="#eed9a4"/>';
         s += '<polygon points="' + pts(WETSAND) + '" fill="#e0c48a"/>';
-        s += '<text class="lbl" x="604" y="330" font-size="14.5" font-weight="700" fill="#8a6d2f" transform="rotate(90 604 330)" text-anchor="middle" letter-spacing="3">THE BEACH</text>';
+        s += '<text class="lbl" x="614" y="420" font-size="14.5" font-weight="700" fill="#8a6d2f" transform="rotate(90 614 420)" text-anchor="middle" letter-spacing="3">THE BEACH</text>';
 
         // Games Area strip along the Theater's east side (42 on the official map)
         s += '<polygon points="440,232 452,234 450,310 438,308" fill="#d9c491" stroke="#bfa96f" stroke-width="1.2"/>';
@@ -3034,7 +3037,7 @@
             s += '<text class="lbl" x="' + cx.toFixed(1) + '" y="' + (cy + 4).toFixed(1) + '" font-size="12" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" text-anchor="middle">' + p[0] + "</text>";
           }
         });
-        s += '<text class="lbl" x="232" y="264" font-size="13" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" stroke-width="3.5" paint-order="stroke" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">Main Pool 3 · Lazy River</text>';
+        s += '<text class="lbl" x="260" y="275" font-size="13" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" stroke-width="3.5" paint-order="stroke" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">Main Pool 3 · Lazy River</text>';
         // Cielo Bar: the cross-shaped bar standing in EC Pool 1's waist
         s += '<g fill="#7d5608" stroke="#54401e" stroke-width="1"><rect x="577" y="413" width="7" height="22" rx="2"/><rect x="570" y="420" width="17" height="7" rx="2"/></g>';
 
@@ -3055,10 +3058,12 @@
           var cx = 0, cy = 0;
           b.coords.forEach(function (p) { cx += p[0]; cy += p[1]; });
           cx /= b.coords.length; cy /= b.coords.length;
-          if (b.num) {
+          if (b.num || b.part) {
             s += '<polygon points="' + pts(b.coords) + '" fill="#c99f66" stroke="#7d5f31" stroke-width="1.8"/>';
-            var nx = b.at ? b.at[0] : cx, ny = b.at ? b.at[1] : cy;
-            s += '<text class="lbl" x="' + nx.toFixed(1) + '" y="' + (ny + 7).toFixed(1) + '" font-size="19" font-weight="800" fill="#ffffff" text-anchor="middle" style="stroke:rgba(101,72,32,0.65);stroke-width:3.5px;paint-order:stroke">' + b.num + "</text>";
+            if (b.num) {
+              var nx = b.at ? b.at[0] : cx, ny = b.at ? b.at[1] : cy;
+              s += '<text class="lbl" x="' + nx.toFixed(1) + '" y="' + (ny + 7).toFixed(1) + '" font-size="19" font-weight="800" fill="#ffffff" text-anchor="middle" style="stroke:rgba(101,72,32,0.65);stroke-width:3.5px;paint-order:stroke">' + b.num + "</text>";
+            }
           } else {
             s += '<polygon points="' + pts(b.coords) + '" fill="' + ROOFS[b.tint || 0] + '" stroke="#6e5326" stroke-width="1.6"/>';
             if (b.label) {
@@ -3124,7 +3129,7 @@
 
         // Area labels
         s += '<text class="lbl" x="228" y="318" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Spa island</text>';
-        s += '<text class="lbl" x="610" y="400" font-size="14.5" font-weight="700" fill="#7d2a3c" text-anchor="middle" letter-spacing="2.5" transform="rotate(90 610 400)">EXCELLENCE CLUB OCEANFRONT</text>';
+        s += '<text class="lbl" x="651" y="378" font-size="14.5" font-weight="700" fill="#7d2a3c" text-anchor="middle" letter-spacing="2.5" transform="rotate(90 651 378)">EXCELLENCE CLUB OCEANFRONT</text>';
 
         // Two resort piers reaching into the sea, as on the official map —
         // one in front of Building 7, a second further south
@@ -3132,7 +3137,7 @@
         [668, 686, 700].forEach(function (ppx) {
           s += '<line x1="' + ppx + '" y1="343" x2="' + ppx + '" y2="353" stroke="#7d6240" stroke-width="2.5"/>';
         });
-        s += '<text class="lbl" x="680" y="322" font-size="12" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">Pier</text>';
+        s += '<text class="lbl" x="686" y="322" font-size="12" font-weight="700" fill="#dff6ff" stroke="rgba(8,63,94,0.5)" style="stroke:rgba(8,63,94,0.65);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">Pier</text>';
         s += '<rect x="660" y="470" width="44" height="9" fill="#a5834e" stroke="#7d6240" stroke-width="1.2"/>';
         [672, 688, 700].forEach(function (ppx2) {
           s += '<line x1="' + ppx2 + '" y1="479" x2="' + ppx2 + '" y2="488" stroke="#7d6240" stroke-width="2.5"/>';
@@ -3141,7 +3146,7 @@
         // Scale bar: ≈100 m (lobby → beach ≈ 350 m across ≈330 units here)
         s += '<g><rect x="30" y="516" width="62" height="8" fill="#fffdf8" stroke="#54401e" stroke-width="1.2"/><rect x="61" y="516" width="31" height="8" fill="#54401e"/>'
           + '<text class="lbl" x="30" y="508" font-size="14.5" font-weight="700" fill="#eef6e4" stroke="rgba(40,70,30,0.6)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke">0</text>'
-          + '<text class="lbl" x="92" y="508" font-size="14.5" font-weight="700" fill="#eef6e4" stroke="rgba(40,70,30,0.6)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke" text-anchor="end">≈100 m</text></g>';
+          + '<text class="lbl" x="61" y="540" font-size="14.5" font-weight="700" fill="#eef6e4" stroke="rgba(40,70,30,0.6)" style="stroke:rgba(30,50,25,0.6);stroke-width:3.5px;paint-order:stroke" text-anchor="middle">≈100 m</text></g>';
 
         // Compass — north in the official map's tilted frame points up and
         // slightly west, so the needle leans left of straight up
@@ -3169,11 +3174,13 @@
         // from the official map); at this zoom they gain name labels and
         // seating terraces.
         [[489, 77, "The Kitchen Table"], [478, 104, "The Grill"], [553, 149, "Lobster House"],
-         [552, 183, "Oregano"], [451, 135, "Spice"], [431, 174, "Chez Isabelle"],
-         [472, 178, "Martini Bar"], [317, 177, "Flavor Market"], [311, 196, "Agave"],
-         [303, 213, "Basmati"]].forEach(function (rn) {
+         [552, 183, "Oregano"], [451, 135, "Spice", 444, 158], [431, 174, "Chez Isabelle"],
+         [472, 178, "Martini Bar"], [317, 177, "Flavor Market", 312, 179], [311, 196, "Agave", 300, 242],
+         [303, 213, "Basmati", 303, 220]].forEach(function (rn) {
           d += terrace(rn[0], rn[1] + 15, 30);
-          d += dLabel(rn[0], rn[1] + 3, rn[2], 14.5);
+          // Entries with two extra numbers carry their own label anchor
+          // (label moved clear of its neighbours; terrace stays put).
+          d += dLabel(rn.length > 4 ? rn[3] : rn[0], rn.length > 4 ? rn[4] : rn[1] + 3, rn[2], 14.5);
         });
         d += dLabel(363, 133, "Sports Bar", 14.5);
         // Lobby / Garibaldi / theater core: entrance portico, colonnade
@@ -3209,7 +3216,7 @@
         d += deckSet(470, 272, 4, 0);
         d += deckSet(578, 366, 2, 0);
         d += '<rect x="580" y="250" width="10" height="18" rx="2.5" fill="#7d5608" stroke="#54401e" stroke-width="1"/>';
-        d += dLabel(586, 282, "Sol bar", 14.5, "#0b5d75");
+        d += dLabel(520, 235, "Sol bar", 14.5, "#0b5d75");
         // Beach: a lounger paired with every palapa, in two loose rows
         [150, 205, 262, 318, 375, 430, 488].forEach(function (by, bi2) {
           d += lounger(606, by + 8, 90, bi2 % 2 ? "#7d5608" : "#0e7a86");
