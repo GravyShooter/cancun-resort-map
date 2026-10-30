@@ -2615,6 +2615,52 @@
       function pts(coords) {
         return coords.map(function (c) { return c[0].toFixed(1) + "," + c[1].toFixed(1); }).join(" ");
       }
+      // SpudMaps path smoothing — rendering only. Routes (nodes) unchanged.
+      // Centripetal Catmull-Rom (alpha 0.5) converted to cubic Bezier.
+      // Every Bezier segment starts and ends exactly on its nodes; a 2-point
+      // path, and any segment listed in SMOOTH_STRAIGHT, stays a straight line.
+      var SMOOTH_ALPHA = 0.5;
+      // 0-based PATHS index -> 0-based segment indices kept straight.
+      var SMOOTH_STRAIGHT = { 1: [1], 5: [10], 6: [5], 25: [1, 4] };
+      function smoothNum(v) { return v.toFixed(1); }
+      function smoothDist(ax, ay, bx, by) {
+        var dx = bx - ax, dy = by - ay;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      function smoothPathD(pts, straightSegs) {
+        var d = "M " + smoothNum(pts[0][0]) + "," + smoothNum(pts[0][1]);
+        var n = pts.length;
+        var i, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y;
+        var d01, d12, d23, s01x, s01y, s12x, s12y, s23x, s23y;
+        var m1x, m1y, m2x, m2y, c1x, c1y, c2x, c2y, segLen;
+        for (i = 0; i < n - 1; i++) {
+          p1x = pts[i][0]; p1y = pts[i][1];
+          p2x = pts[i + 1][0]; p2y = pts[i + 1][1];
+          segLen = smoothDist(p1x, p1y, p2x, p2y);
+          if (n < 3 || segLen === 0 || straightSegs.indexOf(i) >= 0) {
+            d += " L " + smoothNum(p2x) + "," + smoothNum(p2y);
+            continue;
+          }
+          if (i > 0) { p0x = pts[i - 1][0]; p0y = pts[i - 1][1]; }
+          else { p0x = 2 * pts[0][0] - pts[1][0]; p0y = 2 * pts[0][1] - pts[1][1]; }
+          if (i + 2 < n) { p3x = pts[i + 2][0]; p3y = pts[i + 2][1]; }
+          else { p3x = 2 * pts[n - 1][0] - pts[n - 2][0]; p3y = 2 * pts[n - 1][1] - pts[n - 2][1]; }
+          d01 = Math.pow(smoothDist(p0x, p0y, p1x, p1y), SMOOTH_ALPHA);
+          d12 = Math.pow(segLen, SMOOTH_ALPHA);
+          d23 = Math.pow(smoothDist(p2x, p2y, p3x, p3y), SMOOTH_ALPHA);
+          s01x = (p1x - p0x) / d01; s01y = (p1y - p0y) / d01;
+          s12x = (p2x - p1x) / d12; s12y = (p2y - p1y) / d12;
+          s23x = (p3x - p2x) / d23; s23y = (p3y - p2y) / d23;
+          m1x = (d12 * s01x + d01 * s12x) / (d01 + d12);
+          m1y = (d12 * s01y + d01 * s12y) / (d01 + d12);
+          m2x = (d23 * s12x + d12 * s23x) / (d12 + d23);
+          m2y = (d23 * s12y + d12 * s23y) / (d12 + d23);
+          c1x = p1x + m1x * d12 / 3; c1y = p1y + m1y * d12 / 3;
+          c2x = p2x - m2x * d12 / 3; c2y = p2y - m2y * d12 / 3;
+          d += " C " + smoothNum(c1x) + "," + smoothNum(c1y) + " " + smoothNum(c2x) + "," + smoothNum(c2y) + " " + smoothNum(p2x) + "," + smoothNum(p2y);
+        }
+        return d;
+      }
       function scaled(coords, f) {
         var cx = 0, cy = 0;
         coords.forEach(function (c) { cx += c[0]; cy += c[1]; });
@@ -3042,8 +3088,8 @@
         s += '<g fill="#7d5608" stroke="#54401e" stroke-width="1"><rect x="577" y="413" width="7" height="22" rx="2"/><rect x="570" y="420" width="17" height="7" rx="2"/></g>';
 
         // Walking paths: casing, sandy surface, dashed center
-        PATHS.forEach(function (p) {
-          var d = "M " + pts(p).replace(/ /g, " L ");
+        PATHS.forEach(function (p, pi) {
+          var d = smoothPathD(p, SMOOTH_STRAIGHT[pi] || []);
           s += '<path d="' + d + '" fill="none" stroke="#6b4f1d" stroke-width="6" opacity="0.18" stroke-linecap="round" stroke-linejoin="round" transform="translate(1 2)"/>';
           s += '<path d="' + d + '" fill="none" stroke="#fff6dd" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>';
           s += '<path d="' + d + '" fill="none" stroke="#ecd9a0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>';
@@ -5931,7 +5977,12 @@
         return res;
       }
       function routeLine(pts) {
-        var d = "M " + pts.map(function (p) { return p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" L ");
+        var rp = [];
+        pts.forEach(function (p) {
+          var last = rp[rp.length - 1];
+          if (!last || Math.sqrt((p.x - last.x) * (p.x - last.x) + (p.y - last.y) * (p.y - last.y)) >= 0.5) rp.push(p);
+        });
+        var d = rp.length > 1 ? smoothPathD(rp.map(function (p) { return [p.x, p.y]; }), []) : "M " + pts.map(function (p) { return p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" L ");
         var casing = document.createElementNS(ROUTE_NS, "path");
         casing.setAttribute("d", d);
         casing.setAttribute("fill", "none");
