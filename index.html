@@ -2664,7 +2664,7 @@
       // connected outline. The B6/B7 outlines below are those connected
       // unions of the traced segment quads. The rest are venues.
       var BUILDINGS = [
-        { coords: quad(414, 106, 86, 56, 20), tint: 0, label: "Lobby" },
+        { coords: quad(414, 106, 86, 56, 20), tint: 0, label: "Lobby", lx: -4, lsz: 13 },
         { coords: quad(455, 52, 47, 30, 20), tint: 1, label: "Magna · Club" },
         { coords: quad(489, 77, 34, 41, 18), tint: 3, label: "" },
         { coords: quad(478, 104, 36, 32, 18), tint: 2, label: "" },
@@ -2714,8 +2714,8 @@
       // the water instead of the polygon centroid. Lines are split so the
       // number sits under the name; positions are viewBox units.
       var POOL_LABEL_POS = {
-        "Main Pool 1": { lines: ["Main Pool", "1"], x: 549, y: 284 },
-        "Main Pool 2": { lines: ["Main", "Pool 2"], x: 450, y: 303 },
+        "Main Pool 1": { lines: ["Main Pool", "1"], x: 549, y: 314, size: 12 },
+        "Main Pool 2": { lines: ["Main", "Pool 2"], x: 446, y: 317 },
         "EC Pool 1": { lines: ["EC Pool", "1"], x: 570, y: 458 },
         "EC Pool 2": { lines: ["EC Pool", "2"], x: 410, y: 540 }
       };
@@ -3029,7 +3029,7 @@
             // above their baseline and the digit line sits on its
             // baseline, so centering the baselines on the point would
             // ride the block ~4.8 high.
-            s += '<text class="lbl" x="' + pl.x + '" y="' + (pl.y - 2.2).toFixed(1) + '" font-size="13" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" stroke-width="3.5" paint-order="stroke" text-anchor="middle" style="stroke:rgba(6,56,63,0.6);stroke-width:3.5px;paint-order:stroke"><tspan x="' + pl.x + '">' + pl.lines[0] + '</tspan><tspan x="' + pl.x + '" dy="14">' + pl.lines[1] + "</tspan></text>";
+            s += '<text class="lbl" x="' + pl.x + '" y="' + (pl.y - 2.2).toFixed(1) + '" font-size="' + (pl.size || 13) + '" font-weight="700" fill="#eafcff" stroke="rgba(6,56,63,0.6)" stroke-width="3.5" paint-order="stroke" text-anchor="middle" style="stroke:rgba(6,56,63,0.6);stroke-width:3.5px;paint-order:stroke"><tspan x="' + pl.x + '">' + pl.lines[0] + '</tspan><tspan x="' + pl.x + '" dy="14">' + pl.lines[1] + "</tspan></text>";
           } else if (p[0]) {
             var cx = 0, cy = 0;
             p[1].forEach(function (c) { cx += c[0]; cy += c[1]; });
@@ -3067,7 +3067,7 @@
           } else {
             s += '<polygon points="' + pts(b.coords) + '" fill="' + ROOFS[b.tint || 0] + '" stroke="#6e5326" stroke-width="1.6"/>';
             if (b.label) {
-              s += '<text class="lbl" x="' + (cx + (b.lx || 0)).toFixed(1) + '" y="' + (cy + 5).toFixed(1) + '" font-size="15" font-weight="700" fill="#54401e" text-anchor="middle" style="stroke:rgba(255,250,235,0.9);stroke-width:3.5px;paint-order:stroke">' + b.label + "</text>";
+              s += '<text class="lbl" x="' + (cx + (b.lx || 0)).toFixed(1) + '" y="' + (cy + 5).toFixed(1) + '" font-size="' + (b.lsz || 15) + '" font-weight="700" fill="#54401e" text-anchor="middle" style="stroke:rgba(255,250,235,0.9);stroke-width:3.5px;paint-order:stroke">' + b.label + "</text>";
             }
           }
         });
@@ -3128,7 +3128,7 @@
         });
 
         // Area labels
-        s += '<text class="lbl" x="228" y="318" font-size="14.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Spa island</text>';
+        s += '<text class="lbl" x="228" y="323" font-size="10.5" font-weight="700" fill="#3c5a30" text-anchor="middle">Spa island</text>';
         s += '<text class="lbl" x="651" y="378" font-size="14.5" font-weight="700" fill="#7d2a3c" text-anchor="middle" letter-spacing="2.5" transform="rotate(90 651 378)">EXCELLENCE CLUB OCEANFRONT</text>';
 
         // Two resort piers reaching into the sea, as on the official map —
@@ -3174,19 +3174,20 @@
         // from the official map); at this zoom they gain name labels and
         // seating terraces.
         [[489, 77, "The Kitchen Table"], [478, 104, "The Grill"], [553, 149, "Lobster House"],
-         [552, 183, "Oregano"], [451, 135, "Spice", 444, 158], [431, 174, "Chez Isabelle"],
-         [472, 178, "Martini Bar"], [317, 177, "Flavor Market", 312, 179], [311, 196, "Agave", 300, 242],
+         [552, 183, "Oregano", 552, 177, 10], [451, 135, "Spice", 472, 134, 9], [431, 174, "Chez Isabelle", 431, 178, 11.5],
+         [472, 178, "Martini Bar", 478, 196, 9], [317, 177, "Flavor Market", 312, 179], [311, 196, "Agave", 300, 242],
          [303, 213, "Basmati", 303, 220]].forEach(function (rn) {
           d += terrace(rn[0], rn[1] + 15, 30);
           // Entries with two extra numbers carry their own label anchor
-          // (label moved clear of its neighbours; terrace stays put).
-          d += dLabel(rn.length > 4 ? rn[3] : rn[0], rn.length > 4 ? rn[4] : rn[1] + 3, rn[2], 14.5);
+          // (label moved clear of its neighbours; terrace stays put);
+          // an optional sixth number sets the label font size.
+          d += dLabel(rn.length > 4 ? rn[3] : rn[0], rn.length > 4 ? rn[4] : rn[1] + 3, rn[2], rn.length > 5 ? rn[5] : 14.5);
         });
         d += dLabel(363, 133, "Sports Bar", 14.5);
         // Lobby / Garibaldi / theater core: entrance portico, colonnade
         // columns edging the plaza, plaza paving rays, theater stage + seats
         d += '<rect x="396" y="80" width="36" height="9" rx="2" fill="#c39f66" stroke="#7d6240" stroke-width="1"/>';
-        d += dLabel(414, 140, "Lobby entrance", 14.5);
+        d += dLabel(473, 157, "Lobby entrance", 3);
         for (var ci = 0; ci < 5; ci++) {
           d += '<circle cx="' + (318 + ci * 10) + '" cy="' + (180 + ci * 2) + '" r="2.2" fill="#fffdf8" stroke="#a5834e" stroke-width="0.9"/>';
           d += '<circle cx="' + (318 + ci * 10) + '" cy="' + (134 - ci * 2) + '" r="2.2" fill="#fffdf8" stroke="#a5834e" stroke-width="0.9"/>';
@@ -3228,7 +3229,7 @@
         d += flowerBed(255, 390, 5, 20, 67);
         d += flowerBed(205, 392, 4, 16, 71);
         d += dLabel(192, 394, "Spa island gardens", 14.5, "#3c5a30");
-        d += dLabel(294, 336, "Temazcal", 14.5, "#54401e");
+        d += dLabel(298, 336, "Temazcal", 11, "#54401e");
         d += "</g>";
         s += d;
 
@@ -6393,17 +6394,22 @@
       })();
     </script>
     <script>
-      // ---------- Spud Lord appeal popup: appears a few seconds after every page load ----------
-      // Dismissal closes it for this view only — nothing is stored, so it comes back on the next visit.
+      // ---------- Spud Lord appeal popup: appears a few seconds after page load ----------
+      // Shows at most once per browser/device: once it has been shown, a
+      // localStorage flag keeps it from ever appearing again on that device.
       (function () {
         "use strict";
         var pop = document.getElementById("spudPop");
         if (!pop) return;
+        try {
+          if (localStorage.getItem("spudmaps-beg-popup-shown")) return;
+        } catch (e) { /* storage unavailable: fall through and show */ }
         function dismiss() {
           pop.classList.remove("show");
           pop.hidden = true;
         }
         setTimeout(function () {
+          try { localStorage.setItem("spudmaps-beg-popup-shown", "1"); } catch (e) { /* ignore: popup still shows this time */ }
           pop.hidden = false;
           requestAnimationFrame(function () {
             requestAnimationFrame(function () { pop.classList.add("show"); });
