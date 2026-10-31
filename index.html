@@ -1012,6 +1012,17 @@
       .boardbtn-danger { color: var(--c-dining); border-color: var(--c-dining); }
       .boardconfirm { font-size: 0.88rem; font-weight: 600; color: var(--c-dining); }
       .boardedit { margin-top: 4px; }
+      /* Threaded replies: a reply sits indented under the note it answers,
+         with a "Reply to …" context line and a heavier left edge on its
+         bubble so the thread reads at a glance. */
+      .boardlist li.breply .boardbubble { max-width: 88%; }
+      .boardreplyctx { display: block; font-size: 0.72rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 1px; }
+      .boardreplybox {
+        width: 92%; margin-top: 8px; padding: 10px 12px;
+        border: 1px solid var(--line); border-radius: 14px;
+        background: var(--panel); box-shadow: var(--shadow);
+      }
+      .boardreplylabel { display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 5px; color: var(--ink-soft); }
 
       /* ---------- GIF picker (GIPHY) ---------- */
       .gifpanel { margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
@@ -1388,7 +1399,7 @@
       <section class="grounds" aria-label="Group message board">
         <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="boardBody"><span>Group board<span class="boardbadge" id="boardBadge" hidden>0</span></span><span class="chev" aria-hidden="true"></span></button></h2>
         <div class="foldbody" id="boardBody" hidden>
-        <p class="gsub">Short notes for the whole group — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it.</p>
+        <p class="gsub">Short notes for the whole group — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it. Tap Reply under any note to answer it — your reply nests right underneath that note.</p>
         <form id="boardForm">
           <div class="boardwho" id="boardWho"></div>
           <label class="boardlabel" for="boardText">Your note</label>
@@ -5230,6 +5241,11 @@
       var boardQuery = null;      // the live query the board listeners hang off
       var boardEditingKey = null; // key of the note being edited inline, if any
       var boardConfirmKey = null; // key of the note awaiting a delete confirm, if any
+      var boardReplyingKey = null; // key of the note whose reply composer is open, if any
+      var boardGifReplyKey = null; // key of the note a picked GIF will reply to, if any
+      var boardPendingReplyText = "";   // a reply held while the name dialog is open
+      var boardPendingReplyGif = "";    // a GIF reply held while the name dialog is open
+      var boardPendingReplyParent = null; // parent key for either held reply
 
       function boardNote(msg) {
         if (!boardNoteEl) return;
@@ -5297,7 +5313,38 @@
           if (e && ((typeof e.text === "string" && e.text) || (typeof e.gif === "string" && e.gif))) items.push({ key: k, note: e });
         }
         items.sort(function (a, b) { return (b.note.ts || 0) - (a.note.ts || 0); });
-        return items.slice(0, 50);
+        return items.slice(0, 100);
+      }
+      // Flatten the flat note list into display order: each top-level
+      // note (newest first, as before) followed immediately by its
+      // replies, oldest first, so a thread reads top-to-bottom. A reply
+      // is a note whose `replyTo` names another note in the list; a
+      // reply whose parent is gone (deleted, or outside the loaded
+      // window) is shown as a top-level note so it is never lost.
+      // Each returned item gains a `depth` (0 = top-level).
+      function boardThreadOrder(items) {
+        var byKey = {}, kids = {}, tops = [];
+        items.forEach(function (it) { byKey[it.key] = it; });
+        items.forEach(function (it) {
+          var p = it.note && typeof it.note.replyTo === "string" ? it.note.replyTo : "";
+          if (p && byKey[p] && p !== it.key) {
+            if (!kids[p]) kids[p] = [];
+            kids[p].push(it);
+          } else tops.push(it);
+        });
+        Object.keys(kids).forEach(function (k) {
+          kids[k].sort(function (a, b) { return (a.note.ts || 0) - (b.note.ts || 0); });
+        });
+        var out = [], seen = {};
+        function visit(it, depth) {
+          if (seen[it.key]) return;
+          seen[it.key] = true;
+          out.push({ key: it.key, note: it.note, depth: depth });
+          (kids[it.key] || []).forEach(function (c) { visit(c, depth + 1); });
+        }
+        tops.forEach(function (it) { visit(it, 0); });
+        items.forEach(function (it) { visit(it, 0); }); // cycle leftovers
+        return out;
       }
       function boardRenderList() {
         if (!boardListEl) return;
@@ -5308,15 +5355,26 @@
           var open = boardListEl.querySelector("textarea.boardedit");
           if (open) draft = open.value;
         }
-        var items = boardSortedItems();
+        var replyDraft = null;
+        if (boardReplyingKey) {
+          var rop = boardListEl.querySelector("textarea.boardreplytext");
+          if (rop) replyDraft = rop.value;
+        }
+        var items = boardThreadOrder(boardSortedItems());
         if (!boardAnimReadyAt) boardAnimReadyAt = Date.now() + 1200;
         var editAlive = false;
+        var replyAlive = false;
         boardListEl.innerHTML = "";
         items.forEach(function (it) {
           var e = it.note, key = it.key;
           var mine = boardIsMine(e);
+          var depth = it.depth || 0;
           var li = document.createElement("li");
           li.className = mine ? "bmine" : "btheirs";
+          if (depth > 0) {
+            li.classList.add("breply");
+            li.style.marginLeft = Math.min(depth, 3) * 20 + "px";
+          }
           // Chat bubble tinted with the author's color: a light wash of
           // the color over the panel color (adapts to light/dark), with
           // the name in a deeper cut of the same color so it stays
@@ -5329,11 +5387,19 @@
           if (Date.now() >= boardAnimReadyAt && !boardSeenKeys[key] && boardEditingKey !== key) bubble.classList.add("boardbubble--new");
           bubble.style.background = "color-mix(in srgb, " + bcolor + " 16%, var(--panel))";
           bubble.style.borderColor = "color-mix(in srgb, " + bcolor + " 38%, var(--panel))";
+          if (depth > 0) bubble.style.borderLeft = "3px solid " + bcolor;
           var nm = document.createElement("span");
           nm.className = "boardbname";
           nm.style.color = "color-mix(in srgb, " + bcolor + " 72%, var(--ink))";
           nm.textContent = typeof e.name === "string" && e.name ? e.name : "Guest";
           bubble.appendChild(nm);
+          if (depth > 0 && typeof e.replyTo === "string" && boardItems[e.replyTo]) {
+            var pctx = document.createElement("span");
+            pctx.className = "boardreplyctx";
+            var pnote = boardItems[e.replyTo];
+            pctx.textContent = "↳ Reply to " + (typeof pnote.name === "string" && pnote.name ? pnote.name : "Guest");
+            bubble.appendChild(pctx);
+          }
           if (boardEditingKey === key && mine) {
             editAlive = true;
             var ta = document.createElement("textarea");
@@ -5383,7 +5449,7 @@
             tm.textContent = boardTime(e.ts) + (e.edited ? " · edited" : "");
             bubble.appendChild(tm);
             li.appendChild(bubble);
-            if (mine) {
+            {
               var acts = document.createElement("div");
               acts.className = "boardacts";
               if (boardConfirmKey === key) {
@@ -5407,6 +5473,23 @@
                 acts.appendChild(del);
                 acts.appendChild(keep);
               } else {
+                var rb = document.createElement("button");
+                rb.type = "button";
+                rb.className = "boardbtn2 boardbtn-sm";
+                rb.textContent = "Reply";
+                rb.setAttribute("aria-label", "Reply to " + (typeof e.name === "string" && e.name ? e.name : "Guest") + "'s note");
+                rb.setAttribute("aria-expanded", boardReplyingKey === key ? "true" : "false");
+                rb.addEventListener("click", function () {
+                  boardReplyingKey = boardReplyingKey === key ? null : key;
+                  boardConfirmKey = null;
+                  boardRenderList();
+                  if (boardReplyingKey === key) {
+                    var rt = boardListEl.querySelector("textarea.boardreplytext");
+                    if (rt) rt.focus();
+                  }
+                });
+                acts.appendChild(rb);
+                if (mine) {
                 var ed = document.createElement("button");
                 ed.type = "button";
                 ed.className = "boardbtn2 boardbtn-sm";
@@ -5439,14 +5522,62 @@
                 });
                 acts.appendChild(ed);
                 acts.appendChild(db);
+                }
               }
               li.appendChild(acts);
+              if (boardReplyingKey === key) {
+                replyAlive = true;
+                var rbox = document.createElement("div");
+                rbox.className = "boardreplybox";
+                var rl = document.createElement("span");
+                rl.className = "boardreplylabel";
+                rl.textContent = "Reply to " + (typeof e.name === "string" && e.name ? e.name : "Guest");
+                var rta = document.createElement("textarea");
+                rta.className = "boardtext boardreplytext";
+                rta.rows = 2;
+                rta.maxLength = 280;
+                rta.value = replyDraft !== null ? replyDraft : "";
+                rta.placeholder = "Write a reply…";
+                rta.setAttribute("aria-label", "Reply to " + (typeof e.name === "string" && e.name ? e.name : "Guest"));
+                var rrow = document.createElement("div");
+                rrow.className = "boardacts";
+                var rpost = document.createElement("button");
+                rpost.type = "button";
+                rpost.className = "boardbtn2 boardbtn-sm";
+                rpost.textContent = "Post reply";
+                rpost.addEventListener("click", function () { boardPostReply(key, rta); });
+                var rgif = document.createElement("button");
+                rgif.type = "button";
+                rgif.className = "boardbtn2 boardbtn-sm";
+                rgif.textContent = "GIF";
+                rgif.addEventListener("click", function () {
+                  boardGifReplyKey = key;
+                  boardNote("Pick a GIF to reply with.");
+                  gifOpenPicker();
+                });
+                var rcancel = document.createElement("button");
+                rcancel.type = "button";
+                rcancel.className = "boardbtn2 boardbtn-sm";
+                rcancel.textContent = "Cancel";
+                rcancel.addEventListener("click", function () {
+                  boardReplyingKey = null;
+                  boardRenderList();
+                });
+                rrow.appendChild(rpost);
+                rrow.appendChild(rgif);
+                rrow.appendChild(rcancel);
+                rbox.appendChild(rl);
+                rbox.appendChild(rta);
+                rbox.appendChild(rrow);
+                li.appendChild(rbox);
+              }
             }
           }
           boardListEl.appendChild(li);
         });
         items.forEach(function (it) { boardSeenKeys[it.key] = true; });
         if (boardEditingKey && !editAlive) boardEditingKey = null;
+        if (boardReplyingKey && !replyAlive) boardReplyingKey = null;
         if (boardConfirmKey && !boardItems[boardConfirmKey]) boardConfirmKey = null;
         if (boardEmptyEl) {
           boardEmptyEl.hidden = items.length > 0;
@@ -5475,6 +5606,7 @@
       function boardChildRemoved(snap) {
         delete boardItems[snap.key];
         if (boardEditingKey === snap.key) boardEditingKey = null;
+        if (boardReplyingKey === snap.key) boardReplyingKey = null;
         if (boardConfirmKey === snap.key) boardConfirmKey = null;
         boardRenderList();
       }
@@ -5492,7 +5624,7 @@
         if (boardAttached || !liveDb) return;
         try {
           boardRef = liveDb.ref("board");
-          boardQuery = boardRef.orderByChild("ts").limitToLast(50);
+          boardQuery = boardRef.orderByChild("ts").limitToLast(100);
           boardQuery.on("child_added", boardChildUpsert, boardListenError);
           boardQuery.on("child_changed", boardChildUpsert, boardListenError);
           boardQuery.on("child_removed", boardChildRemoved, boardListenError);
@@ -5604,9 +5736,101 @@
           }
         });
       }
+      // ----- Replies: a reply is a normal board note plus a `replyTo`
+      // naming its parent's push key, so it rides the same realtime
+      // sync, name gate, and own-notes-only edit/delete rules. Anyone
+      // can reply to anyone's note. If the parent is deleted before a
+      // held reply posts, the reply is dropped with a note saying so.
+      function boardReplyPostNow(text, parentKey) {
+        if (!liveProfile) { // same name gate as top-level posts
+          boardPendingReplyText = text;
+          boardPendingReplyParent = parentKey;
+          liveOpenDlg("board");
+          return;
+        }
+        boardWithRef("Couldn't post your reply — check your connection and try again.", function () {
+          if (!boardItems[parentKey]) {
+            boardNote("That note is no longer there — your reply wasn't posted.");
+            boardReplyingKey = null;
+            boardRenderList();
+            return;
+          }
+          try {
+            var req = boardRef.push({
+              name: liveProfile.name,
+              color: liveProfile.color,
+              text: text,
+              replyTo: parentKey,
+              ts: firebase.database.ServerValue.TIMESTAMP
+            });
+            var done = function () { boardReplyingKey = null; boardNote(""); boardRenderList(); };
+            var fail = function () { boardNote("Couldn't post your reply — check your connection and try again."); };
+            if (req && typeof req.then === "function") req.then(done, fail);
+            else done();
+          } catch (e) {
+            boardNote("Couldn't post your reply — check your connection and try again.");
+          }
+        });
+      }
+      function boardPostReply(parentKey, ta) {
+        var text = (ta ? ta.value : "").trim().slice(0, 280);
+        if (!text) {
+          boardNote("Write a reply first, then post it.");
+          if (ta) ta.focus();
+          return;
+        }
+        boardNote("");
+        boardReplyPostNow(text, parentKey);
+      }
+      function boardReplyGifPostNow(url, parentKey) {
+        boardWithRef("Couldn't post that GIF reply — check your connection and try again.", function () {
+          if (!boardItems[parentKey]) {
+            boardNote("That note is no longer there — your GIF reply wasn't posted.");
+            boardGifReplyKey = null;
+            gifClosePicker();
+            boardRenderList();
+            return;
+          }
+          try {
+            var req = boardRef.push({
+              name: liveProfile.name,
+              color: liveProfile.color,
+              text: "",
+              gif: url,
+              replyTo: parentKey,
+              ts: firebase.database.ServerValue.TIMESTAMP
+            });
+            var done = function () { boardGifReplyKey = null; boardNote(""); gifClosePicker(); boardRenderList(); };
+            var fail = function () { boardNote("Couldn't post that GIF reply — check your connection and try again."); };
+            if (req && typeof req.then === "function") req.then(done, fail);
+            else done();
+          } catch (e) {
+            boardNote("Couldn't post that GIF reply — check your connection and try again.");
+          }
+        });
+      }
+      function boardGifReply(parentKey, url) {
+        if (!liveProfile) { // same name gate — hold it, ask first
+          boardPendingReplyGif = url;
+          boardPendingReplyParent = parentKey;
+          boardGifReplyKey = null;
+          liveOpenDlg("board");
+          return;
+        }
+        boardReplyGifPostNow(url, parentKey);
+      }
       // Called by the name dialog after a "board"-mode save: a note that
       // was held for a name can go out now that the profile exists.
       function boardAfterProfile() {
+        if (boardPendingReplyParent && (boardPendingReplyText || boardPendingReplyGif)) {
+          var rp = boardPendingReplyParent, rt2 = boardPendingReplyText, rg2 = boardPendingReplyGif;
+          boardPendingReplyParent = null;
+          boardPendingReplyText = "";
+          boardPendingReplyGif = "";
+          if (rg2) boardReplyGifPostNow(rg2, rp);
+          else boardReplyPostNow(rt2, rp);
+          return;
+        }
         if (boardPendingGif) {
           var g = boardPendingGif;
           boardPendingGif = "";
@@ -5708,10 +5932,12 @@
         if (!gifPanelEl) return;
         gifPanelEl.hidden = true;
         boardGifReplaceKey = null;
+        boardGifReplyKey = null;
         if (gifBtnEl) gifBtnEl.setAttribute("aria-expanded", "false");
       }
       function boardGifPick(url) {
         if (boardGifReplaceKey) { boardGifReplace(boardGifReplaceKey, url); return; }
+        if (boardGifReplyKey) { boardGifReply(boardGifReplyKey, url); return; }
         if (!liveProfile) { // same name gate as text notes — hold it, ask first
           boardPendingGif = url;
           liveOpenDlg("board");
