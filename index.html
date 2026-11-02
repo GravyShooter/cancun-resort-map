@@ -975,7 +975,7 @@
         border-radius: var(--radius-sm); padding: 10px 12px; min-height: 54px;
       }
       .boardtext:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
-      .boardrow { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+      .boardrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
       .boardrow .gpsbtn { margin-left: auto; }
       .boardcount { color: var(--ink-soft); font-size: 0.85rem; }
       .boardnote { margin: 8px 0 0; font-size: 0.9rem; font-weight: 600; color: var(--c-dining); }
@@ -1024,6 +1024,77 @@
       }
       .boardreplylabel { display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 5px; color: var(--ink-soft); }
 
+      /* ---------- Wedding album: shared photos ---------- */
+      .albumcapopt { font-weight: 500; color: var(--ink-soft); }
+      .albumcapinput { min-height: 44px; }
+      .albumbar { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; margin-top: 2px; }
+      .albumcapwrap { flex: 1 1 230px; min-width: 0; }
+      .albumcapwrap .boardlabel { margin-top: 4px; }
+      .albumhint { margin: 8px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+      .albumstatus { margin: 10px 0 0; font-size: 0.92rem; font-weight: 600; }
+      .albumstatus.err { color: var(--c-dining); }
+      .albumprogress {
+        height: 8px; margin-top: 10px; border-radius: 999px;
+        background: var(--panel-2); border: 1px solid var(--line); overflow: hidden;
+      }
+      .albumprogressbar { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s ease; }
+      @media (prefers-reduced-motion: reduce) { .albumprogressbar { transition: none; } }
+      .albumgrid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+        gap: 10px; margin-top: 14px;
+      }
+      .albumgrid:empty { margin-top: 0; }
+      @media (max-width: 560px) { .albumgrid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; } }
+      .albumtile {
+        appearance: none; cursor: pointer; padding: 0; display: block; width: 100%;
+        border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+        background: var(--panel-2); color: var(--ink); font: inherit;
+        position: relative; text-align: left; line-height: 0;
+      }
+      .albumtile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .albumtile img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+      .albumtile .atilemeta {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        display: flex; align-items: center; gap: 6px;
+        padding: 16px 8px 6px; line-height: 1.25;
+        background: linear-gradient(180deg, transparent, rgba(16, 22, 26, 0.74));
+        color: #ffffff; font-size: 0.72rem; font-weight: 700;
+      }
+      .albumtile .atilemeta .boarddot { width: 9px; height: 9px; }
+      .albumtile .atilemeta .atilename { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .albumtile .atileunavail {
+        display: none; aspect-ratio: 4 / 3; padding: 12px;
+        align-items: center; justify-content: center; text-align: center;
+        font-size: 0.82rem; font-weight: 600; color: var(--ink-soft); line-height: 1.4;
+      }
+      .albumtile.unavail img, .albumtile.unavail .atilemeta { display: none; }
+      .albumtile.unavail .atileunavail { display: flex; }
+      /* Full-size photo viewer (overlay, styled like the live dialog) */
+      .albumlight {
+        position: fixed; inset: 0; z-index: 96;
+        background: rgba(16, 22, 26, 0.72);
+        display: flex; align-items: center; justify-content: center;
+        padding: 14px;
+      }
+      .albumlight[hidden] { display: none; }
+      .albumlight .acard {
+        background: var(--panel); color: var(--ink);
+        border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        width: 100%; max-width: 880px; padding: 14px;
+        max-height: calc(100vh - 28px); overflow-y: auto;
+      }
+      .albumlight img.aphoto {
+        width: 100%; max-height: 66vh; object-fit: contain; display: block;
+        background: var(--panel-2); border-radius: 10px;
+      }
+      .albumlight .acaption { margin: 10px 0 2px; font-weight: 600; overflow-wrap: break-word; }
+      .albumlight .ameta { margin: 0; color: var(--ink-soft); font-size: 0.9rem; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+      .albumlight .ameta .boarddot { width: 10px; height: 10px; }
+      .alightrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 12px; }
+      .alightrow .aspacer { flex: 1 1 auto; }
+      @media print { .albumlight { display: none; } }
+
       /* ---------- GIF picker (GIPHY) ---------- */
       .gifpanel { margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
       .gifbar { display: flex; align-items: center; gap: 8px; }
@@ -1040,6 +1111,69 @@
       .gifstatus { margin: 10px 0 0; font-size: 0.88rem; color: var(--ink-soft); }
       .gifcredit { margin: 8px 0 0; font-size: 0.7rem; color: var(--ink-soft); text-align: right; }
       .boardgif { display: block; width: 250px; max-width: 100%; height: auto; border-radius: 10px; }
+
+      /* ---------- Board photos (Catbox uploads) ---------- */
+      /* Photo button matches the GIF button; the camera glyph rides
+         inline so the row reads as two equal media actions. */
+      .boardphotobtn { display: inline-flex; align-items: center; gap: 7px; }
+      .boardphotobtn svg { width: 17px; height: 17px; display: block; flex: none; }
+      .boardphotobtn:disabled { opacity: 0.55; cursor: default; }
+      .boardphotohint { margin: 8px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+      /* Staged-photo preview: a panel-2 card in the composer's own
+         language — thumbnail, name, and Post / Remove actions. */
+      .boardpreview {
+        display: flex; gap: 12px; align-items: center;
+        margin-top: 12px; padding: 10px 12px;
+        border: 1px solid var(--line); border-radius: 14px;
+        background: var(--panel-2);
+      }
+      .boardpreview[hidden] { display: none; }
+      .boardpreview img {
+        width: 76px; height: 76px; flex: none; object-fit: cover;
+        border-radius: 10px; border: 1px solid var(--line);
+        background: var(--panel); box-shadow: 0 3px 10px rgba(60, 45, 20, 0.16);
+      }
+      .boardpreview .bpmeta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+      .boardpreview .bpname { font-weight: 700; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .boardpreview .bpsub { color: var(--ink-soft); font-size: 0.82rem; margin-top: 1px; }
+      .boardpreview .bpactions { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 8px; }
+      .boardphotopostbtn {
+        background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+        font-weight: 700;
+      }
+      .boardphotopostbtn:disabled { opacity: 0.55; cursor: default; }
+      @media (max-width: 560px) { .boardpreview img { width: 62px; height: 62px; } }
+      /* Upload progress: the album's bar, made indeterminate — Catbox
+         gives no per-byte progress the page can read cross-origin. */
+      .boardprogress { margin-top: 10px; }
+      .boardprogressbar { width: 38%; animation: boardUploadSlide 1.05s ease-in-out infinite alternate; }
+      @keyframes boardUploadSlide {
+        from { transform: translateX(-12%); }
+        to { transform: translateX(168%); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boardprogressbar { animation: none; width: 100%; }
+      }
+      /* A photo note's bubble runs wider than a text bubble so the
+         picture gets room, and the photo itself is a framed panel
+         image: rounded, bordered, soft shadow, tap to view full-size. */
+      .boardbubble--photo { width: min(430px, 94%); max-width: 94%; }
+      .boardphotofig { margin: 3px 0 7px; }
+      .boardphotofig figcaption { margin-top: 5px; font-size: 0.72rem; color: var(--ink-soft); text-align: right; }
+      .boardphotobtn-view {
+        appearance: none; cursor: pointer; display: block; width: 100%;
+        padding: 0; border: 0; background: none; border-radius: 12px; line-height: 0;
+      }
+      .boardphotobtn-view:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .boardphoto {
+        display: block; width: 100%; height: auto; max-height: 380px; object-fit: cover;
+        border-radius: 12px; border: 1px solid var(--line);
+        background: var(--panel-2); box-shadow: 0 4px 14px rgba(60, 45, 20, 0.16);
+      }
+      .boardphotofallback { display: block; padding: 18px 12px; font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); text-align: center; }
+      .boardlight .alightrow a.boardbtn2 {
+        text-decoration: none; display: inline-flex; align-items: center;
+      }
 
       /* ---------- Route mode ---------- */
       .routebar {
@@ -1141,7 +1275,34 @@
 
       /* ---------- Wedding-day mode: gathering pins ringed in gold ---------- */
       .pin.pin--gather { box-shadow: 0 0 0 3px var(--gold), 0 0 0 7px rgba(166, 124, 26, 0.35), 0 4px 10px rgba(30, 40, 20, 0.5); z-index: 9; }
+      .pin.pin--ceremony { box-shadow: 0 0 0 3px var(--gold), 0 0 0 9px rgba(166, 124, 26, 0.5), 0 4px 10px rgba(30, 40, 20, 0.5); z-index: 10; }
       body.wedding-day .wedding-line { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(166, 124, 26, 0.35); }
+
+      /* ---------- Wedding panel: welcome hour + wedding-day timeline ---------- */
+      .weddingpanel { border-color: var(--gold); margin-bottom: var(--s-4); }
+      .weddingpanel h2 { color: var(--spud); }
+      .wedevents { display: grid; gap: var(--s-4); margin-top: var(--s-3); }
+      @media (min-width: 760px) { .wedevents { grid-template-columns: 1fr 1.4fr; } }
+      .wedevent h3 {
+        margin: 0 0 4px; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem;
+      }
+      .wedevent p { margin: 0 0 6px; font-size: 0.95rem; }
+      .wedevent .wedwhen { font-weight: 700; }
+      .wedlist { list-style: none; margin: 0; padding: 0; }
+      .wedlist li {
+        display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline;
+        padding: 7px 0; border-top: 1px solid var(--line); font-size: 0.95rem;
+      }
+      .wedlist li:first-child { border-top: 0; padding-top: 2px; }
+      .wedtime { font-weight: 700; color: var(--gold); white-space: nowrap; }
+      .wedwhat { color: var(--ink-soft); }
+      .wedlink {
+        appearance: none; cursor: pointer; background: none; border: 0; border-radius: 6px;
+        padding: 4px 2px; margin: -4px 0; font: inherit; font-weight: 700;
+        color: var(--accent); text-decoration: underline; text-underline-offset: 3px;
+      }
+      .wedlink:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .weddress { margin: var(--s-3) 0 0; font-weight: 600; font-size: 0.95rem; }
 
       /* ---------- Room finder ---------- */
       .roomfind { margin-bottom: 2px; }
@@ -1193,6 +1354,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
   </head>
   <body>
     <a class="skip" href="#placesHeading">Skip to the place list</a>
@@ -1326,6 +1488,27 @@
         <div class="grouptools-row" id="groupToolsRow"></div>
       </section>
 
+      <section class="grounds weddingpanel" aria-labelledby="weddingPanelTitle">
+        <h2 id="weddingPanelTitle">Katherine &amp; Shane's wedding</h2>
+        <p class="gsub">Every stop below is already a pin on the map — tap a place name to open it.</p>
+        <div class="wedevents">
+          <div class="wedevent">
+            <h3>Welcome Cocktail Hour</h3>
+            <p><span class="wedwhen">Sat Nov 7 · 5:00–6:00 PM</span> at <button type="button" class="wedlink" data-wedplace="x-lounge">X-Lounge</button></p>
+            <p>Drinks and hors d'oeuvres / pupus provided. Black cocktail attire optional.</p>
+          </div>
+          <div class="wedevent">
+            <h3>Wedding day · Sun Nov 8</h3>
+            <ol class="wedlist">
+              <li><span class="wedtime">5:00 PM</span><button type="button" class="wedlink" data-wedplace="beach-gazebo">Beach Gazebo</button><span class="wedwhat">Ceremony</span></li>
+              <li><span class="wedtime">6:00–7:00 PM</span><button type="button" class="wedlink" data-wedplace="oregano">Oregano</button><span class="wedwhat">Drinks &amp; hors d'oeuvres / pupus</span></li>
+              <li><span class="wedtime">7:00–11:00 PM</span><button type="button" class="wedlink" data-wedplace="agave">Agave</button><span class="wedwhat">Reception — dinner &amp; dance</span></li>
+            </ol>
+          </div>
+        </div>
+        <p class="weddress">Dress code: tropical cocktail attire.</p>
+      </section>
+
       <div class="mapbox">
         <div class="scene" id="scene" tabindex="0" role="group" aria-label="Drawn overview of the resort grounds: flat building footprints, pools, gardens, beach and sea, with numbered place pins. Drag to pan, scroll or pinch to zoom; the Puerto Morelos town strip is drawn at the south end of the map.">
           <div class="maptools jumps" role="group" aria-label="Jump to an area of the map">
@@ -1399,17 +1582,32 @@
       <section class="grounds" aria-label="Group message board">
         <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="boardBody"><span>Group board<span class="boardbadge" id="boardBadge" hidden>0</span></span><span class="chev" aria-hidden="true"></span></button></h2>
         <div class="foldbody" id="boardBody" hidden>
-        <p class="gsub">Short notes for the whole group — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it. Tap Reply under any note to answer it — your reply nests right underneath that note.</p>
+        <p class="gsub">Short notes for the whole group — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it. Tap Reply under any note to answer it — your reply nests right underneath that note. You can add a photo, too: tap Photo, pick one, write a caption if you like, and post — the photo shows right in your note.</p>
         <form id="boardForm">
           <div class="boardwho" id="boardWho"></div>
           <label class="boardlabel" for="boardText">Your note</label>
           <textarea class="boardtext" id="boardText" rows="2" maxlength="280" placeholder="e.g. Pool at 3 — bring sunscreen" aria-describedby="boardCount"></textarea>
           <div class="boardrow">
             <button type="button" class="boardbtn2" id="boardGifBtn" aria-expanded="false" aria-controls="gifPanel">GIF</button>
+            <button type="button" class="boardbtn2 boardphotobtn" id="boardPhotoBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>Photo</button>
+            <input type="file" id="boardPhotoFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
             <span class="boardcount" id="boardCount">280</span>
             <button type="submit" class="gpsbtn" id="boardPost">Post note</button>
           </div>
           <p class="boardnote" id="boardNote" role="status" hidden></p>
+          <div class="boardpreview" id="boardPhotoPreview" hidden>
+            <img id="boardPhotoThumb" alt="Photo you picked, ready to post" />
+            <div class="bpmeta">
+              <span class="bpname" id="boardPhotoName">Photo ready</span>
+              <span class="bpsub" id="boardPhotoSub">Add a caption in the note box above, or just post it.</span>
+              <div class="bpactions">
+                <button type="button" class="boardbtn2 boardphotopostbtn" id="boardPhotoPost">Post photo</button>
+                <button type="button" class="boardbtn2" id="boardPhotoRemove">Remove</button>
+              </div>
+            </div>
+          </div>
+          <div class="albumprogress boardprogress" id="boardPhotoProgress" hidden><div class="albumprogressbar boardprogressbar" id="boardPhotoProgressBar"></div></div>
+          <p class="boardphotohint">Photos upload to Catbox — free, no account or sign-up — and show right here in the board. Keep your originals on your phone, too.</p>
         </form>
         <div class="gifpanel" id="gifPanel" hidden>
           <div class="gifbar">
@@ -1547,9 +1745,10 @@
           meta: "Gardens at mid-resort · west of Main Pool 1",
           desc: "The stone ceremony gazebo in the gardens at mid-resort, just west of Main Pool 1 — across the pool and the beach path from the sand — where the official resort map places it. The resort's other ceremony gazebo is the Beach Gazebo, at the far south end of the sand.",
           note: "From the lobby it's roughly a 5-minute walk: south down the spine, then east toward Main Pool 1 — the gazebo is in the gardens west of the pool." },
-        { name: "Beach Gazebo", cat: "sights", lat: 20.87155, lng: -86.86415,
-          meta: "South end of the beach · Club zone",
-          desc: "A second, quieter ceremony gazebo at the far south end of the beach, past the Excellence Club pools." },
+        { name: "Beach Gazebo", cat: "sights", wed: true, lat: 20.87155, lng: -86.86415,
+          meta: "South end of the beach · Club zone · Wedding ceremony Sun Nov 8, 5 PM",
+          desc: "The wedding ceremony site — Katherine & Shane marry here Sunday Nov 8 at 5:00 PM. A quieter ceremony gazebo at the far south end of the beach, past the Excellence Club pools.",
+          note: "Ceremony: Sunday Nov 8, 5:00 PM. Afterwards: drinks & pupus 6–7 PM at Oregano (pin 14), then the reception 7–11 PM at Agave (pin 10). Dress code: tropical cocktail attire." },
         // Restaurants
         { name: "Magna", cat: "dining", club: true, lat: 20.87795, lng: -86.86495,
           meta: "Breakfast 7–11 AM · Dinner 6–10 PM · Casual Elegance at dinner",
@@ -4067,7 +4266,7 @@
         watchId: null,
         staleTimer: null
       };
-      var liveDb = null, liveAuth = null, liveUid = null;
+      var liveDb = null, liveAuth = null, liveUid = null, liveStorage = null;
       var liveReady = false, liveAuthFailed = false;
       var livePresenceRef = null, liveMyRef = null, liveProximityRef = null;
       var liveProfile = null;
@@ -4859,7 +5058,11 @@
       }, 60000);
       function liveOpenDlg(mode) {
         liveDlgMode = mode;
-        if (mode === "board") {
+        if (mode === "album") {
+          liveDlgTitle.textContent = "Your name for the album";
+          liveDlgIntro.textContent = "A name is required to add photos — every photo shows who shared it. The color tags your photos.";
+          liveDlgNote.textContent = "Your name, color and icon are saved on this device and shown with your photos. (Same name, color and icon as your Live group dot, if you use it.)";
+        } else if (mode === "board") {
           liveDlgTitle.textContent = "Your name for the board";
           liveDlgIntro.textContent = "A name is required to post on the group board — every note shows who wrote it. The color tags your notes.";
           liveDlgNote.textContent = "Your name, color and icon are saved on this device and shown with your notes. (Same name, color and icon as your Live group dot, if you use it.)";
@@ -4923,6 +5126,11 @@
         // "posting as" line, and release a note that was held for a name.
         if (typeof boardRefreshWho === "function") boardRefreshWho();
         if (mode === "board" && typeof boardAfterProfile === "function") boardAfterProfile();
+        // The wedding album keys off the same saved profile: refresh
+        // its "sharing as" line, and release photos held for a name.
+        if (typeof albumRefreshWho === "function") albumRefreshWho();
+        if (typeof albumRenderGrid === "function") albumRenderGrid();
+        if ((mode === "album" || (typeof albumHasPending === "function" && albumHasPending())) && typeof albumAfterProfile === "function") albumAfterProfile();
       });
       liveEditBtn.addEventListener("click", function () { liveOpenDlg(IS_SPUDMAPS_APP ? "app" : "edit"); });
 
@@ -4940,8 +5148,16 @@
           });
           liveDb = firebase.database();
           liveAuth = firebase.auth();
+          try { if (typeof firebase.storage === "function") liveStorage = firebase.storage(); } catch (e) { liveStorage = null; }
           liveReady = true;
-          liveAuth.onAuthStateChanged(function (u) { if (u) liveUid = u.uid; });
+          liveAuth.onAuthStateChanged(function (u) {
+            if (u) {
+              liveUid = u.uid;
+              // Photo ownership keys off this uid — once it lands, the
+              // album re-renders so your own photos get Delete controls.
+              if (typeof albumRenderGrid === "function") albumRenderGrid();
+            }
+          });
           liveAuth.signInAnonymously().catch(function () { liveAuthFailed = true; });
         }
       } catch (e) {
@@ -5310,7 +5526,7 @@
         for (var k in boardItems) {
           if (!Object.prototype.hasOwnProperty.call(boardItems, k)) continue;
           var e = boardItems[k];
-          if (e && ((typeof e.text === "string" && e.text) || (typeof e.gif === "string" && e.gif))) items.push({ key: k, note: e });
+          if (e && ((typeof e.text === "string" && e.text) || (typeof e.gif === "string" && e.gif) || (typeof e.photo === "string" && e.photo))) items.push({ key: k, note: e });
         }
         items.sort(function (a, b) { return (b.note.ts || 0) - (a.note.ts || 0); });
         return items.slice(0, 100);
@@ -5406,8 +5622,8 @@
             ta.className = "boardtext boardedit";
             ta.rows = 2;
             ta.maxLength = 280;
-            ta.value = draft !== null ? draft : e.text;
-            ta.setAttribute("aria-label", "Edit your note");
+            ta.value = draft !== null ? draft : (typeof e.text === "string" ? e.text : "");
+            ta.setAttribute("aria-label", typeof e.photo === "string" && e.photo ? "Edit your photo caption" : "Edit your note");
             bubble.classList.add("editing");
             bubble.appendChild(ta);
             li.appendChild(bubble);
@@ -5430,6 +5646,39 @@
             erow.appendChild(cancel);
             li.appendChild(erow);
           } else {
+            if (typeof e.photo === "string" && boardValidPhotoUrl(e.photo)) {
+              bubble.classList.add("boardbubble--photo");
+              var whoP = typeof e.name === "string" && e.name ? e.name : "Guest";
+              var pfig = document.createElement("figure");
+              pfig.className = "boardphotofig";
+              var pbtn = document.createElement("button");
+              pbtn.type = "button";
+              pbtn.className = "boardphotobtn-view";
+              pbtn.setAttribute("aria-label", "View photo posted by " + whoP + " full-size");
+              var pimg = document.createElement("img");
+              pimg.className = "boardphoto";
+              pimg.src = e.photo;
+              pimg.alt = "Photo posted by " + whoP + (typeof e.text === "string" && e.text ? ": " + e.text : "");
+              pimg.loading = "lazy";
+              pimg.addEventListener("error", function () {
+                pbtn.hidden = true;
+                var fb = document.createElement("span");
+                fb.className = "boardphotofallback";
+                fb.textContent = "This photo couldn't load.";
+                pfig.appendChild(fb);
+                var fcap = pfig.querySelector("figcaption");
+                if (fcap) fcap.hidden = true;
+              });
+              pbtn.appendChild(pimg);
+              (function (note, noteKey) {
+                pbtn.addEventListener("click", function () { boardOpenPhotoLight(note, noteKey); });
+              })(e, key);
+              var pcap = document.createElement("figcaption");
+              pcap.textContent = "Tap to view full size";
+              pfig.appendChild(pbtn);
+              pfig.appendChild(pcap);
+              bubble.appendChild(pfig);
+            }
             if (typeof e.gif === "string" && e.gif) {
               var gimg = document.createElement("img");
               gimg.className = "boardgif";
@@ -5555,6 +5804,12 @@
                   boardNote("Pick a GIF to reply with.");
                   gifOpenPicker();
                 });
+                var rpht = document.createElement("button");
+                rpht.type = "button";
+                rpht.className = "boardbtn2 boardbtn-sm";
+                rpht.textContent = "Photo";
+                rpht.setAttribute("aria-label", "Reply with a photo");
+                rpht.addEventListener("click", function () { boardPhotoPickForReply(key, rta); });
                 var rcancel = document.createElement("button");
                 rcancel.type = "button";
                 rcancel.className = "boardbtn2 boardbtn-sm";
@@ -5565,6 +5820,7 @@
                 });
                 rrow.appendChild(rpost);
                 rrow.appendChild(rgif);
+                rrow.appendChild(rpht);
                 rrow.appendChild(rcancel);
                 rbox.appendChild(rl);
                 rbox.appendChild(rta);
@@ -5660,7 +5916,10 @@
         var cur = boardItems[key];
         if (!cur || !boardIsMine(cur)) { boardEditingKey = null; boardRenderList(); return; }
         var text = (ta ? ta.value : "").trim().slice(0, 280);
-        if (!text) { boardNote("Write something first — or delete the note instead."); return; }
+        // A photo or GIF note may keep an empty caption — the picture
+        // itself is the note. A text-only note still needs its text.
+        var hasMedia = !!((typeof cur.gif === "string" && cur.gif) || (typeof cur.photo === "string" && cur.photo));
+        if (!text && !hasMedia) { boardNote("Write something first — or delete the note instead."); return; }
         boardWithRef("Couldn't save your edit — check your connection and try again.", function () {
           var latest = boardItems[key];
           if (!latest || !boardIsMine(latest)) { boardEditingKey = null; boardRenderList(); return; }
@@ -5822,6 +6081,12 @@
       // Called by the name dialog after a "board"-mode save: a note that
       // was held for a name can go out now that the profile exists.
       function boardAfterProfile() {
+        if (boardPendingPhoto) {
+          var pp = boardPendingPhoto;
+          boardPendingPhoto = null;
+          boardPhotoUploadAndPost(pp.file, pp.caption, pp.replyTo);
+          return;
+        }
         if (boardPendingReplyParent && (boardPendingReplyText || boardPendingReplyGif)) {
           var rp = boardPendingReplyParent, rt2 = boardPendingReplyText, rg2 = boardPendingReplyGif;
           boardPendingReplyParent = null;
@@ -5850,6 +6115,13 @@
         boardForm.addEventListener("submit", function (e) {
           e.preventDefault();
           var text = boardTextEl ? boardTextEl.value.trim().slice(0, 280) : "";
+          // A staged photo turns Post note into Post photo, with the
+          // typed text riding along as its caption.
+          if (boardPhotoStaged) {
+            boardNote("");
+            boardPhotoUploadAndPost(boardPhotoStaged.file, text, null);
+            return;
+          }
           if (!text) {
             boardNote("Write a note first, then post it.");
             if (boardTextEl) boardTextEl.focus();
@@ -5996,6 +6268,325 @@
           gifSearchTimer = setTimeout(function () { gifLoad(q); }, 350);
         });
       }
+      // ---------- Board photos: Catbox anonymous uploads ----------
+      // No account, no API key, nothing for a guest to set up: the
+      // photo goes straight from the phone to Catbox
+      // (POST https://catbox.moe/user/api.php, reqtype=fileupload)
+      // and only the returned https://files.catbox.moe/… URL is
+      // stored on the board note as `photo` — never the image bytes —
+      // so a photo note rides the same realtime sync, name gate, and
+      // own-notes-only edit/delete rules as text and GIF notes.
+      // Catbox's API does not send CORS headers, so when the direct
+      // POST is blocked by the browser the identical upload is
+      // retried through public CORS relays, in order. Either way the
+      // note stores a plain Catbox URL, and <img> display of
+      // files.catbox.moe needs no CORS at all. Deleting a note
+      // removes its board entry; the Catbox file itself is anonymous
+      // and stays link-only, like the board's GIF URLs.
+      var CATBOX_API = "https://catbox.moe/user/api.php";
+      var BOARD_PHOTO_MAX_DIM = 1920;
+      var BOARD_PHOTO_MAX_BYTES = 200 * 1024 * 1024; // Catbox's own cap
+      var BOARD_PHOTO_TYPES = { "image/jpeg": 1, "image/png": 1, "image/webp": 1, "image/gif": 1 };
+      var boardPhotoBtnEl = document.getElementById("boardPhotoBtn");
+      var boardPhotoFileEl = document.getElementById("boardPhotoFile");
+      var boardPhotoPreviewEl = document.getElementById("boardPhotoPreview");
+      var boardPhotoThumbEl = document.getElementById("boardPhotoThumb");
+      var boardPhotoNameEl = document.getElementById("boardPhotoName");
+      var boardPhotoPostEl = document.getElementById("boardPhotoPost");
+      var boardPhotoRemoveEl = document.getElementById("boardPhotoRemove");
+      var boardPhotoProgressEl = document.getElementById("boardPhotoProgress");
+      var boardPhotoStaged = null;      // { file, url } picked in the main composer, awaiting Post photo
+      var boardPhotoReplyKey = null;    // reply key when the picker was opened from a reply box
+      var boardPhotoReplyDraft = "";    // that reply box's text, used as the photo's caption
+      var boardPhotoUploading = false;
+      var boardPendingPhoto = null;     // { file, caption, replyTo } held while the name dialog is open
+
+      function boardValidPhotoUrl(u) {
+        return typeof u === "string" && /^https:\/\/files\.catbox\.moe\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(u);
+      }
+      function boardPhotoExt(type) {
+        if (type === "image/png") return "png";
+        if (type === "image/webp") return "webp";
+        if (type === "image/gif") return "gif";
+        return "jpg";
+      }
+      function boardPhotoSetBusy(on) {
+        boardPhotoUploading = !!on;
+        if (boardPhotoProgressEl) boardPhotoProgressEl.hidden = !on;
+        if (boardPhotoBtnEl) boardPhotoBtnEl.disabled = !!on;
+        if (boardPhotoPostEl) boardPhotoPostEl.disabled = !!on;
+      }
+      // Shrink an oversize photo on-device before uploading (same
+      // approach as the wedding album): decode, draw to a canvas
+      // capped at 1920 px on the long side, re-encode. GIFs pass
+      // through untouched so they keep animating; a photo already
+      // small enough uploads exactly as taken.
+      function boardPhotoPrepare(file, cb) {
+        if (file.type === "image/gif") { cb(file, null); return; }
+        var url = null;
+        try { url = URL.createObjectURL(file); } catch (e) { url = null; }
+        if (!url) { cb(file, null); return; }
+        var img = new Image();
+        img.onload = function () {
+          var revoke = function () { try { URL.revokeObjectURL(url); } catch (e) {} };
+          try {
+            var w = img.naturalWidth || 0, h = img.naturalHeight || 0;
+            if (!w || !h) { revoke(); cb(file, null); return; }
+            var scale = Math.min(1, BOARD_PHOTO_MAX_DIM / Math.max(w, h));
+            if (scale >= 1 && file.size <= 10 * 1024 * 1024) { revoke(); cb(file, null); return; }
+            var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+            var canvas = document.createElement("canvas");
+            canvas.width = cw; canvas.height = ch;
+            var ctx = canvas.getContext("2d");
+            if (!ctx || !canvas.toBlob) { revoke(); cb(file, null); return; }
+            ctx.drawImage(img, 0, 0, cw, ch);
+            var outType = file.type === "image/png" ? "image/png" : "image/jpeg";
+            canvas.toBlob(function (blob) {
+              revoke();
+              if (!blob) { cb(null, "Couldn't prepare that photo on this device."); return; }
+              cb(blob, null);
+            }, outType, 0.87);
+          } catch (e2) { revoke(); cb(file, null); }
+        };
+        img.onerror = function () {
+          try { URL.revokeObjectURL(url); } catch (e) {}
+          cb(null, "That photo's format couldn't be read on this device — try a JPG or PNG.");
+        };
+        img.src = url;
+      }
+      // One upload, up to three routes to Catbox: direct first, then
+      // CORS relays carrying the identical multipart POST. Success is
+      // a plain-text files.catbox.moe URL; anything else (including
+      // Catbox's own plain-language pause notice) falls through to
+      // the next route, then to an honest error.
+      function boardCatboxSend(blob, filename, cb) {
+        var endpoints = [
+          CATBOX_API,
+          "https://corsproxy.io/?url=" + encodeURIComponent(CATBOX_API),
+          "https://api.codetabs.com/v1/proxy/?quest=" + CATBOX_API
+        ];
+        var i = 0, paused = false;
+        function attempt() {
+          if (i >= endpoints.length) {
+            cb(null, paused
+              ? "Catbox has uploads paused right now — try again in a little while."
+              : "Catbox couldn't be reached — check your connection and try again.");
+            return;
+          }
+          var ep = endpoints[i++];
+          var fd = new FormData();
+          fd.append("reqtype", "fileupload");
+          try { fd.append("fileToUpload", blob, filename); } catch (e) { fd.append("fileToUpload", blob); }
+          fetch(ep, { method: "POST", body: fd }).then(function (r) {
+            return r.text().then(function (t) { return (t || "").trim(); });
+          }).then(function (text) {
+            if (boardValidPhotoUrl(text)) { cb(text, null); return; }
+            if (/uploads paused/i.test(text)) paused = true;
+            attempt();
+          }).catch(function () { attempt(); });
+        }
+        attempt();
+      }
+      function boardPhotoPush(url, caption, replyTo) {
+        boardWithRef("Couldn't post that photo — check your connection and try again.", function () {
+          if (replyTo && !boardItems[replyTo]) {
+            boardPhotoSetBusy(false);
+            boardNote("That note is no longer there — your photo reply wasn't posted.");
+            boardRenderList();
+            return;
+          }
+          try {
+            var rec = {
+              name: liveProfile.name,
+              color: liveProfile.color,
+              text: caption || "",
+              photo: url,
+              ts: firebase.database.ServerValue.TIMESTAMP
+            };
+            if (replyTo) rec.replyTo = replyTo;
+            var req = boardRef.push(rec);
+            var done = function () {
+              boardPhotoSetBusy(false);
+              if (replyTo) {
+                boardReplyingKey = null;
+              } else {
+                if (boardTextEl) boardTextEl.value = "";
+                boardCountUpdate();
+                boardPhotoClearStage();
+              }
+              boardNote("Photo posted.");
+              boardRenderList();
+            };
+            var fail = function () {
+              boardPhotoSetBusy(false);
+              boardNote("Couldn't post that photo — check your connection and try again.");
+            };
+            if (req && typeof req.then === "function") req.then(done, fail);
+            else done();
+          } catch (e) {
+            boardPhotoSetBusy(false);
+            boardNote("Couldn't post that photo — check your connection and try again.");
+          }
+        });
+      }
+      function boardPhotoUploadAndPost(file, caption, replyTo) {
+        if (!file || boardPhotoUploading) return;
+        if (!liveProfile) { // same name gate as every board post
+          boardPendingPhoto = { file: file, caption: caption || "", replyTo: replyTo || null };
+          boardNote("Add your name and your photo will post right after.");
+          liveOpenDlg("board");
+          return;
+        }
+        if (!liveReady || !liveDb) {
+          boardNote("The board couldn't connect — check your connection and try again.");
+          return;
+        }
+        boardPhotoSetBusy(true);
+        boardNote("Uploading your photo…");
+        boardPhotoPrepare(file, function (blob, prepErr) {
+          if (!blob) {
+            boardPhotoSetBusy(false);
+            boardNote(prepErr || "Couldn't prepare that photo on this device.");
+            return;
+          }
+          var fname = "spudmaps-photo." + boardPhotoExt(blob.type || file.type);
+          boardCatboxSend(blob, fname, function (url, errMsg) {
+            if (!url) {
+              boardPhotoSetBusy(false);
+              boardNote(errMsg || "Couldn't upload that photo — try again.");
+              return;
+            }
+            boardNote("Photo uploaded — posting it to the board…");
+            boardPhotoPush(url, (caption || "").trim().slice(0, 280), replyTo || null);
+          });
+        });
+      }
+      // ----- Main composer: pick → polished preview → Post photo -----
+      function boardPhotoStage(file) {
+        boardPhotoClearStage();
+        var objUrl = null;
+        try { objUrl = URL.createObjectURL(file); } catch (e) { objUrl = null; }
+        boardPhotoStaged = { file: file, url: objUrl };
+        if (boardPhotoThumbEl && objUrl) boardPhotoThumbEl.src = objUrl;
+        if (boardPhotoNameEl) boardPhotoNameEl.textContent = file.name || "Photo ready";
+        if (boardPhotoPreviewEl) boardPhotoPreviewEl.hidden = false;
+        boardNote("");
+      }
+      function boardPhotoClearStage() {
+        if (boardPhotoStaged && boardPhotoStaged.url) {
+          try { URL.revokeObjectURL(boardPhotoStaged.url); } catch (e) {}
+        }
+        boardPhotoStaged = null;
+        if (boardPhotoPreviewEl) boardPhotoPreviewEl.hidden = true;
+        if (boardPhotoThumbEl) boardPhotoThumbEl.removeAttribute("src");
+      }
+      function boardPhotoPickForReply(key, rta) {
+        if (boardPhotoUploading) { boardNote("Wait for the current photo upload to finish first."); return; }
+        boardPhotoReplyKey = key;
+        boardPhotoReplyDraft = rta ? rta.value : "";
+        if (boardPhotoFileEl) boardPhotoFileEl.click();
+      }
+      if (boardPhotoBtnEl && boardPhotoFileEl) {
+        boardPhotoBtnEl.addEventListener("click", function () {
+          if (boardPhotoUploading) { boardNote("Wait for the current photo upload to finish first."); return; }
+          boardPhotoReplyKey = null;
+          boardPhotoFileEl.click();
+        });
+        boardPhotoFileEl.addEventListener("change", function () {
+          var picked = boardPhotoFileEl.files && boardPhotoFileEl.files[0] ? boardPhotoFileEl.files[0] : null;
+          boardPhotoFileEl.value = "";
+          var replyKey = boardPhotoReplyKey, replyDraft = boardPhotoReplyDraft;
+          boardPhotoReplyKey = null;
+          boardPhotoReplyDraft = "";
+          if (!picked) return;
+          if (!BOARD_PHOTO_TYPES[picked.type]) {
+            boardNote("That file was skipped — photos only (JPG, PNG, WebP or GIF).");
+            return;
+          }
+          if (picked.size > BOARD_PHOTO_MAX_BYTES) {
+            boardNote("That photo is over Catbox's 200 MB limit.");
+            return;
+          }
+          if (replyKey) boardPhotoUploadAndPost(picked, replyDraft, replyKey);
+          else boardPhotoStage(picked);
+        });
+      }
+      if (boardPhotoPostEl) {
+        boardPhotoPostEl.addEventListener("click", function () {
+          if (!boardPhotoStaged) return;
+          var caption = boardTextEl ? boardTextEl.value.trim().slice(0, 280) : "";
+          boardPhotoUploadAndPost(boardPhotoStaged.file, caption, null);
+        });
+      }
+      if (boardPhotoRemoveEl) boardPhotoRemoveEl.addEventListener("click", boardPhotoClearStage);
+      // ----- Full-size viewer for board photos (album viewer styling) -----
+      var boardLight = document.createElement("div");
+      boardLight.className = "albumlight boardlight";
+      boardLight.hidden = true;
+      boardLight.setAttribute("role", "dialog");
+      boardLight.setAttribute("aria-modal", "true");
+      boardLight.setAttribute("aria-label", "Board photo viewer");
+      var boardLightCard = document.createElement("div");
+      boardLightCard.className = "acard";
+      var boardLightImg = document.createElement("img");
+      boardLightImg.className = "aphoto";
+      boardLightImg.alt = "";
+      var boardLightCaption = document.createElement("p");
+      boardLightCaption.className = "acaption";
+      var boardLightMeta = document.createElement("p");
+      boardLightMeta.className = "ameta";
+      var boardLightRow = document.createElement("div");
+      boardLightRow.className = "alightrow";
+      var boardLightOpen = document.createElement("a");
+      boardLightOpen.className = "boardbtn2";
+      boardLightOpen.textContent = "Open full photo";
+      boardLightOpen.target = "_blank";
+      boardLightOpen.rel = "noopener";
+      var boardLightSpacer = document.createElement("span");
+      boardLightSpacer.className = "aspacer";
+      var boardLightClose = document.createElement("button");
+      boardLightClose.type = "button";
+      boardLightClose.className = "boardbtn2";
+      boardLightClose.textContent = "Close";
+      boardLightClose.addEventListener("click", function () { boardClosePhotoLight(); });
+      boardLightRow.appendChild(boardLightOpen);
+      boardLightRow.appendChild(boardLightSpacer);
+      boardLightRow.appendChild(boardLightClose);
+      boardLightCard.appendChild(boardLightImg);
+      boardLightCard.appendChild(boardLightCaption);
+      boardLightCard.appendChild(boardLightMeta);
+      boardLightCard.appendChild(boardLightRow);
+      boardLight.appendChild(boardLightCard);
+      document.body.appendChild(boardLight);
+      boardLight.addEventListener("click", function (e) { if (e.target === boardLight) boardClosePhotoLight(); });
+      document.addEventListener("keydown", function (e) {
+        if (!boardLight.hidden && e.key === "Escape") boardClosePhotoLight();
+      });
+      function boardOpenPhotoLight(note, key) {
+        if (!note || !boardValidPhotoUrl(note.photo)) return;
+        var who = typeof note.name === "string" && note.name ? note.name : "Guest";
+        var cap = typeof note.text === "string" ? note.text.trim() : "";
+        boardLightImg.src = note.photo;
+        boardLightImg.alt = "Photo posted by " + who + (cap ? ": " + cap : "");
+        boardLightCaption.textContent = cap;
+        boardLightCaption.hidden = !cap;
+        boardLightMeta.innerHTML = "";
+        var dot = document.createElement("span");
+        dot.className = "boarddot";
+        dot.style.background = liveValidColor(note.color);
+        var metaText = document.createElement("span");
+        metaText.textContent = "Posted by " + who + (note.ts ? " · " + boardTime(note.ts) : "");
+        boardLightMeta.appendChild(dot);
+        boardLightMeta.appendChild(metaText);
+        boardLightOpen.href = note.photo;
+        boardLight.hidden = false;
+        if (boardLightClose.focus) boardLightClose.focus();
+      }
+      function boardClosePhotoLight() {
+        boardLight.hidden = true;
+        boardLightImg.removeAttribute("src");
+      }
+
       boardRefreshWho();
       boardCountUpdate();
       boardWatchConnection();
@@ -6006,6 +6597,592 @@
         });
       } else {
         boardNote("The board couldn't connect just now — the rest of the map works as usual.");
+      }
+
+      // ---------- Wedding album: shared photos (Firebase Storage + `album` node) ----------
+      // Photo files live in Firebase Storage under album/<uid>/<key>.<ext>;
+      // a small metadata record per photo sits on the Realtime Database
+      // `album` node and rides the same child-listener sync as the board,
+      // so every visitor sees new photos the moment they land. A photo
+      // is "yours" when its stored uid matches this device's anonymous-
+      // auth uid — only your own photos get a Delete control, and the
+      // delete path re-checks the uid before touching Storage or the
+      // database. Names and captions render with textContent only.
+      // Upload protection: image types only, a 10 MB per-photo cap, 6
+      // photos per batch, and anything larger is shrunk to 1920 px on
+      // its long side before it goes up. The matching Storage/Database
+      // rules have to be set in the Firebase console (Storage must be
+      // switched on there first) — the setup steps ship with this build.
+      var ALBUM_MAX_BYTES = 10 * 1024 * 1024;
+      var ALBUM_MAX_FILES = 6;
+      var ALBUM_MAX_DIM = 1920;
+      var ALBUM_TYPES = { "image/jpeg": 1, "image/png": 1, "image/webp": 1, "image/gif": 1 };
+      var albumRef = null;
+      var albumQuery = null;
+      var albumAttached = false;
+      var albumItems = {};        // push key -> photo metadata, kept current by the child listeners
+      var albumUrls = {};         // push key -> resolved download URL (cached for this page view)
+      var albumPendingFiles = []; // files held while the name dialog is open
+      var albumPendingCaption = "";
+      var albumUploading = false;
+      var albumCurrentKey = null; // key open in the full-size viewer, if any
+      var albumConfirmKey = null; // key awaiting a delete confirm in the viewer, if any
+      var albumWhoEl = document.getElementById("albumWho");
+      var albumGridEl = document.getElementById("albumGrid");
+      var albumEmptyEl = document.getElementById("albumEmpty");
+      var albumBadgeEl = document.getElementById("albumBadge");
+      var albumStatusEl = document.getElementById("albumStatus");
+      var albumProgressEl = document.getElementById("albumProgress");
+      var albumProgressBarEl = document.getElementById("albumProgressBar");
+      var albumAddBtn = document.getElementById("albumAddBtn");
+      var albumFileEl = document.getElementById("albumFile");
+      var albumCaptionEl = document.getElementById("albumCaption");
+
+      function albumHasPending() { return albumPendingFiles.length > 0; }
+      function albumStatus(msg, isErr) {
+        if (!albumStatusEl) return;
+        albumStatusEl.textContent = msg || "";
+        albumStatusEl.hidden = !msg;
+        albumStatusEl.classList.toggle("err", !!isErr);
+      }
+      function albumStorageHint(err) {
+        // The one failure a guest can't fix: Storage not switched on in
+        // the console yet, or rules that don't allow the operation.
+        if (err && typeof err.code === "string" && err.code.indexOf("storage/") === 0) {
+          return " If this keeps happening, the album's Firebase Storage may not be switched on yet — it has to be enabled once in the Firebase console (the setup steps came with this app).";
+        }
+        return "";
+      }
+      // A photo is yours by anonymous-auth uid, not by name — two guests
+      // can share a name, but a uid belongs to one device's sign-in.
+      function albumIsMine(e) {
+        return !!(e && liveUid && typeof e.uid === "string" && e.uid !== "" && e.uid === liveUid);
+      }
+      function albumRefreshWho() {
+        if (!albumWhoEl) return;
+        albumWhoEl.innerHTML = "";
+        if (liveProfile) {
+          var lead = document.createElement("span");
+          lead.textContent = "Sharing as";
+          var dot = document.createElement("span");
+          dot.className = "boarddot";
+          dot.style.background = liveProfile.color;
+          var nm = document.createElement("span");
+          nm.className = "bname";
+          nm.textContent = liveProfile.name;
+          var chg = document.createElement("button");
+          chg.type = "button";
+          chg.className = "boardbtn2";
+          chg.textContent = "Change";
+          chg.setAttribute("aria-label", "Change the name and color your photos show");
+          chg.addEventListener("click", function () { liveOpenDlg("album"); });
+          albumWhoEl.appendChild(lead);
+          albumWhoEl.appendChild(dot);
+          albumWhoEl.appendChild(nm);
+          albumWhoEl.appendChild(chg);
+        } else {
+          var msg = document.createElement("span");
+          msg.textContent = "A name is required to add photos — every photo shows who shared it.";
+          var setBtn = document.createElement("button");
+          setBtn.type = "button";
+          setBtn.className = "boardbtn2";
+          setBtn.textContent = "Set your name";
+          setBtn.addEventListener("click", function () { liveOpenDlg("album"); });
+          albumWhoEl.appendChild(msg);
+          albumWhoEl.appendChild(setBtn);
+        }
+      }
+      function albumSortedItems() {
+        var items = [];
+        for (var k in albumItems) {
+          if (!Object.prototype.hasOwnProperty.call(albumItems, k)) continue;
+          var e = albumItems[k];
+          if (e && typeof e.path === "string" && e.path) items.push({ key: k, photo: e });
+        }
+        items.sort(function (a, b) { return (b.photo.ts || 0) - (a.photo.ts || 0); });
+        return items.slice(0, 150);
+      }
+      function albumRenderGrid() {
+        if (!albumGridEl) return;
+        var items = albumSortedItems();
+        albumGridEl.innerHTML = "";
+        items.forEach(function (it) {
+          var e = it.photo, key = it.key;
+          var tile = document.createElement("button");
+          tile.type = "button";
+          tile.className = "albumtile";
+          var who = typeof e.name === "string" && e.name ? e.name : "Guest";
+          tile.setAttribute("aria-label", "View photo shared by " + who + (typeof e.caption === "string" && e.caption ? ": " + e.caption : ""));
+          var img = document.createElement("img");
+          img.alt = "";
+          img.loading = "lazy";
+          tile.appendChild(img);
+          var un = document.createElement("span");
+          un.className = "atileunavail";
+          un.textContent = "This photo couldn't load.";
+          tile.appendChild(un);
+          var meta = document.createElement("span");
+          meta.className = "atilemeta";
+          var dot = document.createElement("span");
+          dot.className = "boarddot";
+          dot.style.background = liveValidColor(e.color);
+          var nm = document.createElement("span");
+          nm.className = "atilename";
+          nm.textContent = who;
+          meta.appendChild(dot);
+          meta.appendChild(nm);
+          tile.appendChild(meta);
+          tile.addEventListener("click", function () { albumOpenLight(key); });
+          albumGridEl.appendChild(tile);
+          if (albumUrls[key]) img.src = albumUrls[key];
+          else albumResolveUrl(key, tile, img);
+          img.addEventListener("error", function () { tile.classList.add("unavail"); });
+        });
+        if (albumEmptyEl) albumEmptyEl.hidden = items.length > 0;
+        if (albumBadgeEl) {
+          albumBadgeEl.textContent = String(items.length);
+          albumBadgeEl.hidden = items.length === 0;
+        }
+        // If the viewer is open on a photo that just changed or went
+        // away (e.g. you deleted it on another device), keep it honest.
+        if (albumCurrentKey) {
+          if (albumItems[albumCurrentKey]) albumRenderLight();
+          else albumCloseLight();
+        }
+      }
+      function albumResolveUrl(key, tile, img) {
+        var e = albumItems[key];
+        if (!e || !liveStorage) { if (tile) tile.classList.add("unavail"); return; }
+        try {
+          liveStorage.ref(e.path).getDownloadURL().then(function (url) {
+            albumUrls[key] = url;
+            if (img && img.isConnected && albumItems[key]) img.src = url;
+            if (albumCurrentKey === key) albumRenderLight();
+          }).catch(function () {
+            if (tile && tile.isConnected) tile.classList.add("unavail");
+          });
+        } catch (err) {
+          if (tile) tile.classList.add("unavail");
+        }
+      }
+      // ----- Realtime sync (same child-listener pattern as the board) -----
+      function albumChildUpsert(snap) {
+        var v = null;
+        try { v = snap.val(); } catch (e) { v = null; }
+        if (v && typeof v.path === "string" && v.path) albumItems[snap.key] = v;
+        else delete albumItems[snap.key];
+        albumRenderGrid();
+      }
+      function albumChildRemoved(snap) {
+        delete albumItems[snap.key];
+        delete albumUrls[snap.key];
+        if (albumConfirmKey === snap.key) albumConfirmKey = null;
+        albumRenderGrid();
+      }
+      function albumDetach() {
+        if (albumQuery) { try { albumQuery.off(); } catch (e) { /* already gone */ } }
+        albumQuery = null;
+        albumRef = null;
+        albumAttached = false;
+      }
+      function albumListenError() {
+        albumDetach();
+        albumStatus("Couldn't load the album just now — check your connection and reload.", true);
+      }
+      function albumAttach() {
+        if (albumAttached || !liveDb) return;
+        try {
+          albumRef = liveDb.ref("album");
+          albumQuery = albumRef.orderByChild("ts").limitToLast(150);
+          albumQuery.on("child_added", albumChildUpsert, albumListenError);
+          albumQuery.on("child_changed", albumChildUpsert, albumListenError);
+          albumQuery.on("child_removed", albumChildRemoved, albumListenError);
+          albumAttached = true;
+        } catch (e) { albumDetach(); }
+      }
+      var albumWatchingConn = false;
+      function albumWatchConnection() {
+        if (albumWatchingConn || !liveDb) return;
+        albumWatchingConn = true;
+        try {
+          liveDb.ref(".info/connected").on("value", function (s) {
+            if (s && s.val() === true && !albumAttached) {
+              liveEnsureAuth(function (ok) { if (ok) albumAttach(); });
+            }
+          });
+        } catch (e) { albumWatchingConn = false; }
+      }
+      function albumWithRef(failMsg, fn) {
+        if (!liveReady || !liveDb) { albumStatus(failMsg, true); return; }
+        liveEnsureAuth(function (ok) {
+          if (!ok) { albumStatus(failMsg, true); return; }
+          albumAttach();
+          if (!albumRef) albumRef = liveDb.ref("album");
+          fn();
+        });
+      }
+      // ----- Upload: validate, shrink, then Storage + metadata -----
+      function albumExtFor(type) {
+        if (type === "image/png") return "png";
+        if (type === "image/webp") return "webp";
+        if (type === "image/gif") return "gif";
+        return "jpg";
+      }
+      // Shrink an oversize photo on-device before uploading: decode it,
+      // draw it to a canvas capped at ALBUM_MAX_DIM on the long side,
+      // and re-encode. (Modern phone browsers bake EXIF orientation
+      // into the decoded image, so rotated shots stay upright.) GIFs
+      // pass through untouched so they keep animating. When a photo is
+      // already small enough it uploads exactly as taken.
+      function albumPrepareBlob(file, cb) {
+        if (file.type === "image/gif") {
+          if (file.size > ALBUM_MAX_BYTES) cb(null, "That GIF is over the 10 MB limit.");
+          else cb(file, null);
+          return;
+        }
+        var url = null;
+        try { url = URL.createObjectURL(file); } catch (e) { url = null; }
+        if (!url) {
+          if (file.size > ALBUM_MAX_BYTES) cb(null, "That photo is over the 10 MB limit.");
+          else cb(file, null);
+          return;
+        }
+        var img = new Image();
+        img.onload = function () {
+          var revoke = function () { try { URL.revokeObjectURL(url); } catch (e) {} };
+          try {
+            var w = img.naturalWidth || 0, h = img.naturalHeight || 0;
+            if (!w || !h) { revoke(); cb(file.size <= ALBUM_MAX_BYTES ? file : null, file.size <= ALBUM_MAX_BYTES ? null : "That photo is over the 10 MB limit."); return; }
+            var scale = Math.min(1, ALBUM_MAX_DIM / Math.max(w, h));
+            if (scale >= 1 && file.size <= ALBUM_MAX_BYTES) { revoke(); cb(file, null); return; }
+            var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+            var canvas = document.createElement("canvas");
+            canvas.width = cw; canvas.height = ch;
+            var ctx = canvas.getContext("2d");
+            if (!ctx || !canvas.toBlob) { revoke(); cb(null, "Couldn't prepare that photo on this device."); return; }
+            ctx.drawImage(img, 0, 0, cw, ch);
+            var outType = file.type === "image/png" ? "image/png" : "image/jpeg";
+            canvas.toBlob(function (blob) {
+              revoke();
+              if (!blob) { cb(null, "Couldn't prepare that photo on this device."); return; }
+              if (blob.size > ALBUM_MAX_BYTES) { cb(null, "That photo is still over the 10 MB limit after shrinking."); return; }
+              cb(blob, null);
+            }, outType, 0.85);
+          } catch (e2) {
+            revoke();
+            cb(file.size <= ALBUM_MAX_BYTES ? file : null, file.size <= ALBUM_MAX_BYTES ? null : "That photo is over the 10 MB limit.");
+          }
+        };
+        img.onerror = function () {
+          try { URL.revokeObjectURL(url); } catch (e) {}
+          // Undecodable here (e.g. an HEIC the browser can't read):
+          // don't upload something nobody's browser could display.
+          cb(null, "That photo's format couldn't be read on this device — try a JPG or PNG.");
+        };
+        img.src = url;
+      }
+      function albumSetProgress(pct, label) {
+        if (albumProgressEl) albumProgressEl.hidden = pct === null;
+        if (albumProgressBarEl && pct !== null) albumProgressBarEl.style.width = Math.round(pct) + "%";
+        if (label !== undefined) albumStatus(label, false);
+      }
+      function albumUploadOne(blob, caption, idx, total, done) {
+        var key = albumRef.push().key;
+        var path = "album/" + liveUid + "/" + key + "." + albumExtFor(blob.type);
+        var ref = liveStorage.ref(path);
+        var task;
+        try {
+          task = ref.put(blob, { contentType: blob.type || "image/jpeg", customMetadata: { uid: String(liveUid) } });
+        } catch (e) { done(false, e); return; }
+        task.on("state_changed", function (snap) {
+          var frac = snap && snap.totalBytes ? snap.bytesTransferred / snap.totalBytes : 0;
+          albumSetProgress(((idx + frac) / total) * 100, "Uploading photo " + (idx + 1) + " of " + total + "…");
+        }, function (err) {
+          done(false, err);
+        }, function () {
+          ref.getDownloadURL().then(function (dlUrl) {
+            albumUrls[key] = dlUrl;
+            var meta = {
+              uid: liveUid,
+              name: liveProfile.name,
+              color: liveProfile.color,
+              path: path,
+              caption: caption || "",
+              size: blob.size,
+              ts: firebase.database.ServerValue.TIMESTAMP
+            };
+            return albumRef.child(key).set(meta);
+          }).then(function () { done(true, null); }).catch(function (err) { done(false, err); });
+        });
+      }
+      function albumUploadFiles(files, caption) {
+        if (albumUploading) { albumStatus("Wait for the current upload to finish first."); return; }
+        if (!liveProfile) { // a name is mandatory — hold the files, ask first
+          albumPendingFiles = files;
+          albumPendingCaption = caption;
+          liveOpenDlg("album");
+          albumStatus("Add your name and your photos will upload right after.");
+          return;
+        }
+        if (!liveReady || !liveDb || !liveStorage) {
+          albumStatus("The album couldn't connect — check your connection and try again. If this keeps happening, the album's Firebase Storage may not be switched on yet — it has to be enabled once in the Firebase console (the setup steps came with this app).", true);
+          return;
+        }
+        albumUploading = true;
+        if (albumAddBtn) albumAddBtn.disabled = true;
+        liveEnsureAuth(function (authOk) {
+          if (!authOk) {
+            albumUploading = false;
+            if (albumAddBtn) albumAddBtn.disabled = false;
+            albumSetProgress(null);
+            albumStatus("Couldn't start the upload — check your connection and try again.", true);
+            return;
+          }
+          albumAttach();
+          if (!albumRef) albumRef = liveDb.ref("album");
+          var total = files.length, idx = 0, added = 0, firstErr = null;
+          albumSetProgress(0, "Uploading photo 1 of " + total + "…");
+          var next = function () {
+            if (idx >= total) {
+              albumUploading = false;
+              if (albumAddBtn) albumAddBtn.disabled = false;
+              albumSetProgress(null);
+              if (added && albumCaptionEl) albumCaptionEl.value = "";
+              if (added && !firstErr) albumStatus(added === 1 ? "Photo added to the album." : added + " photos added to the album.");
+              else if (added && firstErr) albumStatus(added + " of " + total + " photos added. The rest didn't go up — check your connection and try again." + albumStorageHint(firstErr), true);
+              else albumStatus("Couldn't upload — check your connection and try again." + albumStorageHint(firstErr), true);
+              return;
+            }
+            var file = files[idx];
+            albumPrepareBlob(file, function (blob, prepErr) {
+              if (!blob) { if (!firstErr) firstErr = { code: "", message: prepErr || "" }; albumStatus(prepErr || "One photo couldn't be uploaded.", true); idx++; next(); return; }
+              albumUploadOne(blob, caption, idx, total, function (ok, err) {
+                if (ok) added++;
+                else if (!firstErr) firstErr = err;
+                idx++;
+                next();
+              });
+            });
+          };
+          next();
+        });
+      }
+      // Called by the name dialog after an "album"-mode save: photos
+      // that were held for a name go up now that a profile exists.
+      function albumAfterProfile() {
+        if (!albumPendingFiles.length) return;
+        var f = albumPendingFiles, c = albumPendingCaption;
+        albumPendingFiles = [];
+        albumPendingCaption = "";
+        albumUploadFiles(f, c);
+      }
+      if (albumAddBtn && albumFileEl) {
+        albumAddBtn.addEventListener("click", function () {
+          if (albumUploading) { albumStatus("Wait for the current upload to finish first."); return; }
+          albumFileEl.click();
+        });
+        albumFileEl.addEventListener("change", function () {
+          var picked = albumFileEl.files ? Array.prototype.slice.call(albumFileEl.files) : [];
+          albumFileEl.value = "";
+          if (!picked.length) return;
+          var caption = albumCaptionEl ? albumCaptionEl.value.trim().slice(0, 120) : "";
+          var notes = [];
+          if (picked.length > ALBUM_MAX_FILES) {
+            notes.push("Only " + ALBUM_MAX_FILES + " photos at a time — the first " + ALBUM_MAX_FILES + " were kept.");
+            picked = picked.slice(0, ALBUM_MAX_FILES);
+          }
+          var valid = [], rejected = 0;
+          picked.forEach(function (f) {
+            if (!f || !ALBUM_TYPES[f.type]) { rejected++; return; }
+            if (f.type === "image/gif" && f.size > ALBUM_MAX_BYTES) { rejected++; return; }
+            valid.push(f);
+          });
+          if (rejected) notes.push(rejected === 1 ? "One file was skipped — images only (JPG, PNG, WebP or GIF), up to 10 MB each." : rejected + " files were skipped — images only (JPG, PNG, WebP or GIF), up to 10 MB each.");
+          if (!valid.length) {
+            albumStatus(notes.join(" ") || "No photos to add.", true);
+            return;
+          }
+          if (notes.length) albumStatus(notes.join(" "));
+          else albumStatus("");
+          albumUploadFiles(valid, caption);
+        });
+      }
+      // ----- Delete (own photos only, uid-checked here AND by rules) -----
+      function albumDelete(key) {
+        var cur = albumItems[key];
+        if (!cur || !albumIsMine(cur)) { albumConfirmKey = null; albumRenderLight(); return; }
+        albumWithRef("Couldn't delete that photo — check your connection and try again.", function () {
+          var latest = albumItems[key];
+          if (!latest || !albumIsMine(latest)) { albumConfirmKey = null; albumRenderLight(); return; }
+          var finishMeta = function () {
+            var req = albumRef.child(key).remove();
+            var done = function () {
+              albumConfirmKey = null;
+              delete albumItems[key];
+              delete albumUrls[key];
+              albumCloseLight();
+              albumStatus("Photo deleted.");
+              albumRenderGrid();
+            };
+            var fail = function (err) { albumStatus("Couldn't delete that photo — check your connection and try again." + albumStorageHint(err), true); };
+            if (req && typeof req.then === "function") req.then(done, fail);
+            else done();
+          };
+          if (liveStorage && latest.path) {
+            try {
+              liveStorage.ref(latest.path).delete().then(finishMeta).catch(function (err) {
+                // Already gone from Storage — still clear the listing.
+                if (err && err.code === "storage/object-not-found") finishMeta();
+                else albumStatus("Couldn't delete that photo — check your connection and try again." + albumStorageHint(err), true);
+              });
+            } catch (e) { finishMeta(); }
+          } else finishMeta();
+        });
+      }
+      // ----- Full-size viewer (overlay built like the live dialog) -----
+      var albumLight = document.createElement("div");
+      albumLight.className = "albumlight";
+      albumLight.hidden = true;
+      albumLight.setAttribute("role", "dialog");
+      albumLight.setAttribute("aria-modal", "true");
+      albumLight.setAttribute("aria-label", "Photo viewer");
+      var albumCard = document.createElement("div");
+      albumCard.className = "acard";
+      var albumLightImg = document.createElement("img");
+      albumLightImg.className = "aphoto";
+      albumLightImg.alt = "";
+      var albumLightCaption = document.createElement("p");
+      albumLightCaption.className = "acaption";
+      var albumLightMeta = document.createElement("p");
+      albumLightMeta.className = "ameta";
+      var albumLightRow = document.createElement("div");
+      albumLightRow.className = "alightrow";
+      albumCard.appendChild(albumLightImg);
+      albumCard.appendChild(albumLightCaption);
+      albumCard.appendChild(albumLightMeta);
+      albumCard.appendChild(albumLightRow);
+      albumLight.appendChild(albumCard);
+      document.body.appendChild(albumLight);
+      albumLight.addEventListener("click", function (e) { if (e.target === albumLight) albumCloseLight(); });
+      document.addEventListener("keydown", function (e) {
+        if (albumLight.hidden) return;
+        if (e.key === "Escape") albumCloseLight();
+        else if (e.key === "ArrowLeft") albumStepLight(-1);
+        else if (e.key === "ArrowRight") albumStepLight(1);
+      });
+      function albumLightIndex() {
+        var items = albumSortedItems();
+        for (var i = 0; i < items.length; i++) if (items[i].key === albumCurrentKey) return { items: items, idx: i };
+        return { items: items, idx: -1 };
+      }
+      function albumStepLight(dir) {
+        var found = albumLightIndex();
+        if (found.idx < 0 || found.items.length < 2) return;
+        var n = (found.idx + dir + found.items.length) % found.items.length;
+        albumCurrentKey = found.items[n].key;
+        albumConfirmKey = null;
+        albumRenderLight();
+      }
+      function albumOpenLight(key) {
+        if (!albumItems[key]) return;
+        albumCurrentKey = key;
+        albumConfirmKey = null;
+        albumLight.hidden = false;
+        albumRenderLight();
+      }
+      function albumCloseLight() {
+        albumCurrentKey = null;
+        albumConfirmKey = null;
+        albumLight.hidden = true;
+      }
+      function albumRenderLight() {
+        if (albumLight.hidden || !albumCurrentKey) return;
+        var e = albumItems[albumCurrentKey];
+        if (!e) { albumCloseLight(); return; }
+        var key = albumCurrentKey;
+        var who = typeof e.name === "string" && e.name ? e.name : "Guest";
+        albumLightImg.alt = "Photo shared by " + who + (typeof e.caption === "string" && e.caption ? ": " + e.caption : "");
+        if (albumUrls[key]) albumLightImg.src = albumUrls[key];
+        else {
+          albumLightImg.removeAttribute("src");
+          albumResolveUrl(key, null, null);
+        }
+        var cap = typeof e.caption === "string" ? e.caption.trim() : "";
+        albumLightCaption.textContent = cap;
+        albumLightCaption.hidden = !cap;
+        albumLightMeta.innerHTML = "";
+        var dot = document.createElement("span");
+        dot.className = "boarddot";
+        dot.style.background = liveValidColor(e.color);
+        var metaText = document.createElement("span");
+        metaText.textContent = "Shared by " + who + (e.ts ? " · " + boardTime(e.ts) : "");
+        albumLightMeta.appendChild(dot);
+        albumLightMeta.appendChild(metaText);
+        albumLightRow.innerHTML = "";
+        var found = albumLightIndex();
+        if (found.items.length > 1) {
+          var prev = document.createElement("button");
+          prev.type = "button";
+          prev.className = "boardbtn2";
+          prev.textContent = "← Prev";
+          prev.setAttribute("aria-label", "Previous photo");
+          prev.addEventListener("click", function () { albumStepLight(-1); });
+          var next = document.createElement("button");
+          next.type = "button";
+          next.className = "boardbtn2";
+          next.textContent = "Next →";
+          next.setAttribute("aria-label", "Next photo");
+          next.addEventListener("click", function () { albumStepLight(1); });
+          albumLightRow.appendChild(prev);
+          albumLightRow.appendChild(next);
+        }
+        var spacer = document.createElement("span");
+        spacer.className = "aspacer";
+        albumLightRow.appendChild(spacer);
+        if (albumIsMine(e)) {
+          if (albumConfirmKey === key) {
+            var q = document.createElement("span");
+            q.className = "boardconfirm";
+            q.textContent = "Delete this photo?";
+            var del = document.createElement("button");
+            del.type = "button";
+            del.className = "boardbtn2 boardbtn-danger";
+            del.textContent = "Delete";
+            del.addEventListener("click", function () { albumDelete(key); });
+            var keep = document.createElement("button");
+            keep.type = "button";
+            keep.className = "boardbtn2";
+            keep.textContent = "Keep it";
+            keep.addEventListener("click", function () { albumConfirmKey = null; albumRenderLight(); });
+            albumLightRow.appendChild(q);
+            albumLightRow.appendChild(del);
+            albumLightRow.appendChild(keep);
+          } else {
+            var db = document.createElement("button");
+            db.type = "button";
+            db.className = "boardbtn2 boardbtn-danger";
+            db.textContent = "Delete";
+            db.setAttribute("aria-label", "Delete your photo");
+            db.addEventListener("click", function () { albumConfirmKey = key; albumRenderLight(); });
+            albumLightRow.appendChild(db);
+          }
+        }
+        var close = document.createElement("button");
+        close.type = "button";
+        close.className = "boardbtn2";
+        close.textContent = "Close";
+        close.addEventListener("click", albumCloseLight);
+        albumLightRow.appendChild(close);
+      }
+      albumRefreshWho();
+      albumWatchConnection();
+      if (liveReady && liveDb) {
+        liveEnsureAuth(function (ok) {
+          if (ok) albumAttach();
+          else albumStatus("The album couldn't connect just now — check your connection and reload to see the group's photos.", true);
+        });
+      } else {
+        albumStatus("The album couldn't connect just now — the rest of the map works as usual.", true);
       }
 
       // ---------- Route mode: tap two pins for a walking route ----------
@@ -6715,8 +7892,9 @@
 
         // --- Wedding countdown chip + wedding-day mode ---
         // Katherine & Shane, Sunday Nov 8 2026, 5 PM resort time
-        // (America/Cancun). The chip never names a ceremony site: which
-        // gazebo hosts the ceremony is unconfirmed, so neither is asserted.
+        // (America/Cancun). Ceremony site confirmed from the couple's Zola
+        // wedding FAQ (checked Nov 1, 2026): the Beach Gazebo. The Stone
+        // Gazebo is not the ceremony site.
         var chip = document.getElementById("weddingChip");
         var chipText = document.getElementById("weddingChipText");
         function cancunToday() {
@@ -6740,14 +7918,23 @@
           var days = Math.round((Date.UTC(2026, 10, 8) - Date.UTC(t.y, t.m - 1, t.d)) / 86400000);
           chip.hidden = false;
           if (days > 1) {
-            chipText.textContent = "Katherine & Shane's wedding · Sun Nov 8 · 5 PM — " + days + " days to go";
+            chipText.textContent = "Katherine & Shane's wedding · Sun Nov 8 · 5 PM at the Beach Gazebo — " + days + " days to go";
           } else if (days === 1) {
-            chipText.textContent = "Katherine & Shane's wedding is tomorrow · Sun Nov 8 · 5 PM";
+            chipText.textContent = "Katherine & Shane's wedding is tomorrow · Sun Nov 8 · 5 PM at the Beach Gazebo";
           } else if (days === 0) {
-            chipText.textContent = "Wedding day! Katherine & Shane · 5 PM today — the lobby and Garibaldi Square gathering spots are ringed in gold on the map";
+            chipText.textContent = "Wedding day! Katherine & Shane · 5 PM ceremony today at the Beach Gazebo — the ceremony and gathering spots are ringed in gold on the map";
             document.body.classList.add("wedding-day");
             if (typeof pinEls !== "undefined" && pinEls) {
               [0, 1].forEach(function (gi) { if (pinEls[gi]) pinEls[gi].classList.add("pin--gather"); });
+              // Beach Gazebo (index 4): the ceremony site — strongest gold
+              // ring, and its pin label names it as the ceremony site.
+              var ceremonyIdx = -1;
+              try { ceremonyIdx = Spud.indexOfSlug("beach-gazebo"); } catch (e) { ceremonyIdx = 4; }
+              if (ceremonyIdx < 0) ceremonyIdx = 4;
+              if (pinEls[ceremonyIdx]) {
+                pinEls[ceremonyIdx].classList.add("pin--ceremony");
+                pinEls[ceremonyIdx].setAttribute("aria-label", "Pin " + (ceremonyIdx + 1) + ": Beach Gazebo — wedding ceremony site, Sun Nov 8, 5 PM");
+              }
             }
           } else {
             chipText.textContent = "Katherine & Shane · married Sun Nov 8";
@@ -6755,6 +7942,20 @@
         }
         renderWedding();
         setInterval(renderWedding, 60 * 1000);
+
+        // --- Wedding panel: each stop opens its existing pin's details ---
+        // No new pins — the panel links to Beach Gazebo, Oregano, Agave
+        // and X-Lounge, which are already places on the map.
+        var wedBtns = document.querySelectorAll("[data-wedplace]");
+        for (var wi = 0; wi < wedBtns.length; wi++) {
+          (function (btn) {
+            btn.addEventListener("click", function () {
+              var idx = -1;
+              try { idx = Spud.indexOfSlug(btn.getAttribute("data-wedplace")); } catch (e) { idx = -1; }
+              if (idx >= 0 && typeof showDetail === "function") showDetail(idx, false);
+            });
+          })(wedBtns[wi]);
+        }
 
         // --- Weather: Open-Meteo (free, no API key), fetched at runtime ---
         var WMO = { 0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Fog", 51: "Light drizzle", 53: "Drizzle", 55: "Drizzle", 56: "Freezing drizzle", 57: "Freezing drizzle", 61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Freezing rain", 71: "Light snow", 73: "Snow", 75: "Snow", 77: "Snow grains", 80: "Light showers", 81: "Showers", 82: "Heavy showers", 85: "Snow showers", 86: "Snow showers", 95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm" };
