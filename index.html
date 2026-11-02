@@ -1269,6 +1269,54 @@
         100% { opacity: 1; transform: scale(1) rotate(0deg); }
       }
       @keyframes spudfxBreathe { from { transform: scale(1); } to { transform: scale(1.015); } }
+      /* Slice-open: a jagged crack flashes across the middle, the potato
+         shudders, then the split springs open and the white fluff puffs up
+         inside a golden skin rim — big and unmistakable, not a subtle line. */
+      .spudfx-spud.slicing svg { animation: spudfxShake 0.38s ease; }
+      @keyframes spudfxShake {
+        0% { transform: translateX(0); } 25% { transform: translateX(-4px) rotate(-0.6deg); }
+        55% { transform: translateX(4px) rotate(0.6deg); } 100% { transform: translateX(0); }
+      }
+      .spudfx-crackG { opacity: 0; transition: opacity 0.18s ease; }
+      .spudfx-spud.slicing .spudfx-crackG { opacity: 1; }
+      .spudfx-spud.sliced .spudfx-crackG { opacity: 0; }
+      .spudfx-fluffG {
+        opacity: 0; transform: scale(0.15, 0.06);
+        transform-box: fill-box; transform-origin: 50% 50%;
+        transition: opacity 0.4s ease, transform 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+      }
+      .spudfx-spud.sliced .spudfx-fluffG { opacity: 1; transform: scale(1, 1); }
+      /* Butter pats on the fluff: two glossy yellow pats that drop in,
+         then soften and melt into a small glossy pool. Clearly butter. */
+      .spudfx-butterwrap {
+        position: absolute; left: 50%; top: 47%; width: 120px; height: 74px; margin: -37px 0 0 -60px; z-index: 1;
+        opacity: 0; transform: translateY(-16px) scale(0.55) rotate(-4deg);
+      }
+      .spudfx-butterwrap.show {
+        transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+        opacity: 1; transform: translateY(0) scale(1) rotate(-4deg);
+      }
+      .spudfx-butter-pool {
+        position: absolute; left: 50%; bottom: 2px; width: 96px; height: 20px; margin-left: -48px;
+        background: radial-gradient(ellipse at 50% 40%, #ffe98a 0%, #ffd94d 55%, rgba(255, 201, 40, 0) 78%);
+        border-radius: 50%; opacity: 0; transform: scale(0.4);
+      }
+      .spudfx-butterwrap.melting .spudfx-butter-pool { transition: opacity 0.9s ease, transform 1.1s ease; opacity: 0.95; transform: scale(1.15); }
+      .spudfx-butter-pat {
+        position: absolute; width: 62px; height: 40px; border-radius: 9px;
+        background: linear-gradient(145deg, #fff3a0 0%, #ffe259 38%, #ffc61a 72%, #f5a623 100%);
+        border: 1.5px solid #d99406;
+        box-shadow: inset 3px 3px 6px rgba(255, 255, 255, 0.85), inset -4px -5px 7px rgba(190, 120, 0, 0.35), 0 3px 6px rgba(90, 55, 0, 0.35);
+      }
+      .spudfx-butter-pat::after {
+        content: ""; position: absolute; left: 8px; top: 5px; width: 30px; height: 10px; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.75); transform: rotate(-8deg);
+      }
+      .spudfx-butter-pat.pat1 { left: 8px; top: 14px; transform: rotate(-9deg); }
+      .spudfx-butter-pat.pat2 { left: 48px; top: 6px; transform: rotate(7deg); }
+      .spudfx-butterwrap.melting .spudfx-butter-pat { transition: transform 1.1s ease; }
+      .spudfx-butterwrap.melting .spudfx-butter-pat.pat1 { transform: rotate(-11deg) scale(1.08, 0.8) translateY(3px); }
+      .spudfx-butterwrap.melting .spudfx-butter-pat.pat2 { transform: rotate(9deg) scale(1.08, 0.8) translateY(3px); }
       /* Toppings that LAND on the potato and STAY there */
       .spudfx-top {
         position: absolute; will-change: transform, opacity; opacity: 0;
@@ -1307,6 +1355,9 @@
       .spudfx-fadeout { transition: opacity 0.6s ease !important; opacity: 0 !important; }
       @media (prefers-reduced-motion: reduce) {
         .spudfx-spud.show, .spudfx-spud.breathe { animation: none; opacity: 1; }
+        .spudfx-spud.slicing svg { animation: none; }
+        .spudfx-fluffG { transition: none; }
+        .spudfx-butterwrap.show, .spudfx-butterwrap.melting .spudfx-butter-pat, .spudfx-butterwrap.melting .spudfx-butter-pool { transition: none; }
         .spudfx-top { animation: none; opacity: 1; }
         .spudfx-cream.fill, .spudfx-cream.drain { transition: none; }
         .spudfx-dollop-on.show { transition: none; }
@@ -8779,13 +8830,16 @@
                 bit.style.border = "4px solid " + list[i % list.length];
                 bit.style.boxShadow = "0 1px 2px rgba(30,60,20,0.3)";
               }
-              // Land ON the potato: cluster over its top/centre, inside the silhouette.
-              // Potato container is 280x213; pile zone is the upper-middle hollow.
-              var cx = 140 + (Math.random() - 0.5) * 150;
-              var cy = kind === "bacon" ? 78 + (Math.random() - 0.5) * 44 : kind === "cheese" ? 72 + (Math.random() - 0.5) * 48 : 66 + (Math.random() - 0.5) * 42;
-              // Keep the pile roughly elliptical so it follows the potato top
-              bit.style.left = Math.max(42, Math.min(238 - w, cx - w / 2)) + "px";
-              bit.style.top = Math.max(28, Math.min(118 - h, cy - h / 2)) + "px";
+              // Land INTO the opened split, on the white fluff: cluster inside
+              // the fluffy interior revealed in the middle of the potato.
+              // Potato container is 280x213; the fluff mound is centred around
+              // (140, 109) and spans roughly x 48–232, y 58–160. Each layer
+              // sits a little higher as the pile builds up in the split.
+              var cx = 140 + (Math.random() - 0.5) * 128;
+              var cy = kind === "bacon" ? 112 + (Math.random() - 0.5) * 46 : kind === "cheese" ? 104 + (Math.random() - 0.5) * 50 : 96 + (Math.random() - 0.5) * 44;
+              // Keep the pile roughly elliptical so it stays inside the fluff
+              bit.style.left = Math.max(52, Math.min(228 - w, cx - w / 2)) + "px";
+              bit.style.top = Math.max(56, Math.min(152 - h, cy - h / 2)) + "px";
               bit.style.width = w + "px";
               bit.style.height = h + "px";
               bit.style.borderRadius = r;
@@ -8827,8 +8881,45 @@
               '<ellipse cx="71" cy="90.4" rx="3.4" ry="1.7" transform="rotate(-18 71 90.4)"/>' +
               '<ellipse cx="153" cy="74.4" rx="3.6" ry="1.8" transform="rotate(-8 153 74.4)"/>' +
               '<ellipse cx="99" cy="116.4" rx="3.2" ry="1.6" transform="rotate(14 99 116.4)"/>' +
+              '</g>' +
+              // Jagged crack that flashes across the middle while it slices
+              '<g class="spudfx-crackG">' +
+              '<path d="M38 99 L72 90 L100 101 L128 89 L156 100 L184 91 L214 98" fill="none" stroke="#5e3a06" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' +
+              '<path d="M38 99 L72 90 L100 101 L128 89 L156 100 L184 91 L214 98" fill="none" stroke="#2f1d02" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+              '</g>' +
+              // The opened split: golden skin rim, then a big bumpy mound of
+              // white fluff puffing up out of it, with peeled skin tabs.
+              '<g class="spudfx-fluffG">' +
+              '<path d="M38 100 C36 74 56 58 78 62 C86 46 108 42 120 52 C132 40 154 42 162 54 C180 46 198 58 202 72 C216 78 220 96 212 108 C216 126 198 142 178 140 C168 154 146 156 134 146 C120 158 98 156 90 144 C70 152 52 140 54 126 C42 122 36 114 38 100 Z" fill="#b57a14" stroke="#8a560c" stroke-width="3"/>' +
+              '<path d="M38 100 C36 74 56 58 78 62 C86 46 108 42 120 52 C132 40 154 42 162 54 C180 46 198 58 202 72 C216 78 220 96 212 108 C216 126 198 142 178 140 C168 154 146 156 134 146 C120 158 98 156 90 144 C70 152 52 140 54 126 C42 122 36 114 38 100 Z" fill="#fffdf4" transform="translate(125 99) scale(0.87 0.8) translate(-125 -99)"/>' +
+              '<g fill="#f3e6c3">' +
+              '<ellipse cx="86" cy="88" rx="13" ry="7" transform="rotate(-12 86 88)"/>' +
+              '<ellipse cx="128" cy="118" rx="15" ry="8" transform="rotate(6 128 118)"/>' +
+              '<ellipse cx="168" cy="86" rx="12" ry="6.5" transform="rotate(10 168 86)"/>' +
+              '<ellipse cx="104" cy="132" rx="11" ry="6" transform="rotate(-8 104 132)"/>' +
+              '<ellipse cx="158" cy="126" rx="10" ry="5.5" transform="rotate(-6 158 126)"/>' +
+              '</g>' +
+              '<g fill="#ffffff">' +
+              '<ellipse cx="102" cy="76" rx="12" ry="6" transform="rotate(-10 102 76)"/>' +
+              '<ellipse cx="146" cy="70" rx="11" ry="5.5" transform="rotate(8 146 70)"/>' +
+              '<ellipse cx="80" cy="110" rx="10" ry="5" transform="rotate(14 80 110)"/>' +
+              '<ellipse cx="182" cy="108" rx="10" ry="5" transform="rotate(-12 182 108)"/>' +
+              '<ellipse cx="126" cy="94" rx="13" ry="6.5"/>' +
+              '</g>' +
+              '<ellipse cx="47" cy="70" rx="17" ry="8" fill="#c07f16" stroke="#8a560c" stroke-width="2.5" transform="rotate(-32 47 70)"/>' +
+              '<ellipse cx="203" cy="70" rx="17" ry="8" fill="#c07f16" stroke="#8a560c" stroke-width="2.5" transform="rotate(32 203 70)"/>' +
               '</g></svg>';
             fx.appendChild(spud);
+            // Butter pats that land on the fluff right after the split opens,
+            // before any confetti toppings
+            var butterWrap = document.createElement("div");
+            butterWrap.className = "spudfx-butterwrap";
+            butterWrap.setAttribute("aria-hidden", "true");
+            butterWrap.innerHTML =
+              '<span class="spudfx-butter-pool"></span>' +
+              '<span class="spudfx-butter-pat pat1"></span>' +
+              '<span class="spudfx-butter-pat pat2"></span>';
+            spud.appendChild(butterWrap);
             // Dollop that sits on the loaded potato before the overflow finale
             var dollopOn = document.createElement("div");
             dollopOn.className = "spudfx-dollop-on";
@@ -8851,8 +8942,13 @@
             }
 
             if (reduceMotion) {
-              // Calm version: loaded spud appears statically (toppings + dollop already on it), holds, and goes. No falling, no wipe.
+              // Calm version: sliced, loaded spud appears statically (split open
+              // with fluff showing, butter + toppings + dollop already on it),
+              // holds, and goes. No falling, no wipe.
               spud.classList.add("show");
+              spud.classList.add("sliced");
+              butterWrap.classList.add("show");
+              butterWrap.classList.add("melting");
               toppingWave(spud, "bacon", 2);
               toppingWave(spud, "cheese", 3);
               toppingWave(spud, "chive", 4);
@@ -8867,23 +8963,34 @@
               spud.classList.add("show");
               setTimeout(function () { spud.classList.add("breathe"); }, 720);
             });
-            // Progressive loading ON the potato — each layer lands and STAYS
-            setTimeout(function () { toppingWave(spud, "bacon", 2); }, 650);
-            setTimeout(function () { toppingWave(spud, "cheese", 3); }, 1650);
-            setTimeout(function () { toppingWave(spud, "chive", 4); }, 2650);
+            // SLICE IT OPEN: crack flashes across the middle and the potato
+            // shudders, then the split springs open revealing the white fluff
+            setTimeout(function () { spud.classList.add("slicing"); }, 800);
+            setTimeout(function () {
+              spud.classList.remove("slicing");
+              spud.classList.add("sliced");
+            }, 1180);
+            // BUTTER FIRST: pats land on the hot fluff and start melting
+            setTimeout(function () { butterWrap.classList.add("show"); }, 1750);
+            setTimeout(function () { butterWrap.classList.add("melting"); }, 2200);
+            // Then the confetti toppings, layered INTO the split on the fluff —
+            // each layer lands and STAYS
+            setTimeout(function () { toppingWave(spud, "bacon", 2); }, 2600);
+            setTimeout(function () { toppingWave(spud, "cheese", 3); }, 3500);
+            setTimeout(function () { toppingWave(spud, "chive", 4); }, 4400);
             // Dollop crowns the loaded potato
-            setTimeout(function () { dollopOn.classList.add("show"); }, 3550);
-            // HOLD the finished loaded potato (3550–4900ms) so it can be admired — nothing covers it here
+            setTimeout(function () { dollopOn.classList.add("show"); }, 5300);
+            // HOLD the finished loaded potato (5300–6700ms) so it can be admired — nothing covers it here
             // FINALE: sour cream overflows FROM the potato and wipes the whole screen
-            setTimeout(function () { dollopOn.classList.add("overflow"); }, 4900);
-            setTimeout(function () { cream.classList.add("fill"); }, 5100);
+            setTimeout(function () { dollopOn.classList.add("overflow"); }, 6700);
+            setTimeout(function () { cream.classList.add("fill"); }, 6900);
             // Screen is fully white/creamy — hold briefly, then fade back to normal
             setTimeout(function () {
               cream.classList.add("drain");
               spud.classList.add("spudfx-fadeout");
               showSignoff();
-            }, 6350);
-            setTimeout(cleanup, 7300);
+            }, 8150);
+            setTimeout(cleanup, 9100);
           }
 
           logo.addEventListener("click", function () {
