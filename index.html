@@ -247,6 +247,9 @@
       .mapbox {
         background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
         box-shadow: var(--shadow); overflow: hidden;
+        /* The map now leads the main content: keep a gap to the detail card
+           below it, and to the "You are here" bar when no card is open. */
+        margin-bottom: var(--s-4);
       }
       .scene {
         position: relative; background: #79a85b; overflow: hidden;
@@ -542,6 +545,8 @@
       #detail {
         background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
         padding: var(--s-5); box-shadow: var(--shadow); margin-top: var(--s-5);
+        /* Directly under the map now: keep a gap to the controls below it. */
+        margin-bottom: var(--s-5);
       }
       #detail .dcat {
         font-size: 0.76rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
@@ -956,7 +961,7 @@
         color: var(--ink); font: inherit; font-weight: 600;
       }
 
-      /* ---------- Group board ---------- */
+      /* ---------- The Wedding Wall ---------- */
       .boardwho { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 4px; font-size: 0.95rem; }
       .boardwho .bname { font-weight: 700; }
       .boarddot {
@@ -1112,7 +1117,7 @@
       .gifcredit { margin: 8px 0 0; font-size: 0.7rem; color: var(--ink-soft); text-align: right; }
       .boardgif { display: block; width: 250px; max-width: 100%; height: auto; border-radius: 10px; }
 
-      /* ---------- Board photos (Catbox uploads) ---------- */
+      /* ---------- Board photos (Cloudinary uploads) ---------- */
       /* Photo button matches the GIF button; the camera glyph rides
          inline so the row reads as two equal media actions. */
       .boardphotobtn { display: inline-flex; align-items: center; gap: 7px; }
@@ -1143,7 +1148,7 @@
       }
       .boardphotopostbtn:disabled { opacity: 0.55; cursor: default; }
       @media (max-width: 560px) { .boardpreview img { width: 62px; height: 62px; } }
-      /* Upload progress: the album's bar, made indeterminate — Catbox
+      /* Upload progress: the album's bar, made indeterminate — Cloudinary
          gives no per-byte progress the page can read cross-origin. */
       .boardprogress { margin-top: 10px; }
       .boardprogressbar { width: 38%; animation: boardUploadSlide 1.05s ease-in-out infinite alternate; }
@@ -1277,6 +1282,24 @@
       .pin.pin--gather { box-shadow: 0 0 0 3px var(--gold), 0 0 0 7px rgba(166, 124, 26, 0.35), 0 4px 10px rgba(30, 40, 20, 0.5); z-index: 9; }
       .pin.pin--ceremony { box-shadow: 0 0 0 3px var(--gold), 0 0 0 9px rgba(166, 124, 26, 0.5), 0 4px 10px rgba(30, 40, 20, 0.5); z-index: 10; }
       body.wedding-day .wedding-line { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(166, 124, 26, 0.35); }
+
+      /* ---------- The Wedding Wall: shortcut near the top + scroll target ---------- */
+      .wallshortcut {
+        appearance: none; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        min-height: 48px; margin: var(--s-3) auto 0; padding: 10px 22px;
+        border: 2px solid var(--accent); border-radius: 999px;
+        background: var(--panel); color: var(--accent);
+        font-family: var(--font-display); font-weight: 700; font-size: 1rem; line-height: 1.2;
+        box-shadow: 0 4px 14px rgba(60, 45, 20, 0.16);
+      }
+      .wallshortcut svg { width: 19px; height: 19px; flex: none; display: block; }
+      .wallshortcut:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .wallshortcut:hover { text-decoration: underline; text-underline-offset: 3px; }
+      #weddingWall { scroll-margin-top: 12px; }
+      @media (max-width: 560px) {
+        .wallshortcut { margin-top: 6px; min-height: 44px; padding: 8px 18px; font-size: 0.95rem; }
+      }
 
       /* ---------- Wedding panel: welcome hour + wedding-day timeline ---------- */
       .weddingpanel { border-color: var(--gold); margin-bottom: var(--s-4); }
@@ -1422,6 +1445,7 @@
           <div class="brand-rule" aria-hidden="true"></div>
           <p class="sub">Tap a pin or a place name for hours, menus, and what's there.</p>
           <p class="wedding-line" id="weddingChip" hidden><span class="dot" aria-hidden="true"></span><span id="weddingChipText"></span></p>
+          <button type="button" class="wallshortcut" id="wallShortcut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.38 8.38 0 0 1 3 11.5a8.5 8.5 0 0 1 8.5-8.5 8.38 8.38 0 0 1 8.5 8.5z"/><path d="M12 7v6m0 0-2.2-2.2M12 13l2.2-2.2"/></svg>Go to The Wedding Wall</button>
         </div>
         <button type="button" class="installcta" id="installCta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5m0 0L8 10.5m4 4 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 16.5v1.7A1.8 1.8 0 0 0 6.3 20h11.4a1.8 1.8 0 0 0 1.8-1.8v-1.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg> Install as App</button>
       </header>
@@ -1447,68 +1471,7 @@
         })();
       </script>
 
-      <section class="gpscard" aria-label="Your live location">
-        <div class="gpsmain">
-          <h2><span class="gpsdot" aria-hidden="true"></span>You are here</h2>
-          <p class="gpsread" id="gpsRead" aria-live="polite">Location hasn't been requested yet.</p>
-        </div>
-        <div class="gpsbtns">
-          <button type="button" class="gpsbtn" id="gpsBtn">Find me</button>
-          <button type="button" class="gpsstop" id="gpsStop" hidden>Stop</button>
-        </div>
-      </section>
-
-    <aside class="installhint" id="installHint">
-      <div class="ihhead">
-        <button type="button" class="foldtoggle" aria-expanded="false" aria-controls="installBody"><span><strong>Use it like an app</strong> — install tip</span><span class="chev" aria-hidden="true"></span></button>
-        <button type="button" class="ihclose" id="installClose" aria-label="Dismiss install tip">×</button>
-      </div>
-      <div class="foldbody" id="installBody" hidden>
-        <p>Install this map on your phone and it opens fullscreen from your home screen and loads fast — offline use may be limited. <strong>iPhone:</strong> open this page in Safari, tap Share, then “Add to Home Screen.” <strong>Android:</strong> in Chrome, tap the ⋮ menu, then “Install app” / “Add to Home screen.”</p>
-        <button type="button" class="ihbtn" id="installBtn" hidden>Install the map</button>
-      </div>
-    </aside>
-
     <main>
-      <div class="toolbar">
-        <span class="tlabel" id="tsLabel">Text size</span>
-        <span class="tsgroup" role="group" aria-labelledby="tsLabel">
-          <button type="button" class="tsbtn" data-tsv="0" aria-pressed="true" aria-label="Standard text size">A</button>
-          <button type="button" class="tsbtn" data-tsv="1" aria-pressed="false" aria-label="Large text size">A</button>
-          <button type="button" class="tsbtn" data-tsv="2" aria-pressed="false" aria-label="Extra-large text size">A</button>
-        </span>
-        <span class="thint">Keyboard: Tab through the pins and the place list, or use ↑ ↓ arrow keys to move between places in the list.</span>
-      </div>
-
-      <nav class="chips" id="chips" aria-label="Filter places by category"></nav>
-      <p class="visually-hidden" id="filterStatus" role="status" aria-live="polite"></p>
-
-      <section class="grouptools" id="groupTools" aria-labelledby="groupToolsTitle">
-        <h2 class="grouptools-title" id="groupToolsTitle">Group tools</h2>
-        <div class="grouptools-row" id="groupToolsRow"></div>
-      </section>
-
-      <section class="grounds weddingpanel" aria-labelledby="weddingPanelTitle">
-        <h2 id="weddingPanelTitle">Katherine &amp; Shane's wedding</h2>
-        <p class="gsub">Every stop below is already a pin on the map — tap a place name to open it.</p>
-        <div class="wedevents">
-          <div class="wedevent">
-            <h3>Welcome Cocktail Hour</h3>
-            <p><span class="wedwhen">Sat Nov 7 · 5:00–6:00 PM</span> at <button type="button" class="wedlink" data-wedplace="x-lounge">X-Lounge</button></p>
-            <p>Drinks and hors d'oeuvres / pupus provided. Black cocktail attire optional.</p>
-          </div>
-          <div class="wedevent">
-            <h3>Wedding day · Sun Nov 8</h3>
-            <ol class="wedlist">
-              <li><span class="wedtime">5:00 PM</span><button type="button" class="wedlink" data-wedplace="beach-gazebo">Beach Gazebo</button><span class="wedwhat">Ceremony</span></li>
-              <li><span class="wedtime">6:00–7:00 PM</span><button type="button" class="wedlink" data-wedplace="oregano">Oregano</button><span class="wedwhat">Drinks &amp; hors d'oeuvres / pupus</span></li>
-              <li><span class="wedtime">7:00–11:00 PM</span><button type="button" class="wedlink" data-wedplace="agave">Agave</button><span class="wedwhat">Reception — dinner &amp; dance</span></li>
-            </ol>
-          </div>
-        </div>
-        <p class="weddress">Dress code: tropical cocktail attire.</p>
-      </section>
-
       <div class="mapbox">
         <div class="scene" id="scene" tabindex="0" role="group" aria-label="Drawn overview of the resort grounds: flat building footprints, pools, gardens, beach and sea, with numbered place pins. Drag to pan, scroll or pinch to zoom; the Puerto Morelos town strip is drawn at the south end of the map.">
           <div class="maptools jumps" role="group" aria-label="Jump to an area of the map">
@@ -1556,6 +1519,67 @@
 
       <section id="detail" aria-live="polite" aria-label="Place details" tabindex="-1" hidden></section>
 
+      <section class="gpscard" aria-label="Your live location">
+        <div class="gpsmain">
+          <h2><span class="gpsdot" aria-hidden="true"></span>You are here</h2>
+          <p class="gpsread" id="gpsRead" aria-live="polite">Location hasn't been requested yet.</p>
+        </div>
+        <div class="gpsbtns">
+          <button type="button" class="gpsbtn" id="gpsBtn">Find me</button>
+          <button type="button" class="gpsstop" id="gpsStop" hidden>Stop</button>
+        </div>
+      </section>
+
+    <aside class="installhint" id="installHint">
+      <div class="ihhead">
+        <button type="button" class="foldtoggle" aria-expanded="false" aria-controls="installBody"><span><strong>Use it like an app</strong> — install tip</span><span class="chev" aria-hidden="true"></span></button>
+        <button type="button" class="ihclose" id="installClose" aria-label="Dismiss install tip">×</button>
+      </div>
+      <div class="foldbody" id="installBody" hidden>
+        <p>Install this map on your phone and it opens fullscreen from your home screen and loads fast — offline use may be limited. <strong>iPhone:</strong> open this page in Safari, tap Share, then “Add to Home Screen.” <strong>Android:</strong> in Chrome, tap the ⋮ menu, then “Install app” / “Add to Home screen.”</p>
+        <button type="button" class="ihbtn" id="installBtn" hidden>Install the map</button>
+      </div>
+    </aside>
+
+      <div class="toolbar">
+        <span class="tlabel" id="tsLabel">Text size</span>
+        <span class="tsgroup" role="group" aria-labelledby="tsLabel">
+          <button type="button" class="tsbtn" data-tsv="0" aria-pressed="true" aria-label="Standard text size">A</button>
+          <button type="button" class="tsbtn" data-tsv="1" aria-pressed="false" aria-label="Large text size">A</button>
+          <button type="button" class="tsbtn" data-tsv="2" aria-pressed="false" aria-label="Extra-large text size">A</button>
+        </span>
+        <span class="thint">Keyboard: Tab through the pins and the place list, or use ↑ ↓ arrow keys to move between places in the list.</span>
+      </div>
+
+      <nav class="chips" id="chips" aria-label="Filter places by category"></nav>
+      <p class="visually-hidden" id="filterStatus" role="status" aria-live="polite"></p>
+
+      <section class="grouptools" id="groupTools" aria-labelledby="groupToolsTitle">
+        <h2 class="grouptools-title" id="groupToolsTitle">Group tools</h2>
+        <div class="grouptools-row" id="groupToolsRow"></div>
+      </section>
+
+      <section class="grounds weddingpanel" aria-labelledby="weddingPanelTitle">
+        <h2 id="weddingPanelTitle">Katherine &amp; Shane's wedding</h2>
+        <p class="gsub">Every stop below is already a pin on the map — tap a place name to open it.</p>
+        <div class="wedevents">
+          <div class="wedevent">
+            <h3>Welcome Cocktail Hour</h3>
+            <p><span class="wedwhen">Sat Nov 7 · 5:00–6:00 PM</span> at <button type="button" class="wedlink" data-wedplace="x-lounge">X-Lounge</button></p>
+            <p>Drinks and hors d'oeuvres / pupus provided. Black cocktail attire optional.</p>
+          </div>
+          <div class="wedevent">
+            <h3>Wedding day · Sun Nov 8</h3>
+            <ol class="wedlist">
+              <li><span class="wedtime">5:00 PM</span><button type="button" class="wedlink" data-wedplace="beach-gazebo">Beach Gazebo</button><span class="wedwhat">Ceremony</span></li>
+              <li><span class="wedtime">6:00–7:00 PM</span><button type="button" class="wedlink" data-wedplace="oregano">Oregano</button><span class="wedwhat">Drinks &amp; hors d'oeuvres / pupus</span></li>
+              <li><span class="wedtime">7:00–11:00 PM</span><button type="button" class="wedlink" data-wedplace="agave">Agave</button><span class="wedwhat">Reception — dinner &amp; dance</span></li>
+            </ol>
+          </div>
+        </div>
+        <p class="weddress">Dress code: tropical cocktail attire.</p>
+      </section>
+
       <section class="grounds" aria-label="How the grounds are laid out">
         <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="groundsBody"><span>Reading the grounds</span><span class="chev" aria-hidden="true"></span></button></h2>
         <div class="foldbody" id="groundsBody" hidden>
@@ -1579,35 +1603,35 @@
         </div>
       </section>
 
-      <section class="grounds" aria-label="Group message board">
-        <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="boardBody"><span>Group board<span class="boardbadge" id="boardBadge" hidden>0</span></span><span class="chev" aria-hidden="true"></span></button></h2>
-        <div class="foldbody" id="boardBody" hidden>
-        <p class="gsub">Short notes for the whole group — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it. Tap Reply under any note to answer it — your reply nests right underneath that note. You can add a photo, too: tap Photo, pick one, write a caption if you like, and post — the photo shows right in your note.</p>
+      <section class="grounds" id="weddingWall" aria-label="The Wedding Wall">
+        <h2><button type="button" class="foldtoggle" aria-expanded="true" aria-controls="boardBody"><span>The Wedding Wall<span class="boardbadge" id="boardBadge" hidden>0</span></span><span class="chev" aria-hidden="true"></span></button></h2>
+        <div class="foldbody" id="boardBody">
+        <p class="gsub">Short notes for the whole group on The Wedding Wall — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it. Tap Reply under any note to answer it — your reply nests right underneath that note. You can add a photo, too: tap Photo, pick one, write a caption if you like, and post — the photo shows right in your note.</p>
         <form id="boardForm">
           <div class="boardwho" id="boardWho"></div>
-          <label class="boardlabel" for="boardText">Your note</label>
-          <textarea class="boardtext" id="boardText" rows="2" maxlength="280" placeholder="e.g. Pool at 3 — bring sunscreen" aria-describedby="boardCount"></textarea>
+          <label class="boardlabel" for="boardText">Your Note</label>
+          <textarea class="boardtext" id="boardText" rows="2" maxlength="280" placeholder="E.g. Pool at 3 — bring sunscreen" aria-describedby="boardCount"></textarea>
           <div class="boardrow">
             <button type="button" class="boardbtn2" id="boardGifBtn" aria-expanded="false" aria-controls="gifPanel">GIF</button>
             <button type="button" class="boardbtn2 boardphotobtn" id="boardPhotoBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>Photo</button>
             <input type="file" id="boardPhotoFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
             <span class="boardcount" id="boardCount">280</span>
-            <button type="submit" class="gpsbtn" id="boardPost">Post note</button>
+            <button type="submit" class="gpsbtn" id="boardPost">Post Note</button>
           </div>
           <p class="boardnote" id="boardNote" role="status" hidden></p>
           <div class="boardpreview" id="boardPhotoPreview" hidden>
             <img id="boardPhotoThumb" alt="Photo you picked, ready to post" />
             <div class="bpmeta">
-              <span class="bpname" id="boardPhotoName">Photo ready</span>
+              <span class="bpname" id="boardPhotoName">Photo Ready</span>
               <span class="bpsub" id="boardPhotoSub">Add a caption in the note box above, or just post it.</span>
               <div class="bpactions">
-                <button type="button" class="boardbtn2 boardphotopostbtn" id="boardPhotoPost">Post photo</button>
+                <button type="button" class="boardbtn2 boardphotopostbtn" id="boardPhotoPost">Post Photo</button>
                 <button type="button" class="boardbtn2" id="boardPhotoRemove">Remove</button>
               </div>
             </div>
           </div>
           <div class="albumprogress boardprogress" id="boardPhotoProgress" hidden><div class="albumprogressbar boardprogressbar" id="boardPhotoProgressBar"></div></div>
-          <p class="boardphotohint">Photos upload to Catbox — free, no account or sign-up — and show right here in the board. Keep your originals on your phone, too.</p>
+          <p class="boardphotohint">Photos upload to Cloudinary and show right here on The Wedding Wall. Keep your originals on your phone, too.</p>
         </form>
         <div class="gifpanel" id="gifPanel" hidden>
           <div class="gifbar">
@@ -5063,8 +5087,8 @@
           liveDlgIntro.textContent = "A name is required to add photos — every photo shows who shared it. The color tags your photos.";
           liveDlgNote.textContent = "Your name, color and icon are saved on this device and shown with your photos. (Same name, color and icon as your Live group dot, if you use it.)";
         } else if (mode === "board") {
-          liveDlgTitle.textContent = "Your name for the board";
-          liveDlgIntro.textContent = "A name is required to post on the group board — every note shows who wrote it. The color tags your notes.";
+          liveDlgTitle.textContent = "Your Name for The Wedding Wall";
+          liveDlgIntro.textContent = "A name is required to post on The Wedding Wall — every note shows who wrote it. The color tags your notes.";
           liveDlgNote.textContent = "Your name, color and icon are saved on this device and shown with your notes. (Same name, color and icon as your Live group dot, if you use it.)";
         } else if (mode === "app") {
           // App mode (SpudMaps Live app only): the same dialog as the
@@ -5122,7 +5146,7 @@
           try { window.SpudMapsLive?.onProfileSaved?.(); } catch (e) {}
         } else if (mode === "join") liveStartSharing();
         else if (liveState.sharing) liveWriteNow();
-        // The group board keys off the same saved profile: refresh its
+        // The Wedding Wall keys off the same saved profile: refresh its
         // "posting as" line, and release a note that was held for a name.
         if (typeof boardRefreshWho === "function") boardRefreshWho();
         if (mode === "board" && typeof boardAfterProfile === "function") boardAfterProfile();
@@ -5434,7 +5458,7 @@
         liveRenderUsers(want);
       }
 
-      // ---------- Group board: shared notes on the Firebase `board` node ----------
+      // ---------- The Wedding Wall: shared notes on the Firebase `board` node ----------
       // A name is MANDATORY — no anonymous posts. Notes are only ever
       // written under the saved live-group profile (name + color); with no
       // profile set, the typed note is held, the name dialog opens in
@@ -5496,7 +5520,7 @@
           var setBtn = document.createElement("button");
           setBtn.type = "button";
           setBtn.className = "boardbtn2";
-          setBtn.textContent = "Set your name";
+          setBtn.textContent = "Set Your Name";
           setBtn.addEventListener("click", function () { liveOpenDlg("board"); });
           boardWhoEl.appendChild(msg);
           boardWhoEl.appendChild(setBtn);
@@ -5695,7 +5719,7 @@
             }
             var tm = document.createElement("span");
             tm.className = "boardbtime";
-            tm.textContent = boardTime(e.ts) + (e.edited ? " · edited" : "");
+            tm.textContent = boardTime(e.ts) + (e.edited ? " · Edited" : "");
             bubble.appendChild(tm);
             li.appendChild(bubble);
             {
@@ -5713,7 +5737,7 @@
                 var keep = document.createElement("button");
                 keep.type = "button";
                 keep.className = "boardbtn2 boardbtn-sm";
-                keep.textContent = "Keep it";
+                keep.textContent = "Keep It";
                 keep.addEventListener("click", function () {
                   boardConfirmKey = null;
                   boardRenderList();
@@ -5793,7 +5817,7 @@
                 var rpost = document.createElement("button");
                 rpost.type = "button";
                 rpost.className = "boardbtn2 boardbtn-sm";
-                rpost.textContent = "Post reply";
+                rpost.textContent = "Post Reply";
                 rpost.addEventListener("click", function () { boardPostReply(key, rta); });
                 var rgif = document.createElement("button");
                 rgif.type = "button";
@@ -5874,7 +5898,7 @@
       }
       function boardListenError() {
         boardDetach();
-        boardNote("Couldn't load the board just now — check your connection and reload.");
+        boardNote("Couldn't load The Wedding Wall just now — check your connection and reload.");
       }
       function boardAttach() {
         if (boardAttached || !liveDb) return;
@@ -5963,7 +5987,7 @@
           return;
         }
         if (!liveReady || !liveDb) {
-          boardNote("The board couldn't connect — check your connection and try again.");
+          boardNote("The Wedding Wall couldn't connect — check your connection and try again.");
           return;
         }
         liveEnsureAuth(function (ok) {
@@ -6268,24 +6292,24 @@
           gifSearchTimer = setTimeout(function () { gifLoad(q); }, 350);
         });
       }
-      // ---------- Board photos: Catbox anonymous uploads ----------
-      // No account, no API key, nothing for a guest to set up: the
-      // photo goes straight from the phone to Catbox
-      // (POST https://catbox.moe/user/api.php, reqtype=fileupload)
-      // and only the returned https://files.catbox.moe/… URL is
-      // stored on the board note as `photo` — never the image bytes —
-      // so a photo note rides the same realtime sync, name gate, and
-      // own-notes-only edit/delete rules as text and GIF notes.
-      // Catbox's API does not send CORS headers, so when the direct
-      // POST is blocked by the browser the identical upload is
-      // retried through public CORS relays, in order. Either way the
-      // note stores a plain Catbox URL, and <img> display of
-      // files.catbox.moe needs no CORS at all. Deleting a note
-      // removes its board entry; the Catbox file itself is anonymous
-      // and stays link-only, like the board's GIF URLs.
-      var CATBOX_API = "https://catbox.moe/user/api.php";
+      // ---------- Board photos: Cloudinary unsigned uploads ----------
+      // The photo goes straight from the phone to Cloudinary via an
+      // unsigned upload preset (POST
+      // https://api.cloudinary.com/v1_1/tyuni6qy/image/upload with
+      // file + upload_preset=spudmaps-board) and only the returned
+      // secure_url is stored on the board note as `photo` — never
+      // the image bytes — so a photo note rides the same realtime
+      // sync, name gate, and own-notes-only edit/delete rules as
+      // text and GIF notes. Cloudinary sends CORS headers for
+      // unsigned uploads, so the upload is a single direct POST
+      // with no relay fallback. Deleting a note removes its board
+      // entry; the Cloudinary file itself stays link-only, like
+      // the board's GIF URLs.
+      var CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/tyuni6qy/image/upload";
+      var CLOUDINARY_CLOUD_NAME = "tyuni6qy";
+      var CLOUDINARY_UPLOAD_PRESET = "spudmaps-board";
       var BOARD_PHOTO_MAX_DIM = 1920;
-      var BOARD_PHOTO_MAX_BYTES = 200 * 1024 * 1024; // Catbox's own cap
+      var BOARD_PHOTO_MAX_BYTES = 200 * 1024 * 1024; // generous client-side guard; Cloudinary enforces its own limit server-side
       var BOARD_PHOTO_TYPES = { "image/jpeg": 1, "image/png": 1, "image/webp": 1, "image/gif": 1 };
       var boardPhotoBtnEl = document.getElementById("boardPhotoBtn");
       var boardPhotoFileEl = document.getElementById("boardPhotoFile");
@@ -6302,7 +6326,7 @@
       var boardPendingPhoto = null;     // { file, caption, replyTo } held while the name dialog is open
 
       function boardValidPhotoUrl(u) {
-        return typeof u === "string" && /^https:\/\/files\.catbox\.moe\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(u);
+        return typeof u === "string" && /^https:\/\/res\.cloudinary\.com\/tyuni6qy\/image\/upload\/.+$/.test(u);
       }
       function boardPhotoExt(type) {
         if (type === "image/png") return "png";
@@ -6354,38 +6378,32 @@
         };
         img.src = url;
       }
-      // One upload, up to three routes to Catbox: direct first, then
-      // CORS relays carrying the identical multipart POST. Success is
-      // a plain-text files.catbox.moe URL; anything else (including
-      // Catbox's own plain-language pause notice) falls through to
-      // the next route, then to an honest error.
-      function boardCatboxSend(blob, filename, cb) {
-        var endpoints = [
-          CATBOX_API,
-          "https://corsproxy.io/?url=" + encodeURIComponent(CATBOX_API),
-          "https://api.codetabs.com/v1/proxy/?quest=" + CATBOX_API
-        ];
-        var i = 0, paused = false;
-        function attempt() {
-          if (i >= endpoints.length) {
-            cb(null, paused
-              ? "Catbox has uploads paused right now — try again in a little while."
-              : "Catbox couldn't be reached — check your connection and try again.");
-            return;
+      // One direct upload to Cloudinary via the unsigned preset.
+      // Success is JSON with a secure_url on res.cloudinary.com;
+      // anything else is an honest error — no CORS relay fallbacks.
+      function boardCloudinarySend(blob, filename, cb) {
+        var fd = new FormData();
+        fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+        try { fd.append("file", blob, filename); } catch (e) { fd.append("file", blob); }
+        fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: fd }).then(function (r) {
+          return r.json().then(function (j) { return { ok: r.ok, json: j || {} }; }).catch(function () {
+            return { ok: r.ok, json: {} };
+          });
+        }).then(function (res) {
+          var url = res && res.json ? res.json.secure_url : null;
+          if (res && res.ok && url && boardValidPhotoUrl(url)) { cb(url, null); return; }
+          var apiMsg = "";
+          try {
+            if (res && res.json && res.json.error && typeof res.json.error.message === "string") apiMsg = res.json.error.message;
+          } catch (e) {}
+          if (apiMsg) {
+            cb(null, "Cloudinary couldn't upload that photo — " + apiMsg);
+          } else {
+            cb(null, "Cloudinary couldn't be reached — check your connection and try again.");
           }
-          var ep = endpoints[i++];
-          var fd = new FormData();
-          fd.append("reqtype", "fileupload");
-          try { fd.append("fileToUpload", blob, filename); } catch (e) { fd.append("fileToUpload", blob); }
-          fetch(ep, { method: "POST", body: fd }).then(function (r) {
-            return r.text().then(function (t) { return (t || "").trim(); });
-          }).then(function (text) {
-            if (boardValidPhotoUrl(text)) { cb(text, null); return; }
-            if (/uploads paused/i.test(text)) paused = true;
-            attempt();
-          }).catch(function () { attempt(); });
-        }
-        attempt();
+        }).catch(function () {
+          cb(null, "Cloudinary couldn't be reached — check your connection and try again.");
+        });
       }
       function boardPhotoPush(url, caption, replyTo) {
         boardWithRef("Couldn't post that photo — check your connection and try again.", function () {
@@ -6438,7 +6456,7 @@
           return;
         }
         if (!liveReady || !liveDb) {
-          boardNote("The board couldn't connect — check your connection and try again.");
+          boardNote("The Wedding Wall couldn't connect — check your connection and try again.");
           return;
         }
         boardPhotoSetBusy(true);
@@ -6450,13 +6468,13 @@
             return;
           }
           var fname = "spudmaps-photo." + boardPhotoExt(blob.type || file.type);
-          boardCatboxSend(blob, fname, function (url, errMsg) {
+          boardCloudinarySend(blob, fname, function (url, errMsg) {
             if (!url) {
               boardPhotoSetBusy(false);
               boardNote(errMsg || "Couldn't upload that photo — try again.");
               return;
             }
-            boardNote("Photo uploaded — posting it to the board…");
+            boardNote("Photo uploaded — posting it to The Wedding Wall…");
             boardPhotoPush(url, (caption || "").trim().slice(0, 280), replyTo || null);
           });
         });
@@ -6468,7 +6486,7 @@
         try { objUrl = URL.createObjectURL(file); } catch (e) { objUrl = null; }
         boardPhotoStaged = { file: file, url: objUrl };
         if (boardPhotoThumbEl && objUrl) boardPhotoThumbEl.src = objUrl;
-        if (boardPhotoNameEl) boardPhotoNameEl.textContent = file.name || "Photo ready";
+        if (boardPhotoNameEl) boardPhotoNameEl.textContent = file.name || "Photo Ready";
         if (boardPhotoPreviewEl) boardPhotoPreviewEl.hidden = false;
         boardNote("");
       }
@@ -6504,7 +6522,7 @@
             return;
           }
           if (picked.size > BOARD_PHOTO_MAX_BYTES) {
-            boardNote("That photo is over Catbox's 200 MB limit.");
+            boardNote("That photo is over the 200 MB limit.");
             return;
           }
           if (replyKey) boardPhotoUploadAndPost(picked, replyDraft, replyKey);
@@ -6525,7 +6543,7 @@
       boardLight.hidden = true;
       boardLight.setAttribute("role", "dialog");
       boardLight.setAttribute("aria-modal", "true");
-      boardLight.setAttribute("aria-label", "Board photo viewer");
+      boardLight.setAttribute("aria-label", "The Wedding Wall Photo Viewer");
       var boardLightCard = document.createElement("div");
       boardLightCard.className = "acard";
       var boardLightImg = document.createElement("img");
@@ -6539,7 +6557,7 @@
       boardLightRow.className = "alightrow";
       var boardLightOpen = document.createElement("a");
       boardLightOpen.className = "boardbtn2";
-      boardLightOpen.textContent = "Open full photo";
+      boardLightOpen.textContent = "Open Full Photo";
       boardLightOpen.target = "_blank";
       boardLightOpen.rel = "noopener";
       var boardLightSpacer = document.createElement("span");
@@ -6593,10 +6611,10 @@
       if (liveReady && liveDb) {
         liveEnsureAuth(function (ok) {
           if (ok) boardAttach();
-          else boardNote("The board couldn't connect just now — check your connection and reload to read the group's notes.");
+          else boardNote("The Wedding Wall couldn't connect just now — check your connection and reload to read the group's notes.");
         });
       } else {
-        boardNote("The board couldn't connect just now — the rest of the map works as usual.");
+        boardNote("The Wedding Wall couldn't connect just now — the rest of the map works as usual.");
       }
 
       // ---------- Wedding album: shared photos (Firebase Storage + `album` node) ----------
@@ -7844,6 +7862,30 @@
           var open = btn.getAttribute("aria-expanded") === "true";
           btn.setAttribute("aria-expanded", open ? "false" : "true");
           if (body) body.hidden = open;
+        });
+      })();
+    </script>
+    <script>
+      // ---------- The Wedding Wall shortcut: smooth scroll from the top ----------
+      (function () {
+        "use strict";
+        var btn = document.getElementById("wallShortcut");
+        var wall = document.getElementById("weddingWall");
+        if (!btn || !wall) return;
+        btn.addEventListener("click", function () {
+          var reduce = false;
+          try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { reduce = false; }
+          // The wall is expanded by default; if it was collapsed, open it first so the scroll lands on the notes.
+          var body = document.getElementById("boardBody");
+          if (body && body.hidden) {
+            body.hidden = false;
+            var toggles = wall.querySelectorAll(".foldtoggle");
+            for (var i = 0; i < toggles.length; i++) {
+              if (toggles[i].getAttribute("aria-controls") === "boardBody") toggles[i].setAttribute("aria-expanded", "true");
+            }
+          }
+          if (wall.scrollIntoView) wall.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+          else wall.scrollIntoView();
         });
       })();
     </script>
