@@ -1258,7 +1258,7 @@
       .spudfx-spud {
         position: absolute; left: 50%; top: 50%; width: 280px; height: 213px;
         margin: -106px 0 0 -140px; opacity: 0; z-index: 2;
-        filter: drop-shadow(0 0 34px rgba(240, 190, 60, 0.85));
+        filter: drop-shadow(0 0 26px rgba(255, 196, 48, 0.95)) drop-shadow(0 0 58px rgba(232, 156, 22, 0.75)) drop-shadow(0 0 110px rgba(196, 116, 6, 0.45));
       }
       .spudfx-spud svg { display: block; width: 100%; height: 100%; }
       .spudfx-spud.show { animation: spudfxPop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards; }
@@ -1330,6 +1330,27 @@
         82% { opacity: 1; transform: translateY(3px) rotate(var(--rot, 20deg)) scale(1); }
         100% { opacity: 1; transform: translateY(0) rotate(var(--rot, 20deg)) scale(1); }
       }
+      /* Ambient topping confetti rain: bacon bits, cheese shreds, and chive
+         rings falling across the WHOLE screen for the duration of the
+         sequence. Purely decorative atmosphere — a separate layer from
+         the toppings that land and stay on the potato (.spudfx-top), and
+         it never changes their counts, positions, or layering. Sits
+         behind the potato (z 2) and well behind the sour-cream wipe
+         (z 10), so the wipe still ends the show. */
+      .spudfx-rain { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+      .spudfx-rain-bit {
+        position: absolute; top: -48px; opacity: 0; will-change: transform, opacity;
+        box-shadow: 0 1px 2px rgba(60,30,5,0.35);
+        animation-name: spudfxRain; animation-timing-function: linear; animation-fill-mode: forwards;
+      }
+      @keyframes spudfxRain {
+        0% { opacity: 0; transform: translate3d(0, -48px, 0) rotate(0deg); }
+        7% { opacity: 1; }
+        25% { transform: translate3d(calc(var(--drift, 24px) * 0.35), 27vh, 0) rotate(calc(var(--spin, 300deg) * 0.3)); }
+        55% { transform: translate3d(calc(var(--drift, 24px) * -0.25), 58vh, 0) rotate(calc(var(--spin, 300deg) * 0.62)); }
+        93% { opacity: 1; }
+        100% { opacity: 0; transform: translate3d(var(--drift, 24px), 112vh, 0) rotate(var(--spin, 300deg)); }
+      }
       /* Sour cream dollop that appears on the loaded potato, then overflows */
       .spudfx-dollop-on {
         position: absolute; left: 50%; top: 26%; width: 118px; height: 58px; margin-left: -59px; z-index: 6;
@@ -1360,6 +1381,7 @@
         .spudfx-fluffG { transition: none; }
         .spudfx-butterwrap.show, .spudfx-butterwrap.melting .spudfx-butter-pat, .spudfx-butterwrap.melting .spudfx-butter-pool { transition: none; }
         .spudfx-top { animation: none; opacity: 1; }
+        .spudfx-rain { display: none; }
         .spudfx-cream.fill, .spudfx-cream.drain { transition: none; }
         .spudfx-dollop-on.show { transition: none; }
       }
@@ -1917,7 +1939,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v29.5.66</p>
+        <p class="version-stamp">v30.0.67</p>
       </footer>
     </div>
 
@@ -8853,6 +8875,53 @@
             }
           }
 
+          // Ambient topping confetti rain across the whole screen — EXTRA
+          // atmosphere only, in its own full-screen layer inside the fx
+          // overlay. This never calls or alters toppingWave, so the
+          // toppings landing ON the potato keep exactly their current
+          // counts, positions, and layering.
+          function toppingRain(fxEl) {
+            var colors = {
+              bacon: ["#8a3b22", "#a34d2a", "#6e2c18", "#b85c33"],
+              cheese: ["#f2b705", "#f7c948", "#e8930c", "#ffcf3f"],
+              chive: ["#3e9b4f", "#57b25e", "#2e7d3b"]
+            };
+            var kinds = ["bacon", "cheese", "chive"];
+            var rain = document.createElement("div");
+            rain.className = "spudfx-rain";
+            rain.setAttribute("aria-hidden", "true");
+            for (var i = 0; i < 84; i++) {
+              var kind = kinds[i % 3];
+              var list = colors[kind];
+              var bit = document.createElement("div");
+              bit.className = "spudfx-rain-bit";
+              var w, h, r;
+              if (kind === "bacon") {
+                w = 13 + Math.random() * 10; h = 8 + Math.random() * 6; r = "3px";
+                bit.style.background = list[i % list.length];
+                if (i % 3 === 0) bit.style.boxShadow = "inset 0 0 0 2px rgba(70, 28, 12, 0.45), 0 1px 2px rgba(60,30,5,0.35)";
+              } else if (kind === "cheese") {
+                w = 4 + Math.random() * 2; h = 20 + Math.random() * 14; r = "2px";
+                bit.style.background = list[i % list.length];
+              } else {
+                w = 11 + Math.random() * 5; h = w; r = "50%";
+                bit.style.background = "transparent";
+                bit.style.border = "4px solid " + list[i % list.length];
+                bit.style.boxShadow = "0 1px 2px rgba(30,60,20,0.3)";
+              }
+              bit.style.left = (Math.random() * 100) + "%";
+              bit.style.width = w + "px";
+              bit.style.height = h + "px";
+              bit.style.borderRadius = r;
+              bit.style.setProperty("--drift", (-70 + Math.random() * 140) + "px");
+              bit.style.setProperty("--spin", (-260 + Math.random() * 520) + "deg");
+              bit.style.animationDuration = (2.6 + Math.random() * 1.9) + "s";
+              bit.style.animationDelay = (Math.random() * 5.2) + "s";
+              rain.appendChild(bit);
+            }
+            fxEl.appendChild(rain);
+          }
+
           function playSpud() {
             if (playing) return;
             playing = true;
@@ -8864,11 +8933,11 @@
             spud.innerHTML =
               '<svg viewBox="0 0 250 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Golden potato">' +
               '<defs><radialGradient id="spudfxGold" cx="38%" cy="30%" r="85%">' +
-              '<stop offset="0%" stop-color="#f6cd62"/><stop offset="45%" stop-color="#e3a82e"/>' +
-              '<stop offset="78%" stop-color="#c07f16"/><stop offset="100%" stop-color="#9c6208"/>' +
+              '<stop offset="0%" stop-color="#ffdc73"/><stop offset="32%" stop-color="#f4ae1f"/>' +
+              '<stop offset="62%" stop-color="#dd8f0c"/><stop offset="85%" stop-color="#b96f04"/><stop offset="100%" stop-color="#8f5203"/>' +
               '</radialGradient></defs>' +
               '<path d="M28 100 C24 58 66 26 122 22 C180 18 224 48 226 92 C228 136 184 166 126 168 C70 170 32 142 28 100 Z" fill="url(#spudfxGold)"/>' +
-              '<ellipse cx="88" cy="62" rx="34" ry="15" fill="#ffe9a3" opacity="0.55" transform="rotate(-14 88 62)"/>' +
+              '<ellipse cx="88" cy="62" rx="34" ry="15" fill="#ffedb0" opacity="0.65" transform="rotate(-14 88 62)"/>' +
               '<g fill="#8a560c">' +
               '<ellipse cx="70" cy="92" rx="6.5" ry="4" transform="rotate(-18 70 92)"/>' +
               '<ellipse cx="112" cy="52" rx="5.5" ry="3.4" transform="rotate(10 112 52)"/>' +
@@ -8892,7 +8961,7 @@
               // The opened split: golden skin rim, then a big bumpy mound of
               // white fluff puffing up out of it, with peeled skin tabs.
               '<g class="spudfx-fluffG">' +
-              '<path d="M38 100 C36 74 56 58 78 62 C86 46 108 42 120 52 C132 40 154 42 162 54 C180 46 198 58 202 72 C216 78 220 96 212 108 C216 126 198 142 178 140 C168 154 146 156 134 146 C120 158 98 156 90 144 C70 152 52 140 54 126 C42 122 36 114 38 100 Z" fill="#b57a14" stroke="#8a560c" stroke-width="3"/>' +
+              '<path d="M38 100 C36 74 56 58 78 62 C86 46 108 42 120 52 C132 40 154 42 162 54 C180 46 198 58 202 72 C216 78 220 96 212 108 C216 126 198 142 178 140 C168 154 146 156 134 146 C120 158 98 156 90 144 C70 152 52 140 54 126 C42 122 36 114 38 100 Z" fill="#a86a08" stroke="#7c4c05" stroke-width="3"/>' +
               '<path d="M38 100 C36 74 56 58 78 62 C86 46 108 42 120 52 C132 40 154 42 162 54 C180 46 198 58 202 72 C216 78 220 96 212 108 C216 126 198 142 178 140 C168 154 146 156 134 146 C120 158 98 156 90 144 C70 152 52 140 54 126 C42 122 36 114 38 100 Z" fill="#fffdf4" transform="translate(125 99) scale(0.87 0.8) translate(-125 -99)"/>' +
               '<g fill="#f3e6c3">' +
               '<ellipse cx="86" cy="88" rx="13" ry="7" transform="rotate(-12 86 88)"/>' +
@@ -8908,8 +8977,8 @@
               '<ellipse cx="182" cy="108" rx="10" ry="5" transform="rotate(-12 182 108)"/>' +
               '<ellipse cx="126" cy="94" rx="13" ry="6.5"/>' +
               '</g>' +
-              '<ellipse cx="47" cy="70" rx="17" ry="8" fill="#c07f16" stroke="#8a560c" stroke-width="2.5" transform="rotate(-32 47 70)"/>' +
-              '<ellipse cx="203" cy="70" rx="17" ry="8" fill="#c07f16" stroke="#8a560c" stroke-width="2.5" transform="rotate(32 203 70)"/>' +
+              '<ellipse cx="47" cy="70" rx="17" ry="8" fill="#d18a0c" stroke="#7c4c05" stroke-width="2.5" transform="rotate(-32 47 70)"/>' +
+              '<ellipse cx="203" cy="70" rx="17" ry="8" fill="#d18a0c" stroke="#7c4c05" stroke-width="2.5" transform="rotate(32 203 70)"/>' +
               '</g></svg>';
             fx.appendChild(spud);
             // Butter pats that land on the fluff right after the split opens,
@@ -8965,6 +9034,9 @@
               spud.classList.add("show");
               setTimeout(function () { spud.classList.add("breathe"); }, 720);
             });
+            // Screen-wide topping confetti rain for the whole sequence
+            // (ambient only — the on-potato topping waves below are untouched)
+            toppingRain(fx);
             // SLICE IT OPEN: crack flashes across the middle and the potato
             // shudders, then the split springs open revealing the white fluff
             setTimeout(function () { spud.classList.add("slicing"); }, 800);
