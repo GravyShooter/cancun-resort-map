@@ -1351,13 +1351,17 @@
         93% { opacity: 1; }
         100% { opacity: 0; transform: translate3d(var(--drift, 24px), 112vh, 0) rotate(var(--spin, 300deg)); }
       }
-      /* Sour cream dollop that appears on the loaded potato, then overflows */
+      /* Sour cream piped swirl that appears on the loaded potato, then
+         overflows — a Daisy-style squeeze-pouch swirl: stacked ridged
+         tiers spiralling up to a small curl tip, drawn by the inline SVG
+         inside this element (see dollopOn.innerHTML in playSpud). */
       .spudfx-dollop-on {
-        position: absolute; left: 50%; top: 26%; width: 118px; height: 58px; margin-left: -59px; z-index: 6;
-        background: radial-gradient(ellipse at 38% 28%, #ffffff 0%, #fffef8 45%, #fdf6e3 78%, #f3ead0 100%);
-        border-radius: 50% 50% 48% 52% / 62% 62% 38% 38%;
-        box-shadow: 0 3px 10px rgba(120,100,50,0.25), inset 0 -8px 14px rgba(226,216,186,0.65), inset 6px 6px 12px #ffffff;
+        position: absolute; left: 50%; top: 24%; width: 124px; height: 64px; margin-left: -62px; z-index: 6;
         opacity: 0; transform: scale(0.3) translateY(6px);
+      }
+      .spudfx-dollop-on svg {
+        display: block; width: 100%; height: 100%; overflow: visible;
+        filter: drop-shadow(0 3px 6px rgba(120, 100, 50, 0.28));
       }
       .spudfx-dollop-on.show { transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3); opacity: 1; transform: scale(1) translateY(0); }
       .spudfx-dollop-on.overflow { transition: transform 0.9s ease-in, opacity 0.3s ease; transform: scale(1.6) translateY(2px); opacity: 0.95; }
@@ -1939,7 +1943,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v30.0.67</p>
+        <p class="version-stamp">v31.0.68</p>
       </footer>
     </div>
 
@@ -8833,10 +8837,11 @@
             var colors = {
               bacon: ["#8a3b22", "#a34d2a", "#6e2c18", "#b85c33"],
               cheese: ["#f2b705", "#f7c948", "#e8930c", "#ffcf3f"],
-              chive: ["#3e9b4f", "#57b25e", "#2e7d3b"]
+              chive: ["#3e9b4f", "#57b25e", "#2e7d3b"],
+              pepper: ["#241a12", "#33261a", "#171008", "#403120"]
             };
             var list = colors[kind] || colors.bacon;
-            var count = kind === "cheese" ? 26 : kind === "bacon" ? 22 : 20;
+            var count = kind === "cheese" ? 26 : kind === "bacon" ? 22 : kind === "pepper" ? 40 : 20;
             for (var i = 0; i < count; i++) {
               var bit = document.createElement("div");
               bit.className = "spudfx-top";
@@ -8848,6 +8853,11 @@
               } else if (kind === "cheese") {
                 w = 4 + Math.random() * 2; h = 20 + Math.random() * 14; r = "2px";
                 bit.style.background = list[i % list.length];
+              } else if (kind === "pepper") {
+                // Cracked black pepper: fine dark speckles, not chunks
+                w = 3 + Math.random() * 2.6; h = 2 + Math.random() * 1.8; r = "50%";
+                bit.style.background = list[i % list.length];
+                bit.style.boxShadow = "0 1px 1px rgba(40,26,10,0.3)";
               } else {
                 w = 11 + Math.random() * 5; h = w; r = "50%";
                 bit.style.background = "transparent";
@@ -8859,8 +8869,13 @@
               // Potato container is 280x213; the fluff mound is centred around
               // (140, 109) and spans roughly x 48–232, y 58–160. Each layer
               // sits a little higher as the pile builds up in the split.
-              var cx = 140 + (Math.random() - 0.5) * 128;
-              var cy = kind === "bacon" ? 112 + (Math.random() - 0.5) * 46 : kind === "cheese" ? 104 + (Math.random() - 0.5) * 50 : 96 + (Math.random() - 0.5) * 44;
+              // Chives are the exception: as the final garnish they land ON
+              // the sour-cream swirl, so they cluster tight over the swirl
+              // (centred ~(140, 76), spanning roughly x 80–200, y 48–112).
+              // Pepper goes over the WHOLE finished top — swirl and pile —
+              // so it scatters across the full fluff width and height.
+              var cx = kind === "chive" ? 140 + (Math.random() - 0.5) * 74 : 140 + (Math.random() - 0.5) * 128;
+              var cy = kind === "bacon" ? 112 + (Math.random() - 0.5) * 46 : kind === "cheese" ? 104 + (Math.random() - 0.5) * 50 : kind === "chive" ? 78 + (Math.random() - 0.5) * 30 : 98 + (Math.random() - 0.5) * 66;
               // Keep the pile roughly elliptical so it stays inside the fluff
               bit.style.left = Math.max(52, Math.min(228 - w, cx - w / 2)) + "px";
               bit.style.top = Math.max(56, Math.min(152 - h, cy - h / 2)) + "px";
@@ -8869,8 +8884,8 @@
               bit.style.borderRadius = r;
               bit.style.zIndex = String(layerZ);
               bit.style.setProperty("--rot", (-38 + Math.random() * 76) + "deg");
-              bit.style.animationDuration = (0.55 + Math.random() * 0.35) + "s";
-              bit.style.animationDelay = (i * 28 + Math.random() * 90) + "ms";
+              bit.style.animationDuration = kind === "pepper" ? (0.4 + Math.random() * 0.25) + "s" : (0.55 + Math.random() * 0.35) + "s";
+              bit.style.animationDelay = kind === "pepper" ? (i * 14 + Math.random() * 70) + "ms" : (i * 28 + Math.random() * 90) + "ms";
               spudEl.appendChild(bit);
             }
           }
@@ -8991,10 +9006,43 @@
               '<span class="spudfx-butter-pat pat1"></span>' +
               '<span class="spudfx-butter-pat pat2"></span>';
             spud.appendChild(butterWrap);
-            // Dollop that sits on the loaded potato before the overflow finale
+            // Piped sour-cream swirl that sits on the loaded potato before
+            // the overflow finale: stacked ridged tiers spiralling up to a
+            // curl tip, like it was squeezed from a Daisy pouch — not a
+            // plain round dollop.
             var dollopOn = document.createElement("div");
             dollopOn.className = "spudfx-dollop-on";
             dollopOn.setAttribute("aria-hidden", "true");
+            dollopOn.innerHTML =
+              '<svg viewBox="0 0 124 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+              '<defs><radialGradient id="spudfxCream" cx="38%" cy="26%" r="85%">' +
+              '<stop offset="0%" stop-color="#ffffff"/><stop offset="52%" stop-color="#fffef8"/>' +
+              '<stop offset="84%" stop-color="#f8f0dc"/><stop offset="100%" stop-color="#ebdfc0"/>' +
+              '</radialGradient></defs>' +
+              // Bottom piped tier: wide scalloped base ring
+              '<path d="M8 46 C8 36 22 31 36 33 C44 25 58 23 66 27 C76 21 92 24 100 31 C110 30 118 36 118 45 C118 54 104 59 88 57 C72 61 52 61 38 57 C22 59 8 55 8 46 Z" fill="url(#spudfxCream)" stroke="#e2d4ae" stroke-width="1.6"/>' +
+              // Middle piped tier
+              '<path d="M26 36 C26 28 38 24 48 26 C54 19 66 18 72 21 C80 16 92 19 98 25 C106 25 110 30 110 36 C110 43 98 47 86 45 C74 48 58 48 48 45 C36 47 26 43 26 36 Z" fill="url(#spudfxCream)" stroke="#e2d4ae" stroke-width="1.5"/>' +
+              // Top piped tier
+              '<path d="M42 26 C42 20 52 16 60 18 C65 13 74 12 79 15 C86 12 94 16 95 22 C96 28 86 31 77 30 C68 32 56 32 50 30 C44 29 41 29 42 26 Z" fill="url(#spudfxCream)" stroke="#e2d4ae" stroke-width="1.4"/>' +
+              // Curl tip at the peak of the spiral
+              '<path d="M56 15 C57 7 66 3 71 6 C76 9 74 15 68 16 C63 17 60 14 62 11 C63 9 66 9 67 10" fill="url(#spudfxCream)" stroke="#e2d4ae" stroke-width="1.3" stroke-linecap="round"/>' +
+              // Piping ridges: short curved grooves across each tier
+              '<g fill="none" stroke="#ddd0a8" stroke-width="1.7" stroke-linecap="round" opacity="0.85">' +
+              '<path d="M22 36 Q24 44 20 52"/><path d="M40 32 Q42 42 38 54"/>' +
+              '<path d="M60 29 Q61 40 58 56"/><path d="M80 28 Q82 38 84 54"/>' +
+              '<path d="M98 33 Q99 42 102 50"/>' +
+              '<path d="M38 26 Q40 33 37 42"/><path d="M56 22 Q57 30 55 44"/>' +
+              '<path d="M74 20 Q76 28 77 43"/><path d="M90 26 Q91 32 93 40"/>' +
+              '<path d="M52 18 Q54 23 52 29"/><path d="M68 15 Q70 21 70 29"/>' +
+              '<path d="M84 19 Q85 23 86 28"/>' +
+              '</g>' +
+              // Glossy highlights on the ridges
+              '<g fill="#ffffff" opacity="0.8">' +
+              '<ellipse cx="38" cy="36" rx="9" ry="3.2" transform="rotate(-14 38 36)"/>' +
+              '<ellipse cx="64" cy="24" rx="8" ry="2.8" transform="rotate(-8 64 24)"/>' +
+              '<ellipse cx="84" cy="36" rx="7" ry="2.6" transform="rotate(10 84 36)"/>' +
+              '</g></svg>';
             spud.appendChild(dollopOn);
             var cream = document.createElement("div");
             cream.className = "spudfx-cream";
@@ -9022,8 +9070,9 @@
               butterWrap.classList.add("melting");
               toppingWave(spud, "bacon", 2);
               toppingWave(spud, "cheese", 3);
-              toppingWave(spud, "chive", 4);
               dollopOn.classList.add("show");
+              toppingWave(spud, "chive", 7);
+              toppingWave(spud, "pepper", 8);
               // In reduced motion the topping animation is disabled in CSS, so they show statically.
               setTimeout(showSignoff, 600);
               setTimeout(cleanup, 2800);
@@ -9048,23 +9097,26 @@
             setTimeout(function () { butterWrap.classList.add("show"); }, 1750);
             setTimeout(function () { butterWrap.classList.add("melting"); }, 2200);
             // Then the confetti toppings, layered INTO the split on the fluff —
-            // each layer lands and STAYS
+            // each layer lands and STAYS: bacon first, then cheese
             setTimeout(function () { toppingWave(spud, "bacon", 2); }, 2600);
             setTimeout(function () { toppingWave(spud, "cheese", 3); }, 3500);
-            setTimeout(function () { toppingWave(spud, "chive", 4); }, 4400);
-            // Dollop crowns the loaded potato
-            setTimeout(function () { dollopOn.classList.add("show"); }, 5300);
-            // HOLD the finished loaded potato (5300–6700ms) so it can be admired — nothing covers it here
+            // The piped sour-cream swirl goes on NEXT, over bacon and cheese
+            setTimeout(function () { dollopOn.classList.add("show"); }, 4400);
+            // Chive rings are the garnish ON TOP of the swirl, sprinkled last
+            setTimeout(function () { toppingWave(spud, "chive", 7); }, 5300);
+            // Cracked black pepper speckles over the whole finished top
+            setTimeout(function () { toppingWave(spud, "pepper", 8); }, 6000);
+            // HOLD the finished loaded potato (6000–7300ms) so it can be admired — nothing covers it here
             // FINALE: sour cream overflows FROM the potato and wipes the whole screen
-            setTimeout(function () { dollopOn.classList.add("overflow"); }, 6700);
-            setTimeout(function () { cream.classList.add("fill"); }, 6900);
+            setTimeout(function () { dollopOn.classList.add("overflow"); }, 7300);
+            setTimeout(function () { cream.classList.add("fill"); }, 7500);
             // Screen is fully white/creamy — hold briefly, then fade back to normal
             setTimeout(function () {
               cream.classList.add("drain");
               spud.classList.add("spudfx-fadeout");
               showSignoff();
-            }, 8150);
-            setTimeout(cleanup, 9100);
+            }, 8750);
+            setTimeout(cleanup, 9700);
           }
 
           logo.addEventListener("click", function () {
