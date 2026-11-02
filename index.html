@@ -1252,6 +1252,44 @@
       }
       .offlinebar strong { font-weight: 700; }
       @media print { .offlinebar, .opennownote { display: none; } }
+      /* ---------- Ceremonial spud payoff: golden spud, topping confetti, sour-cream fill ---------- */
+      .spudfx { position: fixed; inset: 0; z-index: 300; pointer-events: none; overflow: hidden; }
+      .spudfx-spud {
+        position: absolute; left: 50%; top: 50%; width: 250px; height: 190px;
+        margin: -95px 0 0 -125px; opacity: 0;
+        filter: drop-shadow(0 0 34px rgba(240, 190, 60, 0.85));
+      }
+      .spudfx-spud svg { display: block; width: 100%; height: 100%; }
+      .spudfx-spud.show { animation: spudfxPop 1.5s ease forwards; }
+      @keyframes spudfxPop {
+        0% { opacity: 0; transform: scale(0.35) rotate(-10deg); }
+        22% { opacity: 1; transform: scale(1.1) rotate(3deg); }
+        40% { transform: scale(1) rotate(0deg); }
+        78% { opacity: 1; transform: scale(1.02); }
+        100% { opacity: 0; transform: scale(1.06); }
+      }
+      .spudfx-bit {
+        position: absolute; top: -30px; will-change: transform;
+        animation-name: spudfxFall; animation-timing-function: linear; animation-fill-mode: forwards;
+      }
+      @keyframes spudfxFall { to { transform: translateY(112vh) rotate(var(--spin, 320deg)); } }
+      .spudfx-cream {
+        position: absolute; inset: 0; transform: translateY(104%);
+        background: linear-gradient(180deg, #fffefb 0%, #fdfaf1 55%, #f6f1e2 100%);
+        box-shadow: inset 0 18px 34px rgba(214, 203, 168, 0.55), inset 0 -22px 40px rgba(226, 216, 186, 0.5);
+      }
+      .spudfx-cream .creamwave { position: absolute; left: 0; right: 0; top: -86px; height: 88px; width: 100%; display: block; }
+      .spudfx-cream .dollop {
+        position: absolute; border-radius: 50%;
+        background: radial-gradient(ellipse at 38% 32%, #ffffff 0%, #fdfaf0 55%, rgba(246, 240, 222, 0) 78%);
+      }
+      .spudfx-cream.fill { transition: transform 0.95s cubic-bezier(0.3, 0.7, 0.3, 1); transform: translateY(0); }
+      .spudfx-cream.drain { transition: transform 0.95s ease-in; transform: translateY(104%); }
+      @media (prefers-reduced-motion: reduce) {
+        .spudfx-spud.show { animation: none; opacity: 1; }
+        .spudfx-cream.fill, .spudfx-cream.drain { transition: none; }
+      }
+      @media print { .spudfx { display: none; } }
       /* ---------- Splash: brief spud-branded loading screen ---------- */
       .splash {
         position: fixed; inset: 0; z-index: 200;
@@ -8677,13 +8715,10 @@
         (function () {
           var logo = document.querySelector(".hero-logo");
           if (!logo) return;
-          var taps = 0, lastTap = 0, eggBar = null;
-          logo.addEventListener("click", function () {
-            var now = Date.now();
-            taps = (now - lastTap < 2500) ? taps + 1 : 1;
-            lastTap = now;
-            if (taps < 5) return;
-            taps = 0;
+          var taps = 0, lastTap = 0, eggBar = null, playing = false;
+          var reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+          function showSignoff() {
             if (!eggBar) {
               eggBar = document.createElement("div");
               eggBar.className = "offlinebar";
@@ -8692,9 +8727,124 @@
               if (!wrap) return;
               wrap.insertBefore(eggBar, wrap.firstChild);
             }
-            eggBar.innerHTML = "<strong>You found the ceremonial spud.</strong> Five taps on the logo summon it. It does nothing, grants no perks, and shortens no walks — it is, nonetheless, perfect. The Spud Lord approves.";
+            eggBar.innerHTML = "<strong>The ceremonial spud has been summoned.</strong> Golden, fully loaded, and glorious. The Spud Lord approves.";
             eggBar.hidden = false;
             setTimeout(function () { eggBar.hidden = true; }, 6000);
+          }
+
+          function confettiWave(fx, kind) {
+            var colors = {
+              bacon: ["#8a3b22", "#a34d2a", "#6e2c18"],
+              cheese: ["#f2b705", "#f7c948", "#e8930c"],
+              chive: ["#3e9b4f", "#57b25e", "#2e7d3b"]
+            };
+            var list = colors[kind] || colors.bacon;
+            for (var i = 0; i < 42; i++) {
+              var bit = document.createElement("div");
+              bit.className = "spudfx-bit";
+              var w, h, r;
+              if (kind === "bacon") {
+                // Crispy bacon bits: chunky reddish-brown rectangles.
+                w = 10 + Math.random() * 9; h = 6 + Math.random() * 5; r = "3px";
+                bit.style.background = list[i % list.length];
+                if (i % 3 === 0) bit.style.boxShadow = "inset 0 0 0 2px rgba(70, 28, 12, 0.45)";
+              } else if (kind === "cheese") {
+                // Cheese shreds: long, thin golden strips.
+                w = 3.5 + Math.random() * 1.5; h = 17 + Math.random() * 11; r = "2px";
+                bit.style.background = list[i % list.length];
+              } else {
+                // Chive rings: small green hoops with a hollow middle.
+                w = 10 + Math.random() * 4; h = w; r = "50%";
+                bit.style.background = "transparent";
+                bit.style.border = "3.5px solid " + list[i % list.length];
+              }
+              bit.style.left = (Math.random() * 100) + "vw";
+              bit.style.width = w + "px";
+              bit.style.height = h + "px";
+              bit.style.borderRadius = r;
+              bit.style.setProperty("--spin", (180 + Math.random() * 540) + "deg");
+              bit.style.animationDuration = (1.1 + Math.random() * 0.9) + "s";
+              bit.style.animationDelay = (Math.random() * 0.35) + "s";
+              fx.appendChild(bit);
+            }
+          }
+
+          function playSpud() {
+            if (playing) return;
+            playing = true;
+            var fx = document.createElement("div");
+            fx.className = "spudfx";
+            fx.setAttribute("aria-hidden", "true");
+            var spud = document.createElement("div");
+            spud.className = "spudfx-spud";
+            spud.innerHTML =
+              '<svg viewBox="0 0 250 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Golden potato">' +
+              '<defs><radialGradient id="spudfxGold" cx="38%" cy="30%" r="85%">' +
+              '<stop offset="0%" stop-color="#f6cd62"/><stop offset="45%" stop-color="#e3a82e"/>' +
+              '<stop offset="78%" stop-color="#c07f16"/><stop offset="100%" stop-color="#9c6208"/>' +
+              '</radialGradient></defs>' +
+              '<path d="M28 100 C24 58 66 26 122 22 C180 18 224 48 226 92 C228 136 184 166 126 168 C70 170 32 142 28 100 Z" fill="url(#spudfxGold)"/>' +
+              '<ellipse cx="88" cy="62" rx="34" ry="15" fill="#ffe9a3" opacity="0.55" transform="rotate(-14 88 62)"/>' +
+              '<g fill="#8a560c">' +
+              '<ellipse cx="70" cy="92" rx="6.5" ry="4" transform="rotate(-18 70 92)"/>' +
+              '<ellipse cx="112" cy="52" rx="5.5" ry="3.4" transform="rotate(10 112 52)"/>' +
+              '<ellipse cx="152" cy="76" rx="7" ry="4.2" transform="rotate(-8 152 76)"/>' +
+              '<ellipse cx="98" cy="118" rx="6" ry="3.8" transform="rotate(14 98 118)"/>' +
+              '<ellipse cx="178" cy="116" rx="5.5" ry="3.4" transform="rotate(-20 178 116)"/>' +
+              '<ellipse cx="140" cy="140" rx="5" ry="3" transform="rotate(6 140 140)"/>' +
+              '<ellipse cx="52" cy="128" rx="4.6" ry="2.8" transform="rotate(22 52 128)"/>' +
+              '<ellipse cx="196" cy="62" rx="4.6" ry="2.8" transform="rotate(16 196 62)"/>' +
+              '</g>' +
+              '<g fill="#fff3c4" opacity="0.7">' +
+              '<ellipse cx="71" cy="90.4" rx="3.4" ry="1.7" transform="rotate(-18 71 90.4)"/>' +
+              '<ellipse cx="153" cy="74.4" rx="3.6" ry="1.8" transform="rotate(-8 153 74.4)"/>' +
+              '<ellipse cx="99" cy="116.4" rx="3.2" ry="1.6" transform="rotate(14 99 116.4)"/>' +
+              '</g></svg>';
+            fx.appendChild(spud);
+            var cream = document.createElement("div");
+            cream.className = "spudfx-cream";
+            cream.innerHTML =
+              '<svg class="creamwave" viewBox="0 0 1440 88" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+              '<path fill="#fffefb" d="M0 88 L0 52 C60 30 96 58 150 44 C196 32 214 8 246 12 C282 16 282 52 322 58 C368 65 396 30 448 34 C492 37 502 66 548 62 C566 60 574 34 596 30 C622 25 634 58 664 88 L720 88 C748 56 786 66 830 52 C878 37 900 60 952 50 C1004 40 1024 14 1062 18 C1102 22 1104 58 1150 60 C1196 62 1224 34 1276 40 C1324 46 1348 66 1392 56 C1414 51 1428 44 1440 46 L1440 88 Z"/></svg>' +
+              '<span class="dollop" style="left:12%;top:16%;width:190px;height:64px"></span>' +
+              '<span class="dollop" style="left:58%;top:30%;width:230px;height:76px"></span>' +
+              '<span class="dollop" style="left:30%;top:58%;width:170px;height:56px"></span>' +
+              '<span class="dollop" style="left:74%;top:66%;width:150px;height:50px"></span>';
+            fx.appendChild(cream);
+            document.body.appendChild(fx);
+
+            function cleanup() {
+              if (fx.parentNode) fx.parentNode.removeChild(fx);
+              playing = false;
+            }
+
+            if (reduceMotion) {
+              // Calm version: the golden spud simply appears, holds, and goes.
+              spud.classList.add("show");
+              setTimeout(showSignoff, 600);
+              setTimeout(cleanup, 2600);
+              return;
+            }
+
+            requestAnimationFrame(function () { spud.classList.add("show"); });
+            setTimeout(function () { confettiWave(fx, "bacon"); }, 1150);
+            setTimeout(function () { confettiWave(fx, "cheese"); }, 2050);
+            setTimeout(function () { confettiWave(fx, "chive"); }, 2950);
+            setTimeout(function () { cream.classList.add("fill"); }, 3900);
+            setTimeout(function () {
+              cream.classList.add("drain");
+              showSignoff();
+            }, 5050);
+            setTimeout(cleanup, 6150);
+          }
+
+          logo.addEventListener("click", function () {
+            var now = Date.now();
+            taps = (now - lastTap < 2500) ? taps + 1 : 1;
+            lastTap = now;
+            if (taps < 5) return;
+            taps = 0;
+            playSpud();
           });
         })();
       })();
