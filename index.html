@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-03-runner-jump-duck-buttons · v72.1.86 -->
+<!-- build-2026-11-03-runner-hazard-spacing · v73.1.86 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -3250,7 +3250,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v72.1.85</p>
+        <p class="version-stamp">v73.1.86</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -11106,6 +11106,13 @@
         // spawner polices the gap to the next hazard against it, so
         // no pair or sequence is impossible to clear.
         var lastObs = null;
+        // The trailing edge (run-line position) of the most recent
+        // spawn group of ANY kind, and whether that group was a
+        // hazard. Hazards police their distance from this too: a
+        // knife landing right on the tail of a butter line leaves
+        // no reaction room even when the previous hazard was far
+        // back — the "knives and butter too close together" trap.
+        var lastGroupEnd = -Infinity, lastGroupHazard = false;
         // Double jump: jumps spent since the last landing (0, 1, 2)
         // and the kick-off rings the second jump leaves behind.
         var jumpsUsed = 0, rings = [];
@@ -11150,6 +11157,7 @@
           items = []; floats = [];
           dust = []; dustTimer = 0; squash = 0;
           jumpsUsed = 0; rings = []; lastObs = null;
+          lastGroupEnd = -Infinity; lastGroupHazard = false;
           slideT = 0;
           peelerPending = false; peelerWait = 0; firstPeelerSeen = false; probeLog = [];
           nextSpawn = 520;
@@ -11210,6 +11218,22 @@
         // (which punishes being airborne). One full single-jump of
         // travel at the current speed, plus a landing margin.
         function peelerNeedsGap() { return speed() * 0.74 + 240; }
+        // Clear ground (edge to edge) a hazard group needs after
+        // the previous hazard group. The old spacing was in fixed
+        // pixels while the gaps SHRANK with distance — but jump
+        // travel GROWS with speed (a single jump covers ~250 px at
+        // the opening pace and ~745 px at top speed; a double jump
+        // ~1,230 px), so late-run clusters could be wider than a
+        // double jump spans, with the next hazard sitting exactly
+        // where he has to land. This gap scales with speed like the
+        // peeler rule does: at top speed it is ~600 px of empty
+        // ground — land, get a beat on the ground, jump again.
+        function hazardClearGap() { return speed() * 0.42 + 190; }
+        // Clear ground a hazard needs after a topping or power-up
+        // group: shorter than after a hazard (he is already on the
+        // ground collecting), but never zero — a hazard never sits
+        // on a topping line's tail.
+        function toppingClearGap() { return speed() * 0.20 + 130; }
         // High-value toppings (chili +30, sour cream +25) ride high:
         // too high to grab from the ground, so collecting one is a
         // jump — the taller perch takes a double jump — instead of a
@@ -11220,6 +11244,7 @@
         function singleTopping() {
           var tk = TOPPINGS[Math.floor(Math.random() * TOPPINGS.length)];
           pushItem(tk, W + 30, isHighValue(tk) ? highYOff() : (Math.random() < 0.35 ? 56 : 0));
+          return W + 30 + DIMS[tk].w; // screen x of its trailing edge
         }
         function spawn() {
           var m = distM();
@@ -11229,12 +11254,13 @@
           // after, behind a hazard-free run-up of toppings.
           if (m >= 460 && !firstPeelerSeen) peelerPending = true;
           var roll = Math.random();
-          var obsSpan = 0, obsPeeler = false; // this call's hazard footprint, for the gap floor below
+          var groupEndX = null, groupHazard = false, obsPeeler = false; // this call's group footprint, for the gap floor below
           // Power-ups: uncommon, and never back-to-back.
           if (powerupCooldown <= 0 && roll < 0.075) {
             var pk = ["magnet", "shield", "mult"][Math.floor(Math.random() * 3)];
             if (pk === "shield" && shieldOn) pk = "mult";
             pushItem(pk, W + 30, Math.random() < 0.5 ? 56 : 0);
+            groupEndX = W + 30 + DIMS[pk].w;
             powerupCooldown = 9 + Math.random() * 7;
           } else if (roll < 0.47) {
             var pool = obstaclePool(m);
@@ -11272,33 +11298,52 @@
               }
             }
             if (ok === null) {
-              singleTopping();
+              groupEndX = singleTopping();
             } else {
-              // Spawn fairness after a peeler: he is grounded as it
-              // passes and needs room to get airborne again before
-              // the next hazard lands on him — push a too-close
-              // follower further out instead of stacking it on the
-              // peeler's tail. Rolling pins close distance as they
-              // roll, so one trailing a peeler gets extra room.
-              if (lastObs && lastObs.kind === "peeler" && ok !== "peeler") {
-                if (ok === "rollingPin" && gap < 520) ox += 520 - gap;
-                else if (ok !== "rollingPin" && gap < 380) ox += 380 - gap;
+              // Spawn fairness, generalized: EVERY hazard now gets
+              // the speed-scaled spacing only the peeler used to
+              // get. A hazard that would land too close after the
+              // previous hazard group is pushed further out (never
+              // swapped or dropped), so there is always clear
+              // ground to land on and jump from again; a hazard
+              // after a topping group keeps a shorter but real
+              // reaction gap off the topping line's tail. Rolling
+              // pins close distance as they roll, so any pair
+              // involving one gets extra room. Peelers keep their
+              // own stricter start-to-start rule above and only
+              // take the topping gap here.
+              var needStart = -Infinity;
+              if (ok === "peeler") {
+                if (isFinite(lastGroupEnd)) needStart = lastGroupEnd + toppingClearGap();
+              } else {
+                if (lastObs) {
+                  var need1 = lastObs.end + hazardClearGap();
+                  if (ok === "rollingPin" || lastObs.kind === "rollingPin") need1 += 90;
+                  needStart = Math.max(needStart, need1);
+                }
+                if (isFinite(lastGroupEnd)) needStart = Math.max(needStart, lastGroupEnd + toppingClearGap());
               }
+              if (distPx + ox < needStart) ox += needStart - (distPx + ox);
               pushItem(ok, ox, ok === "peeler" ? 96 : 0);
               if (ok === "peeler") { firstPeelerSeen = true; peelerPending = false; plog("peeler spawned"); }
-              lastObs = { kind: ok, track: distPx + ox };
-              obsSpan = ox - (W + 30); obsPeeler = ok === "peeler";
+              lastObs = { kind: ok, track: distPx + ox, end: distPx + ox + DIMS[ok].w };
+              groupEndX = ox + DIMS[ok].w; groupHazard = true; obsPeeler = ok === "peeler";
               // Late runs throw pairs: a second ground hazard trailing
               // the first, close enough that one jump — or one double
               // jump — spans both. Peelers never pair: a pair must
-              // never mix "be airborne" with "stay grounded".
-              if (ok !== "peeler" && m >= 500 && Math.random() < 0.28) {
+              // never mix "be airborne" with "stay grounded". The
+              // trailing hazard sits tighter than it used to (max
+              // span ~285 px, well inside even a low-speed double
+              // jump), and the pair as a whole still gets the full
+              // clear gap before and after it via the rules above
+              // and the floor below — no third hazard stacks onto it.
+              if (ok !== "peeler" && m >= 500 && Math.random() < 0.24) {
                 var ok2 = pool[Math.floor(Math.random() * pool.length)];
                 if (ok2 !== "peeler") {
-                  var ox2 = ox + 190 + Math.random() * 60;
+                  var ox2 = ox + 172 + Math.random() * 46;
                   pushItem(ok2, ox2, 0);
-                  lastObs = { kind: ok2, track: distPx + ox2 };
-                  obsSpan = ox2 - (W + 30);
+                  lastObs = { kind: ok2, track: distPx + ox2, end: distPx + ox2 + DIMS[ok2].w };
+                  groupEndX = ox2 + DIMS[ok2].w;
                 }
               }
             }
@@ -11308,17 +11353,30 @@
             var ak = TOPPINGS[Math.floor(Math.random() * TOPPINGS.length)];
             var aOff = isHighValue(ak) ? 150 : 56;
             for (var a = 0; a < 3; a++) pushItem(ak, W + 30 + a * 54, aOff);
+            groupEndX = W + 30 + 2 * 54 + DIMS[ak].w;
           } else {
-            singleTopping();
+            groupEndX = singleTopping();
           }
-          // Gaps shrink as distance climbs — the steeper ramp.
-          var shrink = Math.max(0.52, 1 - m / 2600);
-          nextSpawn = (290 + Math.random() * 330) * shrink;
-          // Floor: the next spawn never lands inside this hazard
-          // group's footprint (a pair's second hazard sits up to
-          // 250 px past the first), and a peeler always gets a long
-          // quiet stretch after it.
-          if (obsSpan > 0 || obsPeeler) nextSpawn = Math.max(nextSpawn, obsSpan + (obsPeeler ? 460 : 210));
+          if (groupEndX !== null) {
+            lastGroupEnd = distPx + groupEndX;
+            lastGroupHazard = groupHazard;
+          }
+          // Gaps shrink as distance climbs, but the floor no longer
+          // lets them collapse: the tightening stops earlier than it
+          // used to, and the floor below overrides it whenever a
+          // group needs real room.
+          var shrink = Math.max(0.60, 1 - m / 2800);
+          nextSpawn = (300 + Math.random() * 320) * shrink;
+          // Floor: the next spawn never lands inside this group's
+          // footprint. After a hazard group it also keeps the full
+          // speed-scaled clear gap before anything else spawns (a
+          // peeler keeps its long quiet stretch); after a topping
+          // or power-up group it keeps a modest buffer so the next
+          // group never stacks onto its tail.
+          if (groupEndX !== null) {
+            var floorGap = obsPeeler ? 460 : (groupHazard ? hazardClearGap() : 130);
+            nextSpawn = Math.max(nextSpawn, (groupEndX - (W + 30)) + floorGap);
+          }
         }
 
         function jump() {
@@ -11326,16 +11384,20 @@
           var airborne = player.y > 0.01 || player.vy < 0;
           if (!airborne && jumpsUsed === 0) {
             jumpsUsed = 1;
-            player.vy = -920;
+            player.vy = -950;
             if (window.SFX) SFX("jump");
           } else if (airborne && jumpsUsed === 1) {
             // Double jump: one mid-air second jump, earned back on
             // landing. A touch softer than the ground jump, but fired
             // near the top of the arc it carries him over the wide
-            // hazard pairs a single jump can't span. The kick leaves
-            // a ring and a puff of dust so the spent jump reads.
+            // hazard pairs a single jump can't span. Both jumps got
+            // a small buff when hazard spacing was reworked: peak
+            // height ~340 px and ~1.26 s of air, so a tall knife
+            // paired with a wide butter slick clears with room to
+            // spare instead of by a frame. The kick leaves a ring
+            // and a puff of dust so the spent jump reads.
             jumpsUsed = 2;
-            player.vy = -845;
+            player.vy = -890;
             squash = -0.8; // stretch tall (negative squash), decays in tick
             rings.push({ x: player.x + player.w / 2, y: GROUND - player.y - 4, r: 10, life: 0 });
             for (var dp2 = 0; dp2 < 5; dp2++) {
@@ -12413,6 +12475,7 @@
             mode: mode, dist: distM(), score: score(),
             sliding: slideT > 0, playerY: Math.round(player.y),
             peelerPending: peelerPending, firstPeelerSeen: firstPeelerSeen,
+            clearGap: Math.round(hazardClearGap()), lastObsKind: lastObs ? lastObs.kind : null,
             items: items.map(function (it) { return { kind: it.kind, x: Math.round(it.x) }; }),
             log: probeLog.slice()
           };
