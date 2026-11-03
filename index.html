@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-03-beach-reads-phrasebook · v54.2.78 -->
+<!-- build-2026-11-03-3d-splats-shots-gun-max · v55.4.79 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -1700,6 +1700,62 @@
       /* ---------- Tate-lo 3D: first-person Spudball ---------- */
       .ball3d-stage { background: #1a0f08; cursor: crosshair; }
       .ball3d-card { width: min(880px, 100%); }
+      /* Maximize / fullscreen controls in the 3D dialog header. */
+      .ball3d-viewbtn {
+        appearance: none; cursor: pointer; flex: none;
+        display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px;
+        border: 1px solid var(--line); border-radius: 999px;
+        background: var(--panel-2); color: var(--ink);
+        font-family: var(--font-display); font-weight: 600; font-size: 0.85rem;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .ball3d-viewbtn[hidden] { display: none; }
+      .ball3d-viewbtn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .ball3d-viewbtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      /* Maximized: the dialog fills the viewport, the HUD compacts to
+         a single strip, the hint and roster drop away, the canvas
+         takes the largest 960:600 box that fits, and the touch
+         controls float over the stage instead of stacking below it.
+         This is also the fallback on devices with no element
+         fullscreen (iPhone Safari). */
+      .ball3dgame.ball3d-max { padding: 0; }
+      .ball3dgame.ball3d-max .ball3d-card {
+        position: relative;
+        width: 100%; height: 100vh; height: 100dvh; max-height: 100dvh;
+        border-radius: 0; border-left: 0; border-right: 0;
+        display: flex; flex-direction: column;
+        padding: 8px 10px 10px;
+      }
+      .ball3dgame.ball3d-max .spudgame-head { margin-bottom: 0; }
+      .ball3dgame.ball3d-max .spudgame-head h2 { font-size: 1.05rem; }
+      .ball3dgame.ball3d-max .ball-hud {
+        font-size: 0.8rem; flex-wrap: nowrap; white-space: nowrap;
+        overflow: hidden; margin: 0; gap: 2px 12px;
+      }
+      .ball3dgame.ball3d-max .ball-roster,
+      .ball3dgame.ball3d-max .spudgame-hint { display: none; }
+      .ball3dgame.ball3d-max .ball3d-stage {
+        flex: 1 1 auto; min-height: 0;
+        align-items: center; justify-items: center;
+        background: #1a0f08;
+      }
+      .ball3dgame.ball3d-max .ball3d-stage canvas {
+        align-self: center;
+        width: min(100%, calc((100vh - 132px) * 1.6));
+        width: min(100%, calc((100dvh - 132px) * 1.6));
+        height: auto;
+      }
+      .ball3dgame.ball3d-max .spudgame-panel { justify-self: stretch; align-self: stretch; }
+      .ball3dgame.ball3d-max .ball3d-touchrow {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        bottom: 12px; z-index: 6; margin: 0;
+        max-width: calc(100% - 20px);
+        background: rgba(18, 24, 28, 0.55); padding: 6px; border-radius: 14px;
+      }
+      .ball3dgame.ball3d-max .ball3d-sticklabel { display: none; }
+      @media (min-width: 760px) {
+        .ball3dgame.ball3d-max .ball3d-touchrow { max-width: calc(100% - 20px); margin: 0; }
+      }
       .ball3d-touchrow {
         display: flex; gap: 8px; align-items: stretch; margin-top: 8px;
       }
@@ -2690,7 +2746,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v54.2.78</p>
+        <p class="version-stamp">v55.4.79</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -2886,6 +2942,8 @@
       <div class="spudgame-card ball3d-card">
         <div class="spudgame-head">
           <h2 id="spudBall3dTitle">Tate-lo 3D — Spudball FPS</h2>
+          <button type="button" class="ball3d-viewbtn" id="ball3dMaxBtn" aria-pressed="false">Maximize</button>
+          <button type="button" class="ball3d-viewbtn" id="ball3dFsBtn" hidden>Fullscreen</button>
           <button type="button" class="spudgame-x" id="spudBall3dClose" aria-label="Close Tate-lo 3D">&times;</button>
         </div>
         <p class="ball-hud">
@@ -13356,7 +13414,9 @@
       // matching stone/brick/grass paints) as automatic fallbacks if
       // any photo texture fails to load. Warm distance fog, depth
       // shading, billboard Spudtan sprites with blob shadows, floor
-      // splat decals, glowing tracers, and a bobbing blaster viewmodel.
+      // persistent splat decals, slow glowing projectile shots that
+      // leave a splat wherever they land, and a sour-cream-gun
+      // viewmodel pointing forward at the crosshair.
       // Same rules as top-down Tate-lo: one hit is a sour-cream splat,
       // one life per round, first team to 5, 75-second rounds, same
       // blaster for everyone, no pickups. Drop-in / drop-out
@@ -13387,6 +13447,15 @@
         var FOV = 1.152;                       // ~66 degrees
         var PROJ = (BW / 2) / Math.tan(FOV / 2);
         var WIN_SCORE = 5, ROUND_MAX = 75;
+        // Shots are real travelling projectiles now, not hitscan: one
+        // shared speed for you, the bots, and remote players, slow
+        // enough to watch (and dodge) in flight — about 8.2 arena
+        // units a second, so a cross-arena shot takes ~2 seconds.
+        var SHOT_SPEED = 8.2;
+        // Every impact leaves a sour-cream splat decal. The cap keeps
+        // the per-frame decal draw cheap on phones; the oldest splat
+        // is recycled once the cap is hit.
+        var MAX_DECALS = 90, MAX_PROJECTILES = 72;
         var TEAM = {
           gold: { color: "#e8a91c", light: "#ffd23e", dark: "#9c6d05", shot: "#ffcf3d", name: "Gold" },
           red: { color: "#cf3a4e", light: "#ff7a8a", dark: "#8f1f30", shot: "#ff5d7a", name: "Red" }
@@ -13657,6 +13726,15 @@
           g.beginPath(); g.ellipse(56, 22, 12, 5, 0, 0, 6.29); g.fill();
           g.fillStyle = "rgba(210,190,150,0.5)";
           g.beginPath(); g.ellipse(70, 36, 30, 11, 0, 0, 6.29); g.fill();
+          // Satellite droplets flung out around the main blob, so a
+          // splat reads big and messy rather than a tidy oval.
+          g.fillStyle = "rgba(255,253,240,0.92)";
+          g.beginPath(); g.ellipse(10, 34, 7, 4, 0.3, 0, 6.29); g.fill();
+          g.beginPath(); g.ellipse(150, 48, 8, 4.5, -0.3, 0, 6.29); g.fill();
+          g.beginPath(); g.ellipse(38, 68, 6, 3.4, 0, 0, 6.29); g.fill();
+          g.beginPath(); g.ellipse(122, 14, 6, 3.4, 0, 0, 6.29); g.fill();
+          g.beginPath(); g.ellipse(84, 72, 5, 3, 0, 0, 6.29); g.fill();
+          g.beginPath(); g.ellipse(64, 8, 4.4, 2.6, 0, 0, 6.29); g.fill();
           return c;
         })();
 
@@ -13775,7 +13853,7 @@
         var raf = 0, lastTs = 0, elapsed = 0;
         var countT = 0, roundT = 0, overT = 0, overAt = 0;
         var roundNum = 1, score = { gold: 0, red: 0 };
-        var fighters = [], tracers = [], parts = [], decals = [];
+        var fighters = [], tracers = [], parts = [], decals = [], projectiles = [];
         var player = null;
         var playerSplats = 0, playerShots = 0;
         var bannerText = "", bannerSub = "";
@@ -13874,28 +13952,91 @@
             });
           }
         }
+        // ----- Splat decals: every impact leaves one, and they stay
+        // for the rest of the round. kind "floor" lies flat on the
+        // ground; kind "wall" sticks at shot height where a shot met
+        // a wall, crate, hedge, or Spudtan. Capped at MAX_DECALS with
+        // the oldest recycled, so a long firefight stays smooth. -----
+        function addSplatDecal(x, y, kind, z, scale) {
+          decals.push({ x: x, y: y, kind: kind || "floor", z: z || 0, scale: scale || 1, seed: Math.random() * 6.28 });
+          while (decals.length > MAX_DECALS) decals.shift();
+        }
+        // ----- Projectiles: shots physically travel at SHOT_SPEED,
+        // the same for you, the bots, and (as visual-only copies)
+        // remote players, so a shot can be watched, dodged, and
+        // jumped. Hits resolve when the shot arrives, not at the
+        // trigger pull. -----
+        function spawnProjectile(o) {
+          if (projectiles.length >= MAX_PROJECTILES) projectiles.shift();
+          projectiles.push({
+            x: o.x, y: o.y, z: o.z,
+            vx: Math.cos(o.ang) * SHOT_SPEED, vy: Math.sin(o.ang) * SHOT_SPEED,
+            ang: o.ang, team: o.team, shooter: o.shooter || null,
+            visualOnly: !!o.visualOnly, life: 0
+          });
+        }
+        function stepProjectiles(dt) {
+          for (var i = projectiles.length - 1; i >= 0; i--) {
+            var p = projectiles[i];
+            var dead = false;
+            // Two substeps a frame so a shot can't tunnel through a
+            // fighter or a thin crate edge at low frame rates.
+            for (var s = 0; s < 2 && !dead; s++) {
+              var h = dt / 2;
+              p.life += h;
+              p.x += p.vx * h; p.y += p.vy * h;
+              // Fighter impact (enemies only; the z window matches
+              // the old level-shot rule, so a jump still dodges).
+              for (var j = 0; j < fighters.length; j++) {
+                var v = fighters[j];
+                if (!v.alive || v.team === p.team || v === p.shooter) continue;
+                var dx = v.x - p.x, dy = v.y - p.y;
+                if (dx * dx + dy * dy > 0.13) continue;
+                var vz0 = v.z || 0;
+                if (p.z < vz0 - 0.04 || p.z > vz0 + 0.98) continue;
+                burst(p.x, p.y, p.z, TEAM[p.team].color, false);
+                addSplatDecal(p.x, p.y, "wall", p.z, 0.95);
+                if (!p.visualOnly) {
+                  if (p.shooter && p.shooter.isPlayer) { hitmarkT = 0.18; playerSplats++; if (window.SFX) SFX("hit"); }
+                  routeHit(v, p.shooter);
+                }
+                dead = true; break;
+              }
+              if (dead) break;
+              // Wall / crate / hedge impact: a splat stuck at shot
+              // height, plus drips that land as a floor splat at the
+              // base of the wall.
+              if (solidAt(Math.floor(p.x), Math.floor(p.y))) {
+                var ix = p.x - Math.cos(p.ang) * 0.13, iy = p.y - Math.sin(p.ang) * 0.13;
+                burst(ix, iy, p.z, TEAM[p.team].color, false);
+                addSplatDecal(ix, iy, "wall", p.z, 1.05 + Math.random() * 0.3);
+                addSplatDecal(ix - Math.cos(p.ang) * 0.22, iy - Math.sin(p.ang) * 0.22, "floor", 0, 0.8 + Math.random() * 0.25);
+                dead = true; break;
+              }
+              // Spent shot: it drops and leaves a floor splat.
+              if (p.life > 3.6) {
+                addSplatDecal(p.x, p.y, "floor", 0, 0.85);
+                dead = true; break;
+              }
+            }
+            if (dead) projectiles.splice(i, 1);
+            if (mode !== "play") break; // a splat just ended the round
+          }
+        }
         function fireFighter(f, spread) {
           var ang = f.angle + (Math.random() - 0.5) * 2 * spread;
-          var hit = shootRay(f, ang);
           if (window.SFX) SFX("shot", { vol: f.isPlayer ? 1 : 0.28 });
           var mx = f.x + Math.cos(f.angle) * 0.45, my = f.y + Math.sin(f.angle) * 0.45;
-          var hitZ = hit.victim ? (hit.victim.z || 0) + 0.5 : (f.z || 0) + 0.5;
-          tracers.push({ x1: mx, y1: my, z1: (f.z || 0) + 0.52, x2: hit.x, y2: hit.y, z2: hitZ, team: f.team, life: 0, max: 0.09 });
-          burst(hit.x, hit.y, hitZ, TEAM[f.team].color, false);
+          spawnProjectile({ x: mx, y: my, z: (f.z || 0) + 0.52, ang: ang, team: f.team, shooter: f, visualOnly: false });
           f.cool = f.isPlayer ? 0.24 : 0.52 + Math.random() * 0.42;
           if (f.isPlayer) { playerShots++; recoil = 1; flashT = 0.07; }
-          if (mp.on && f.isPlayer) mpSendShot(mx, my, hit.x, hit.y, f.team);
-          if (hit.victim) {
-            if (f.isPlayer) { hitmarkT = 0.18; playerSplats++; if (window.SFX) SFX("hit"); }
-            routeHit(hit.victim, f);
-          }
+          if (mp.on && f.isPlayer) mpSendShot(mx, my, ang, f.team);
         }
         // Death bookkeeping: decals, bursts, my own death cam.
         function applyDeath(victim, shooter) {
           victim.alive = false;
           if (window.SFX) { SFX("splat"); if (victim.isPlayer) SFX("hurt"); }
-          decals.push({ x: victim.x, y: victim.y, team: victim.team, seed: Math.random() * 6.28 });
-          if (decals.length > 26) decals.shift();
+          addSplatDecal(victim.x, victim.y, "floor", 0, 1.3);
           burst(victim.x, victim.y, (victim.z || 0) + 0.5, TEAM[victim.team].color, true);
           if (shooter && !shooter.isPlayer) shooter.splats++;
           if (victim.isPlayer) {
@@ -13930,7 +14071,7 @@
             f.cool = 0; f.react = 0.45 + Math.random() * 0.5; f.strafeT = 0; f.path = []; f.pathT = 0;
           }
           if (mp.on && mpSpectating) player.alive = false;
-          tracers = []; parts = []; decals = [];
+          tracers = []; parts = []; decals = []; projectiles = [];
           pitch = 0;
           roundT = 0; countT = 0; mode = "count";
           bannerText = "ROUND " + roundNum;
@@ -13951,7 +14092,7 @@
         }
         function endRound(winner) {
           if (mode !== "play") return;
-          mode = "roundover"; overT = 0; tracers = [];
+          mode = "roundover"; overT = 0; tracers = []; projectiles = [];
           if (window.SFX) SFX(winner ? (player && winner === player.team ? "roundwin" : "roundlose") : "beep");
           if (winner) {
             score[winner]++;
@@ -14284,17 +14425,22 @@
             if (bf && bf.occupant === "bot" && bf.alive && mode === "play") splat(bf, null);
           }
         }
-        function mpSendShot(x1, y1, x2, y2, team) {
+        function mpSendShot(x1, y1, ang, team) {
           if (!mp.shotsRef) return;
           try {
-            mp.shotsRef.push({ by: mp.uid, x1: Math.round(x1 * 100) / 100, y1: Math.round(y1 * 100) / 100, x2: Math.round(x2 * 100) / 100, y2: Math.round(y2 * 100) / 100, team: team, ts: window.firebase && firebase.database ? firebase.database.ServerValue.TIMESTAMP : Date.now() });
+            mp.shotsRef.push({ by: mp.uid, x1: Math.round(x1 * 100) / 100, y1: Math.round(y1 * 100) / 100, a: Math.round(ang * 1000) / 1000, team: team, ts: window.firebase && firebase.database ? firebase.database.ServerValue.TIMESTAMP : Date.now() });
           } catch (e) {}
         }
         function mpOnShot(snap) {
           var s = snap.val();
           if (!s || s.by === mp.uid) return;
           if (window.SFX) SFX("shot", { vol: 0.2 });
-          tracers.push({ x1: s.x1, y1: s.y1, z1: 0.52, x2: s.x2, y2: s.y2, z2: 0.5, team: s.team, life: 0, max: 0.09 });
+          // Remote shots fly as visual-only projectiles at the same
+          // SHOT_SPEED; they burst and splat where they land here,
+          // while the actual hit is confirmed by the shooter's own
+          // client (hit events / presence), as before.
+          var a = typeof s.a === "number" ? s.a : Math.atan2((s.y2 || s.y1) - s.y1, (s.x2 || s.x1) - s.x1);
+          spawnProjectile({ x: s.x1, y: s.y1, z: 0.52, ang: a, team: s.team, shooter: null, visualOnly: true });
         }
         function mpPublishNow() {
           if (!mp.on || !mp.myRef) return;
@@ -14492,6 +14638,7 @@
           updateHud();
         }
         function stepFx(dt) {
+          if (projectiles.length) stepProjectiles(dt);
           for (var i = tracers.length - 1; i >= 0; i--) {
             tracers[i].life += dt;
             if (tracers[i].life >= tracers[i].max) tracers.splice(i, 1);
@@ -14733,14 +14880,25 @@
             var scrX = RBW / 2 + (ent.r / ent.f) * PROJ;
             var groundY = horizon + (PROJ * eyeH) / ent.f;
             if (ent.kind === "decal") {
-              var dw = PROJ * 1.05 / ent.f, dh = dw * 0.5;
+              var dsc = ent.item.scale || 1;
+              var dw = PROJ * 1.5 * dsc / ent.f;
               var cc = Math.max(0, Math.min(RBW - 1, Math.floor(scrX)));
               if (ent.f > zbuf[cc] + 0.55) continue;
               b.save();
-              b.translate(scrX, groundY);
-              b.rotate(ent.item.seed);
-              b.globalAlpha = 0.94;
-              b.drawImage(splatSprite, -dw / 2, -dh / 2, dw, dh);
+              if (ent.item.kind === "wall") {
+                // Stuck at shot height where the shot landed: drawn
+                // upright, centred on the impact height.
+                var wallY = horizon + (eyeH - (ent.item.z || 0.5)) * PROJ / ent.f;
+                b.translate(scrX, wallY);
+                b.rotate(ent.item.seed * 0.6);
+                b.globalAlpha = 0.96;
+                b.drawImage(splatSprite, -dw / 2, -dw * 0.28, dw, dw * 0.56);
+              } else {
+                b.translate(scrX, groundY);
+                b.rotate(ent.item.seed);
+                b.globalAlpha = 0.94;
+                b.drawImage(splatSprite, -dw / 2, -dw * 0.25, dw, dw * 0.5);
+              }
               b.restore();
               b.globalAlpha = 1;
             } else {
@@ -14794,6 +14952,33 @@
             b.beginPath(); b.moveTo(ax, ay); b.lineTo(bx2, by2); b.stroke();
             b.globalAlpha = 1;
           }
+          // Projectiles in flight: a glowing sour-cream shot with a
+          // short comet tail, big enough to track across the arena.
+          for (var pj = 0; pj < projectiles.length; pj++) {
+            var prj = projectiles[pj];
+            var ppj = project(cam, prj.x, prj.y, prj.z);
+            if (ppj.f < 0.15) continue;
+            var txp = prj.x - prj.vx * 0.055, typ = prj.y - prj.vy * 0.055;
+            var ptl = project(cam, txp, typ, prj.z);
+            var hx = RBW / 2 + (ppj.r / ppj.f) * PROJ, hy = horizon + (eyeH - prj.z) * PROJ / ppj.f;
+            var ccj = Math.max(0, Math.min(RBW - 1, Math.floor(hx)));
+            if (zbuf[ccj] < ppj.f - 0.1) continue;
+            var rad = Math.max(1.9, PROJ * 0.085 / ppj.f);
+            if (ptl.f > 0.15) {
+              var tx2 = RBW / 2 + (ptl.r / ptl.f) * PROJ, ty2 = horizon + (eyeH - prj.z) * PROJ / ptl.f;
+              b.strokeStyle = TEAM[prj.team].shot; b.globalAlpha = 0.55; b.lineWidth = Math.max(1.4, rad * 0.9); b.lineCap = "round";
+              b.beginPath(); b.moveTo(tx2, ty2); b.lineTo(hx, hy); b.stroke();
+              b.globalAlpha = 1;
+            }
+            var gg = b.createRadialGradient(hx, hy, 0.5, hx, hy, rad * 2.6);
+            gg.addColorStop(0, "rgba(255,254,246,0.95)");
+            gg.addColorStop(0.35, TEAM[prj.team].shot);
+            gg.addColorStop(1, "rgba(255,220,120,0)");
+            b.fillStyle = gg;
+            b.beginPath(); b.arc(hx, hy, rad * 2.6, 0, 6.29); b.fill();
+            b.fillStyle = "#fffef6";
+            b.beginPath(); b.arc(hx, hy, rad * 0.62, 0, 6.29); b.fill();
+          }
           // Splat particles in 3D.
           for (var p2 = 0; p2 < parts.length; p2++) {
             var pt = parts[p2];
@@ -14834,66 +15019,115 @@
           var bobY = moving && player.alive ? Math.abs(Math.cos(walkT)) * 6 : Math.sin(t * 2.1) * 1.6;
           var rec = recoil * 15;
           ctx.save();
-          ctx.translate(bobX, bobY + rec * 0.7 + 26);
+          // The sour-cream gun, held pointing FORWARD toward the
+          // crosshair: everything is drawn in a frame anchored at the
+          // bottom of the screen and rotated onto the aim axis, so
+          // the tub body sits big and near in the lower right while
+          // the barrel foreshortens away from the viewer, receding
+          // up-left to its nozzle near the crosshair. Local +y runs
+          // back toward the viewer; the nozzle is at local y ≈ -215.
+          // Bob sways the anchor; recoil slides the gun back along
+          // its own axis, as before.
+          ctx.translate(668 + bobX, 586 + bobY);
+          ctx.rotate(-0.62);
+          ctx.translate(0, rec * 0.8);
           // Forearm running off the bottom-right corner to the grip.
-          var armG = ctx.createLinearGradient(700, 520, 830, 620);
+          var armG = ctx.createLinearGradient(40, 0, 170, 120);
           armG.addColorStop(0, "#eebd6d"); armG.addColorStop(1, "#9a6526");
           ctx.fillStyle = armG;
           ctx.beginPath();
-          ctx.moveTo(668, 528); ctx.lineTo(724, 506); ctx.lineTo(852, 606); ctx.lineTo(806, 640); ctx.closePath(); ctx.fill();
+          ctx.moveTo(52, -6); ctx.lineTo(104, 6); ctx.lineTo(196, 128); ctx.lineTo(128, 142); ctx.closePath(); ctx.fill();
           ctx.fillStyle = TEAM.gold.dark;
           ctx.beginPath();
-          ctx.moveTo(742, 520); ctx.lineTo(770, 508); ctx.lineTo(852, 578); ctx.lineTo(830, 600); ctx.closePath(); ctx.fill();
-          // Sour-cream tank at the rear.
-          var tankG = ctx.createLinearGradient(660, 460, 770, 560);
-          tankG.addColorStop(0, "rgba(255,255,250,0.96)"); tankG.addColorStop(0.55, "rgba(238,232,214,0.94)"); tankG.addColorStop(1, "rgba(198,188,160,0.95)");
-          ctx.fillStyle = tankG;
-          ctx.beginPath(); ctx.roundRect(664, 462 + rec * 0.3, 96, 100, 20); ctx.fill();
-          ctx.strokeStyle = "rgba(90,98,108,0.85)"; ctx.lineWidth = 3; ctx.stroke();
-          ctx.fillStyle = "rgba(255,253,240,0.95)";
-          ctx.beginPath(); ctx.roundRect(674, 492 + rec * 0.3, 76, 52, 12); ctx.fill();
-          ctx.fillStyle = "rgba(120,128,138,0.9)";
-          ctx.fillRect(664, 478 + rec * 0.3, 96, 7); ctx.fillRect(664, 540 + rec * 0.3, 96, 7);
-          // Receiver: gunmetal body with a gold team stripe.
-          var bodyG = ctx.createLinearGradient(0, 440, 0, 520);
-          bodyG.addColorStop(0, "#5d6874"); bodyG.addColorStop(0.4, "#39434e"); bodyG.addColorStop(1, "#22282f");
-          ctx.fillStyle = bodyG;
-          ctx.beginPath(); ctx.roundRect(548, 448 + rec * 0.35, 178, 56, 15); ctx.fill();
-          ctx.strokeStyle = "rgba(10,12,14,0.6)"; ctx.lineWidth = 2; ctx.stroke();
-          ctx.fillStyle = TEAM.gold.color;
-          ctx.beginPath(); ctx.roundRect(548, 484 + rec * 0.35, 178, 9, 4); ctx.fill();
-          ctx.fillStyle = "#78838f";
-          ctx.beginPath(); ctx.roundRect(566, 436 + rec * 0.35, 108, 12, 6); ctx.fill();
-          // Barrel + glowing muzzle tip.
-          ctx.fillStyle = "#2b3138";
-          ctx.beginPath(); ctx.roundRect(478, 462 + rec * 0.35, 84, 22, 9); ctx.fill();
-          ctx.fillStyle = TEAM.gold.light;
-          ctx.beginPath(); ctx.roundRect(462, 460 + rec * 0.35, 20, 26, 6); ctx.fill();
-          // Potato hand on the grip.
-          var handG = ctx.createRadialGradient(596, 536, 6, 606, 550, 40);
+          ctx.moveTo(84, 2); ctx.lineTo(112, 10); ctx.lineTo(176, 96); ctx.lineTo(146, 108); ctx.closePath(); ctx.fill();
+          // The tub body: cream-white, wide at the near end and
+          // tapering as it recedes — dressed like a sour-cream tub,
+          // white bands above and below the blue label.
+          var tubG = ctx.createLinearGradient(-88, 0, 88, 0);
+          tubG.addColorStop(0, "#fdfcf6"); tubG.addColorStop(0.55, "#f3eee0"); tubG.addColorStop(1, "#cfc7ae");
+          ctx.fillStyle = tubG;
+          ctx.beginPath();
+          ctx.moveTo(-88, 10); ctx.lineTo(88, 10); ctx.lineTo(54, -118); ctx.lineTo(-54, -118); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = "rgba(90,98,108,0.55)"; ctx.lineWidth = 2.5; ctx.stroke();
+          // Side shading so the tub reads round, not flat.
+          ctx.fillStyle = "rgba(120,110,84,0.18)";
+          ctx.beginPath();
+          ctx.moveTo(46, 8); ctx.lineTo(88, 10); ctx.lineTo(54, -118); ctx.lineTo(30, -118); ctx.closePath(); ctx.fill();
+          // The blue label band across the middle, name and all.
+          ctx.fillStyle = "#2b5f9e";
+          ctx.beginPath();
+          ctx.moveTo(-66, -80); ctx.lineTo(66, -80); ctx.lineTo(76, -40); ctx.lineTo(-76, -40); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = "rgba(255,255,255,0.20)";
+          ctx.beginPath();
+          ctx.moveTo(-66, -80); ctx.lineTo(66, -80); ctx.lineTo(64, -71); ctx.lineTo(-64, -71); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = "#fff";
+          ctx.font = "800 16px 'Baloo 2', sans-serif"; ctx.textAlign = "center";
+          ctx.fillText("SOUR CREAM", 0, -54);
+          ctx.textAlign = "left";
+          // A dollop swirl on the white band below the label.
+          ctx.fillStyle = "rgba(255,255,252,0.95)";
+          ctx.beginPath(); ctx.ellipse(0, -20, 17, 8, 0, 0, 6.29); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(0, -27, 10, 6, 0, 0, 6.29); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(1, -33, 5, 4, 0, 0, 6.29); ctx.fill();
+          ctx.strokeStyle = "rgba(150,140,110,0.5)"; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.ellipse(0, -20, 17, 8, 0, 0, 6.29); ctx.stroke();
+          // Tub lid rim at the near end, with a blue pinstripe.
+          ctx.fillStyle = "#2b5f9e";
+          ctx.beginPath();
+          ctx.moveTo(-87, -1); ctx.lineTo(87, -1); ctx.lineTo(88, 5); ctx.lineTo(-88, 5); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = "#e9e3d0";
+          ctx.beginPath(); ctx.ellipse(0, 10, 90, 15, 0, 0, 6.29); ctx.fill();
+          ctx.strokeStyle = "rgba(90,98,108,0.7)"; ctx.lineWidth = 2.5; ctx.stroke();
+          // Barrel: a tapered cream tube receding from the tub's far
+          // face to the nozzle, with blue compression rings whose
+          // widths follow the taper.
+          var barG = ctx.createLinearGradient(-32, 0, 32, 0);
+          barG.addColorStop(0, "#fdfcf6"); barG.addColorStop(0.6, "#e9e4d2"); barG.addColorStop(1, "#c9c0a4");
+          ctx.fillStyle = barG;
+          ctx.beginPath();
+          ctx.moveTo(-32, -112); ctx.lineTo(32, -112); ctx.lineTo(13, -198); ctx.lineTo(-13, -198); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = "rgba(90,98,108,0.5)"; ctx.lineWidth = 2; ctx.stroke();
+          ctx.fillStyle = "#2b5f9e";
+          ctx.beginPath(); ctx.moveTo(-26.5, -140); ctx.lineTo(26.5, -140); ctx.lineTo(24.5, -130); ctx.lineTo(-24.5, -130); ctx.closePath(); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(-20, -172); ctx.lineTo(20, -172); ctx.lineTo(18.4, -163); ctx.lineTo(-18.4, -163); ctx.closePath(); ctx.fill();
+          // Nozzle: a flared tip with a blue mouth — the cream
+          // squirts out of this end, toward the crosshair.
+          ctx.fillStyle = "#dfe5ea";
+          ctx.beginPath();
+          ctx.moveTo(-13, -198); ctx.lineTo(13, -198); ctx.lineTo(20, -216); ctx.lineTo(-20, -216); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = "rgba(70,80,90,0.65)"; ctx.lineWidth = 2; ctx.stroke();
+          ctx.fillStyle = "#2b5f9e";
+          ctx.beginPath(); ctx.ellipse(0, -216, 20, 5.5, 0, 0, 6.29); ctx.fill();
+          // An idle dollop of sour cream sitting in the nozzle.
+          ctx.fillStyle = "#fffef8";
+          ctx.beginPath(); ctx.ellipse(0, -219, 11, 6, 0, 0, 6.29); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(1, -225, 6, 4.5, 0, 0, 6.29); ctx.fill();
+          // Potato hand gripping the tub's right side.
+          var handG = ctx.createRadialGradient(74, -8, 6, 84, 0, 42);
           handG.addColorStop(0, "#ffe1a1"); handG.addColorStop(0.6, "#eebd6d"); handG.addColorStop(1, "#a8742f");
           ctx.fillStyle = handG;
-          ctx.beginPath(); ctx.ellipse(606, 550 + rec * 0.4, 32, 24, -0.35, 0, 6.29); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(84, -2, 30, 23, 0.35, 0, 6.29); ctx.fill();
           ctx.strokeStyle = "rgba(110,66,20,0.5)"; ctx.lineWidth = 2; ctx.stroke();
           ctx.fillStyle = "rgba(110,66,20,0.4)";
-          ctx.beginPath(); ctx.arc(596, 544 + rec * 0.4, 3, 0, 6.29); ctx.fill();
-          // Muzzle flash.
+          ctx.beginPath(); ctx.arc(76, -6, 3, 0, 6.29); ctx.fill();
+          // Firing: a squirt of sour cream jets out of the nozzle,
+          // straight along the aim axis toward the crosshair — a
+          // wobbling rope of cream blobs with droplets flying off.
           if (flashT > 0) {
-            var mxp = 458, myp = 473 + rec * 0.35;
-            var fg2 = ctx.createRadialGradient(mxp, myp, 2, mxp, myp, 74);
-            fg2.addColorStop(0, "rgba(255,246,200,0.95)"); fg2.addColorStop(0.4, "rgba(255,190,80,0.65)"); fg2.addColorStop(1, "rgba(255,160,50,0)");
-            ctx.fillStyle = fg2;
-            ctx.beginPath(); ctx.arc(mxp, myp, 74, 0, 6.29); ctx.fill();
-            ctx.fillStyle = "#fff6cf";
-            ctx.beginPath();
-            for (var sp = 0; sp < 8; sp++) {
-              var ang = sp * Math.PI / 4 + 0.3, L = sp % 2 ? 24 : 42;
-              ctx.moveTo(mxp, myp);
-              ctx.lineTo(mxp + Math.cos(ang - 0.16) * L * 0.4, myp + Math.sin(ang - 0.16) * L * 0.4);
-              ctx.lineTo(mxp + Math.cos(ang) * L, myp + Math.sin(ang) * L);
-              ctx.lineTo(mxp + Math.cos(ang + 0.16) * L * 0.4, myp + Math.sin(ang + 0.16) * L * 0.4);
+            var sq = Math.max(0, Math.min(1, flashT / 0.07));
+            var jg = ctx.createRadialGradient(0, -222, 2, 0, -222, 54);
+            jg.addColorStop(0, "rgba(255,255,250," + (0.85 * sq).toFixed(3) + ")"); jg.addColorStop(1, "rgba(255,255,250,0)");
+            ctx.fillStyle = jg;
+            ctx.beginPath(); ctx.arc(0, -222, 54, 0, 6.29); ctx.fill();
+            ctx.fillStyle = "rgba(255,254,248," + (0.96 * sq).toFixed(3) + ")";
+            for (var db = 0; db < 6; db++) {
+              var dy2 = -226 - db * 11, dr2 = 8.5 - db * 1.05, dxo = Math.sin(db * 1.7 + t * 30) * 2.2;
+              ctx.beginPath(); ctx.arc(dxo, dy2, Math.max(2.2, dr2), 0, 6.29); ctx.fill();
             }
-            ctx.fill();
+            ctx.fillStyle = "rgba(255,254,248," + (0.8 * sq).toFixed(3) + ")";
+            ctx.beginPath(); ctx.arc(-13, -244, 3, 0, 6.29); ctx.fill();
+            ctx.beginPath(); ctx.arc(12, -258, 2.6, 0, 6.29); ctx.fill();
+            ctx.beginPath(); ctx.arc(4, -282, 2.2, 0, 6.29); ctx.fill();
           }
           ctx.restore();
         }
@@ -15017,7 +15251,7 @@
           cancelAnimationFrame(raf);
           makeFighters();
           score = { gold: 0, red: 0 }; roundNum = 1;
-          tracers = []; parts = []; decals = [];
+          tracers = []; parts = []; decals = []; projectiles = [];
           pitch = 0;
           startPanel.hidden = false; overPanel.hidden = true;
           var dlg = document.getElementById("spudArcade");
@@ -15030,6 +15264,9 @@
         }
         function closeBall3d() {
           if (mp.on || mp.joining) mpLeaveRoom(true);
+          if (document.fullscreenElement) { try { var xp = document.exitFullscreen(); if (xp && xp.catch) xp.catch(function () {}); } catch (e) {} }
+          fsActive = false;
+          if (isMax) setMax(false);
           open = false; mode = "ready";
           cancelAnimationFrame(raf);
           if (document.exitPointerLock && document.pointerLockElement === canvas) { try { document.exitPointerLock(); } catch (e) {} }
@@ -15042,6 +15279,36 @@
         document.getElementById("ball3dStart").addEventListener("click", joinLive);
         if (soloBtn) soloBtn.addEventListener("click", function () { if (mp.on) mpLeaveRoom(true); startMatch(); });
         document.getElementById("ball3dRestart").addEventListener("click", onRestart);
+        // ----- Maximize / fullscreen: Maximize expands the dialog
+        // to the full viewport (biggest canvas, compact HUD, controls
+        // overlaid). Fullscreen asks the device for true fullscreen
+        // on top of that, and its button only appears where the
+        // device supports element fullscreen — on iPhone Safari it
+        // doesn't, so Maximize is the fallback there. -----
+        var maxBtn = document.getElementById("ball3dMaxBtn");
+        var fsBtn = document.getElementById("ball3dFsBtn");
+        var isMax = false, fsActive = false;
+        function setMax(on) {
+          isMax = on;
+          overlay.classList.toggle("ball3d-max", on);
+          if (maxBtn) {
+            maxBtn.setAttribute("aria-pressed", on ? "true" : "false");
+            maxBtn.textContent = on ? "Restore" : "Maximize";
+          }
+          draw(0);
+        }
+        if (maxBtn) maxBtn.addEventListener("click", function () { setMax(!isMax); });
+        if (fsBtn && overlay.requestFullscreen) fsBtn.hidden = false;
+        if (fsBtn) fsBtn.addEventListener("click", function () {
+          setMax(true); fsActive = true;
+          try {
+            var fp = overlay.requestFullscreen();
+            if (fp && fp.catch) fp.catch(function () { fsActive = false; });
+          } catch (e) { fsActive = false; }
+        });
+        document.addEventListener("fullscreenchange", function () {
+          if (!document.fullscreenElement && fsActive) { fsActive = false; setMax(false); }
+        });
         var arcadeBall3d = document.getElementById("arcadeBall3dPlay");
         if (arcadeBall3d) arcadeBall3d.addEventListener("click", openBall3d);
         // Virtual joystick (touch): a real stick in the stage's
