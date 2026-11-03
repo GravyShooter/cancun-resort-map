@@ -2155,7 +2155,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v43.0.76</p>
+        <p class="version-stamp">v44.0.77</p>
       </footer>
     </div>
 
@@ -9104,6 +9104,7 @@
         var W = 800, H = 300, GROUND = 246;
         var POINTS = { cream: 25, bacon: 15, cheese: 10, chive: 10 };
         var open = false;
+        var openedAt = 0; // when openGame() last opened the popup
         var mode = "ready"; // ready | running | over
         var raf = 0, lastTs = 0;
         var distPx = 0, bonus = 0, best = 0, overAt = 0;
@@ -9675,6 +9676,7 @@
 
         function openGame() {
           open = true;
+          openedAt = Date.now();
           mode = "ready";
           cancelAnimationFrame(raf);
           resetRun();
@@ -9722,7 +9724,20 @@
           pressAction();
         });
         overlay.addEventListener("pointerdown", function (e) {
-          if (e.target === overlay) closeGame();
+          if (e.target !== overlay) return;
+          // No penalty for the summoning burst: the game is opened by
+          // RAPID taps on the wordmark, and a burst rarely stops at
+          // exactly five — the 6th tap is already in the air when the
+          // popup appears, and it lands on the backdrop where the
+          // wordmark sits (the overlay covers the header). Without
+          // this guard that tap read as a tap-outside and closed the
+          // game the instant it opened. Backdrop taps in the first
+          // moments after opening are part of the burst, so they are
+          // ignored; a deliberate tap-outside a moment later still
+          // closes, as do the × button and Escape, and taps inside
+          // the card (jump / Start) are untouched.
+          if (Date.now() - openedAt < 1500) return;
+          closeGame();
         });
         document.addEventListener("keydown", function (e) {
           if (!open) return;
@@ -9753,6 +9768,13 @@
         // deduped click fallback and 4-second window as the logo's.
         var wmTaps = 0, wmLastTap = 0, wmLastPointerTap = 0;
         function countWordmarkTap() {
+          // While the game is open the wordmark counter is latched
+          // off: extra presses past five can never re-trigger
+          // openGame() (which would reset the run back to "ready")
+          // or otherwise penalize the burst that summoned it. The
+          // count restarts from zero once the game has been closed
+          // on purpose (×, Escape, or a deliberate tap-outside).
+          if (open) { wmTaps = 0; return; }
           var now = Date.now();
           wmTaps = (now - wmLastTap < 4000) ? wmTaps + 1 : 1;
           wmLastTap = now;
