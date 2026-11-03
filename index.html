@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-03-spudmonsters · v65.12.80 -->
+<!-- build-2026-11-03-games-scrollfix-sweep · v67.1.81 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -1680,7 +1680,20 @@
       .ftd-board .fb-stat strong { color: var(--ink); }
       @media print { .cardgame { display: none; } }
       /* ---------- SpudCraft: the potato RTS ---------- */
-      .craftgame { overflow-y: auto; }
+      .craftgame { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+      /* Phone scroll fix, same trap as SpudMonsters: the setup panel
+         lives INSIDE the stage, the shared .spudgame-stage sets
+         touch-action:none, and the panel is far taller than a phone
+         viewport — every scroll drag began on the stage and was
+         swallowed, so the faction/map/fight rundown and the Start
+         the war button below the fold were unreachable by touch.
+         Unlike SpudMonsters, this canvas DOES need drags in play
+         (drag-box selection), so pan-y applies only while a panel
+         is up: start/over panel visible → drags scroll the dialog;
+         panel hidden, war on → the stage keeps touch-action:none
+         and box-select drags still work. */
+      .craftgame:has(.spudgame-panel:not([hidden])) .craft-stage { touch-action: pan-y; }
+      .craftgame .spudgame-panel { touch-action: pan-y; }
       .craftgame .spudgame-card { width: min(1020px, 100%); margin: auto; }
       .craft-stage { background: #3d5a2a; }
       .craft-hud {
@@ -1726,7 +1739,16 @@
       }
       @media print { .craftgame { display: none; } }
       /* ---------- SpudValley: the potato farming sim ---------- */
-      .valleygame { overflow-y: auto; }
+      .valleygame { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+      /* Phone scroll fix, same trap as SpudMonsters: the welcome
+         panel (farmer/farm names + the three save slots) lives
+         INSIDE the stage, whose shared touch-action:none swallowed
+         every scroll drag, stranding the slots below the fold on a
+         phone. Pan-y only while a panel is up — the farm canvas
+         keeps touch-action:none in play, where it only ever needs
+         taps anyway (tap-to-walk reads pointerdown). */
+      .valleygame:has(.spudgame-panel:not([hidden])) .valley-stage { touch-action: pan-y; }
+      .valleygame .spudgame-panel { touch-action: pan-y; }
       .valleygame .spudgame-card { width: min(1040px, 100%); margin: auto; }
       .valley-stage { background: #59883c; }
       .valley-hud {
@@ -1817,8 +1839,18 @@
       }
       @media print { .valleygame { display: none; } }
       /* ---------- SpudMonsters: the potato monster adventure ---------- */
-      .monstergame { overflow-y: auto; }
+      .monstergame { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
       .monstergame .spudgame-card { width: min(1040px, 100%); margin: auto; }
+      /* Phone scroll fix: the shared .spudgame-stage sets touch-action:none
+         for canvas play, but this game's start panel lives INSIDE the stage
+         and is far taller than a phone viewport — every scroll drag began
+         on the stage and was swallowed, so the save slots and Start journey
+         buttons below the fold were unreachable by touch. The canvas only
+         ever needs taps (tap-to-walk reads pointerdown), never drags, so
+         the monster stage and its panels take vertical pan scrolling back:
+         drags scroll the dialog, taps still land on the canvas. */
+      .monstergame .mon-stage { touch-action: pan-y; }
+      .monstergame .spudgame-panel { touch-action: pan-y; }
       .mon-stage { background: #4a7a3a; }
       .mon-hud {
         display: flex; flex-wrap: wrap; gap: 2px 16px; align-items: center;
@@ -1919,6 +1951,12 @@
       @media (max-width: 560px) {
         .monstergame .spudgame-panel { gap: 4px; padding: 10px; }
         .monstergame .spudgame-hero { height: 52px; }
+        /* Compact the title panel so the starter cards and save slots sit
+           as close to the fold as possible once scrolling works. */
+        #monStartPanel > p { font-size: 0.88rem; line-height: 1.42; }
+        .mon-starter { flex-basis: 128px; padding: 6px 4px 8px; font-size: 0.84rem; }
+        .mon-starter canvas { width: 60px; height: 60px; }
+        .mon-starter small { font-size: 0.72rem; line-height: 1.3; }
       }
       @media print { .monstergame { display: none; } }
       /* ---------- Spud Kart ---------- */
@@ -1958,6 +1996,23 @@
       }
       .kart-track-btn.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
       .kart-track-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      /* Phone scroll fix, same trap as SpudMonsters — and worse: this
+         overlay never got overflow-y:auto at all, so the tall start
+         panel (track picker, three long briefings, two start buttons)
+         was clipped with no way to reach its bottom on a phone, and
+         the stage's touch-action:none swallowed drags besides. The
+         overlay scrolls now, and the stage takes pan-y only while a
+         panel is up — in a race the panel is hidden, so drag-steering
+         on the road keeps touch-action:none. */
+      .kartgame { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+      .kartgame .spudgame-card { margin: auto; }
+      .kartgame:has(.spudgame-panel:not([hidden])) .kart-stage { touch-action: pan-y; }
+      .kartgame .spudgame-panel { touch-action: pan-y; }
+      @media (max-width: 560px) {
+        .kartgame .spudgame-panel { gap: 4px; padding: 10px; }
+        .kartgame .spudgame-hero { height: 52px; }
+        .kartgame .spudgame-panel p { font-size: 0.9rem; }
+      }
       @media print { .kartgame { display: none; } }
       /* ---------- Tate-lo Spudball ---------- */
       .ball-stage { background: #2e5d23; }
@@ -1994,7 +2049,15 @@
       @media (min-width: 760px) { .ball-controls { max-width: 560px; margin-left: auto; margin-right: auto; } }
       /* The maxed-out start panel is taller than a phone viewport:
          let the overlay scroll to it, same fix as Tate-lo 3D. */
-      .ballgame { overflow-y: auto; }
+      .ballgame { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+      /* …but the overlay scrolling wasn't enough: the panel lives
+         INSIDE the stage, whose shared touch-action:none swallowed
+         every drag that started on the panel — the same trap as
+         SpudMonsters. Pan-y only while a panel is up; in a match
+         the panel is hidden and the arena keeps touch-action:none
+         for its drag-to-move / drag-to-aim halves. */
+      .ballgame:has(.spudgame-panel:not([hidden])) .ball-stage { touch-action: pan-y; }
+      .ballgame .spudgame-panel { touch-action: pan-y; }
       .ballgame .spudgame-card { margin: auto; }
       .ballgame .spudgame-hero { height: 60px; }
       .ballgame .spudgame-panel { gap: 4px; padding: 10px 12px; }
@@ -2116,7 +2179,15 @@
          let the 3D overlay scroll to it (auto margins centre the
          card when it fits and pin it to the top when it doesn't),
          and tighten the panel so it usually fits outright. */
-      .ball3dgame { overflow-y: auto; }
+      .ball3dgame { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+      /* Same SpudMonsters trap as Tate-lo above: the start panel
+         lives INSIDE the stage, so its touch-action:none swallowed
+         panel drags even though the overlay could scroll. Pan-y
+         only while a panel is up; in a match the panel is hidden
+         and aiming rides the two sticks (their own touch-action:
+         none), not stage drags. */
+      .ball3dgame:has(.spudgame-panel:not([hidden])) .ball3d-stage { touch-action: pan-y; }
+      .ball3dgame .spudgame-panel { touch-action: pan-y; }
       .ball3dgame .ball3d-card { margin: auto; }
       .ball3dgame .spudgame-hero { height: 60px; }
       .ball3dgame .spudgame-panel { gap: 4px; padding: 10px 12px; }
@@ -2140,6 +2211,15 @@
         padding: 10px;
       }
       .spudgame[hidden] { display: none; }
+      /* Spud Runner gets the same seatbelt as the other games: its
+         panels are compact and sized to fit, but on a short phone
+         the overlay can now scroll as a fallback, and the stage
+         takes pan-y while a panel is up. In a run both panels are
+         hidden, so tap-to-jump keeps touch-action:none. */
+      #spudGame { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+      #spudGame .spudgame-card { margin: auto; }
+      #spudGame:has(.spudgame-panel:not([hidden])) .spudgame-stage { touch-action: pan-y; }
+      #spudGame .spudgame-panel { touch-action: pan-y; }
       /* No scrolling anywhere in the game popup — not the card, not the
          game-over panel, not the mini leaderboard. Everything is sized
          and laid out to fit the viewport at once (see the stage grid
@@ -3074,7 +3154,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v65.12.80</p>
+        <p class="version-stamp">v67.1.81</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
