@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-03-runner-maximize-bigger-canvas · v70.2.84 -->
+<!-- build-2026-11-03-runner-jump-duck-buttons · v72.1.86 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -2226,7 +2226,7 @@
          panels are compact and sized to fit, but on a short phone
          the overlay can now scroll as a fallback, and the stage
          takes pan-y while a panel is up. In a run both panels are
-         hidden, so tap-to-jump keeps touch-action:none. */
+         hidden, so the stage keeps touch-action:none. */
       #spudGame { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
       #spudGame .spudgame-card { margin: auto; }
       #spudGame:has(.spudgame-panel:not([hidden])) .spudgame-stage { touch-action: pan-y; }
@@ -2275,10 +2275,14 @@
       }
       #spudGame.runner-max .spudgame-stage canvas {
         align-self: center; justify-self: center;
-        width: min(100%, calc((100vh - 160px) * 2));
-        width: min(100%, calc((100dvh - 160px) * 2));
+        /* 236px (was 160px before the control row existed) leaves
+           room for the header, HUD, Jump / Duck row, and the
+           leaderboard bar, so the canvas never crowds the buttons. */
+        width: min(100%, calc((100vh - 236px) * 2));
+        width: min(100%, calc((100dvh - 236px) * 2));
         height: auto;
       }
+      #spudGame.runner-max .runner-controls { flex: none; }
       #spudGame.runner-max .spudgame-panel { justify-self: stretch; align-self: stretch; }
       #spudGame.runner-max .spudgame-lb { overflow-y: auto; min-height: 0; }
       /* No scrolling anywhere in the game popup — not the card, not the
@@ -2368,6 +2372,36 @@
         box-shadow: 0 4px 14px rgba(60, 45, 20, 0.22);
       }
       .spudgame-hint { margin: 8px 0 0; font-size: 0.82rem; color: var(--ink-soft); text-align: center; }
+      /* ---------- Spud Runner: on-screen Jump / Duck buttons ----------
+         The touch controls, in a row directly under the stage so they
+         never cover the play area: Duck in the left thumb zone, Jump
+         in the right, pushed to opposite ends. Big enough for a thumb
+         mid-run (64px tall, wide targets), styled like the Kart pads.
+         They stay in place in maximized mode too — the card becomes a
+         flex column there and this row simply sits under the stage. */
+      .runner-controls {
+        display: flex; justify-content: space-between; align-items: stretch;
+        gap: 12px; margin-top: 8px;
+      }
+      .runner-btn {
+        appearance: none; cursor: pointer; flex: 0 1 176px; min-width: 128px; min-height: 64px;
+        padding: 10px 20px;
+        border: 1px solid var(--line); border-radius: 14px;
+        background: var(--panel-2); color: var(--ink);
+        font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; line-height: 1.1;
+        display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+        box-shadow: 0 3px 10px rgba(60, 45, 20, 0.16);
+        touch-action: none; -webkit-user-select: none; user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .runner-btn .runner-btn-arrow { font-size: 1.05rem; line-height: 1; }
+      .runner-btn-jump { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+      .runner-btn:active, .runner-btn.held { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+      .runner-btn-jump:active, .runner-btn-jump.held { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); filter: brightness(1.18); }
+      .runner-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      @media (max-width: 560px) {
+        .runner-btn { flex: 1 1 0; min-width: 0; min-height: 62px; font-size: 1.05rem; }
+      }
       /* ---------- Spud Runner: shared leaderboard ---------- */
       .spudgame-lbbar { display: flex; justify-content: center; margin-top: 8px; }
       .spudgame-lbbtn {
@@ -2436,6 +2470,7 @@
         .spudgame-panel { gap: 4px; padding: 10px; }
         .spudgame-panel h3 { font-size: 1.1rem; }
         .spudgame-btn { min-height: 40px; padding: 8px 20px; }
+        .runner-btn { min-height: 52px; }
         .spudgame-lb-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
         .spudgame-lb-mini .spudgame-lb-empty { grid-column: 1 / -1; }
         .spudgame-lb-mini .spudgame-lb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3215,7 +3250,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v70.2.84</p>
+        <p class="version-stamp">v72.1.85</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -3314,7 +3349,8 @@
             <h3>Ready to run?</h3>
             <p>SuperSpud's on the run through four worlds. Jump forks, knives, mashers, butter slicks, and rolling pins — but stay on the ground under the Hover Peeler. Collect seven toppings, all points.</p>
             <p>Grab the Spud Magnet (pulls toppings in), the Sour Cream Shield (eats one hit), and Double-Loaded ×2 (double topping points). Every 250 m pays a +50 milestone bonus — and the run only gets faster.</p>
-            <p>Tap, click, or press Space to jump — tap again mid-air to double-jump over wide hazard pairs. It comes back every time you land. Peelers still mean stay on the ground.</p>
+            <p>Use the on-screen buttons under the game: <strong>Jump</strong> (bottom right) to jump — press it again mid-air to double-jump over wide hazard pairs — and <strong>Duck</strong> (bottom left) to slide. On a keyboard, Space / ↑ jumps and S / ↓ slides. The double jump comes back every time you land. Peelers still mean stay on the ground.</p>
+            <p>The Hover Peeler (from 460 m) floats at jump height: stay on the ground or slide under it — tap the Duck button, or press S / ↓ for a slide. Jumping into it ends the run. And the best toppings ride high: chili and sour cream sit too high to grab from the ground, so jump or double-jump to collect them.</p>
             <button type="button" class="spudgame-btn" id="spudGameStart">Start running</button>
           </div>
           <div class="spudgame-panel spudgame-panel--over" id="spudGameOverPanel" hidden>
@@ -3336,6 +3372,10 @@
             <button type="button" class="spudgame-btn" id="spudGameRestart">Run again</button>
           </div>
         </div>
+        <div class="runner-controls" aria-label="SuperSpud Runner controls">
+          <button type="button" class="runner-btn runner-btn-duck" id="spudGameDuckBtn" aria-label="Duck — slide under the Hover Peeler"><span class="runner-btn-arrow" aria-hidden="true">▼</span> Duck</button>
+          <button type="button" class="runner-btn runner-btn-jump" id="spudGameJumpBtn" aria-label="Jump — press again in mid-air to double-jump">Jump <span class="runner-btn-arrow" aria-hidden="true">▲</span></button>
+        </div>
         <div class="spudgame-lbbar">
           <button type="button" class="spudgame-lbbtn" id="spudGameLbBtn" aria-expanded="false" aria-controls="spudGameLbSection">Leaderboard</button>
         </div>
@@ -3344,7 +3384,7 @@
           <p class="spudgame-lb-status" id="spudGameLbSecStatus" hidden></p>
           <ol class="spudgame-lb-list" id="spudGameLbList"></ol>
         </section>
-        <p class="spudgame-hint">Any utensil, slick, or rolling pin ends the run — unless your Sour Cream Shield eats the hit. Double jump: tap again in mid-air; it refreshes when you land. Toppings: sour cream +25, chili +30, butter +20, bacon +15, broccoli +15, cheese +10, chives +10. Worlds change every 400 m; milestones pay +50 every 250 m.</p>
+        <p class="spudgame-hint">Any utensil, slick, or rolling pin ends the run — unless your Sour Cream Shield eats the hit. Double jump: press Jump again in mid-air; it refreshes when you land. Toppings: sour cream +25, chili +30, butter +20, bacon +15, broccoli +15, cheese +10, chives +10. Worlds change every 400 m; milestones pay +50 every 250 m.</p>
       </div>
     </div>
 
@@ -10880,6 +10920,7 @@
           roundlose: function (v) { tone({ type: "triangle", f0: 330, dur: 0.14, vol: 0.28 * v }); tone({ type: "triangle", f0: 247, dur: 0.24, vol: 0.28 * v, when: 0.12 }); },
           // Runner: hop, topping pickup, fork crash.
           jump: function (v) { tone({ type: "sine", f0: 280, f1: 680, dur: 0.16, vol: 0.30 * v }); },
+          slide: function (v) { noise({ dur: 0.22, vol: 0.20 * v, ftype: "bandpass", f0: 950, f1: 280, q: 0.8 }); },
           pickup: function (v) { tone({ type: "sine", f0: 660, dur: 0.09, vol: 0.30 * v }); tone({ type: "sine", f0: 990, dur: 0.14, vol: 0.30 * v, when: 0.07 }); },
           crash: function (v) { noise({ dur: 0.40, vol: 0.50 * v, f0: 1400, f1: 120 }); tone({ type: "sawtooth", f0: 220, f1: 38, dur: 0.50, vol: 0.32 * v }); },
           // Kart: countdown, items, slicks, bumps, laps. (Engine below.)
@@ -11068,6 +11109,22 @@
         // Double jump: jumps spent since the last landing (0, 1, 2)
         // and the kick-off rings the second jump leaves behind.
         var jumpsUsed = 0, rings = [];
+        // Slide: seconds of slide left. The timer only burns while
+        // he is on the ground (see tick), so a slide commanded in
+        // mid-air slams him down and starts on touchdown instead of
+        // evaporating during the fall.
+        var slideT = 0;
+        var SLIDE_TIME = 0.62;
+        // Hover Peeler deferral: a peeler that rolls — or comes due —
+        // before it has a fair gap after the last hazard is held
+        // pending rather than swapped away; while one is pending,
+        // hazard rolls serve toppings only, so the run-up stays
+        // hazard-free and the gap keeps growing until it can spawn.
+        var peelerPending = false, peelerWait = 0, firstPeelerSeen = false;
+        // Build-verification probe log: peeler spawns and passes and
+        // slides, stamped by distance; read via __spudRunnerProbe.
+        var probeLog = [];
+        function plog(msg) { probeLog.push(distM() + "m " + msg); if (probeLog.length > 60) probeLog.shift(); }
         // SuperSpud himself: the user's loaded-potato hero (gold armor,
         // red gloves and boots, sour-cream top, fork in hand), cut out
         // of his sunset portrait into assets/superspud.png. He IS the
@@ -11093,6 +11150,8 @@
           items = []; floats = [];
           dust = []; dustTimer = 0; squash = 0;
           jumpsUsed = 0; rings = []; lastObs = null;
+          slideT = 0;
+          peelerPending = false; peelerWait = 0; firstPeelerSeen = false; probeLog = [];
           nextSpawn = 520;
           magnetT = 0; multT = 0; shieldOn = false; invulnT = 0;
           milestones = 0; nextMilestone = 250; worldIdx = 0; banner = null;
@@ -11151,8 +11210,24 @@
         // (which punishes being airborne). One full single-jump of
         // travel at the current speed, plus a landing margin.
         function peelerNeedsGap() { return speed() * 0.74 + 240; }
+        // High-value toppings (chili +30, sour cream +25) ride high:
+        // too high to grab from the ground, so collecting one is a
+        // jump — the taller perch takes a double jump — instead of a
+        // freebie for running past. Every cheaper topping stays at
+        // ground level or in the low arc, where running collects it.
+        function isHighValue(kind) { return kind === "chili" || kind === "cream"; }
+        function highYOff() { return Math.random() < 0.45 ? 212 : 150; }
+        function singleTopping() {
+          var tk = TOPPINGS[Math.floor(Math.random() * TOPPINGS.length)];
+          pushItem(tk, W + 30, isHighValue(tk) ? highYOff() : (Math.random() < 0.35 ? 56 : 0));
+        }
         function spawn() {
           var m = distM();
+          // The first Hover Peeler is guaranteed: once the run passes
+          // its 460 m unlock with none seen, it goes pending, and the
+          // deferral in the hazard branch below delivers it shortly
+          // after, behind a hazard-free run-up of toppings.
+          if (m >= 460 && !firstPeelerSeen) peelerPending = true;
           var roll = Math.random();
           var obsSpan = 0, obsPeeler = false; // this call's hazard footprint, for the gap floor below
           // Power-ups: uncommon, and never back-to-back.
@@ -11165,55 +11240,76 @@
             var pool = obstaclePool(m);
             var ok = pool[Math.floor(Math.random() * pool.length)];
             var ox = W + 30;
-            // Spawn fairness: no impossible combos, with or without
-            // the double jump. Police this hazard against the last
-            // one using their true distance apart on the run line.
-            if (lastObs) {
-              var gap = (distPx + ox) - lastObs.track;
-              if (ok === "peeler" && gap < peelerNeedsGap()) {
-                // A peeler too soon after another hazard is a death
-                // trap: the jump that clears the first hazard leaves
-                // him airborne exactly where the peeler demands he be
-                // grounded, with no room to land in between. Swap it
-                // for a ground hazard the same jump — or a double
-                // jump — can carry him over.
-                var alts = pool.filter(function (k) { return k !== "peeler"; });
-                ok = alts.length ? alts[Math.floor(Math.random() * alts.length)] : "fork";
-              } else if (lastObs.kind === "peeler" && ok !== "peeler" && ok !== "rollingPin" && gap < 380) {
-                // Right after a peeler he is grounded and needs room
-                // to get airborne again before the next hazard lands
-                // on him — push this one further out instead of
-                // stacking it on the peeler's tail.
-                ox += 380 - gap;
-              } else if (lastObs.kind === "peeler" && ok === "rollingPin" && gap < 520) {
-                // Rolling pins close distance as they roll, so one
-                // trailing a peeler gets extra room.
-                ox += 520 - gap;
+            var gap = lastObs ? (distPx + ox) - lastObs.track : Infinity;
+            // Hover Peeler deferral. A peeler too soon after another
+            // hazard is a death trap — the jump that clears the first
+            // hazard leaves him airborne exactly where the peeler
+            // demands he be grounded — so the run-83 rule swapped it
+            // for a ground hazard. But the gap a peeler needs
+            // (~790 px at 460 m, ~965 px at top speed) is wider than
+            // any single spawn interval (~240–510 px), so the swap
+            // fired after nearly every hazard and peelers almost
+            // never appeared. Now a too-soon peeler is held pending
+            // instead: this spawn serves toppings only, lastObs stays
+            // where it was, and the gap keeps growing until a later
+            // spawn can place the peeler fairly. The old swap
+            // survives only as the fallback for a peeler stuck
+            // pending implausibly long.
+            if (ok === "peeler" && gap < peelerNeedsGap()) {
+              peelerPending = true;
+              ok = null; // hazard-free run-up: toppings only
+            } else if (peelerPending) {
+              if (gap >= peelerNeedsGap()) {
+                ok = "peeler"; // the deferred peeler gets its gap
+                peelerPending = false; peelerWait = 0;
+              } else if (peelerWait >= 8) {
+                // Fallback: stop holding it and spawn what rolled
+                // (the swap's old outcome) rather than hold forever.
+                peelerPending = false; peelerWait = 0;
+              } else {
+                peelerWait++;
+                ok = null; // still waiting: toppings only
               }
             }
-            pushItem(ok, ox, ok === "peeler" ? 96 : 0);
-            lastObs = { kind: ok, track: distPx + ox };
-            obsSpan = ox - (W + 30); obsPeeler = ok === "peeler";
-            // Late runs throw pairs: a second ground hazard trailing
-            // the first, close enough that one jump — or one double
-            // jump — spans both. Peelers never pair: a pair must
-            // never mix "be airborne" with "stay grounded".
-            if (ok !== "peeler" && m >= 500 && Math.random() < 0.28) {
-              var ok2 = pool[Math.floor(Math.random() * pool.length)];
-              if (ok2 !== "peeler") {
-                var ox2 = ox + 190 + Math.random() * 60;
-                pushItem(ok2, ox2, 0);
-                lastObs = { kind: ok2, track: distPx + ox2 };
-                obsSpan = ox2 - (W + 30);
+            if (ok === null) {
+              singleTopping();
+            } else {
+              // Spawn fairness after a peeler: he is grounded as it
+              // passes and needs room to get airborne again before
+              // the next hazard lands on him — push a too-close
+              // follower further out instead of stacking it on the
+              // peeler's tail. Rolling pins close distance as they
+              // roll, so one trailing a peeler gets extra room.
+              if (lastObs && lastObs.kind === "peeler" && ok !== "peeler") {
+                if (ok === "rollingPin" && gap < 520) ox += 520 - gap;
+                else if (ok !== "rollingPin" && gap < 380) ox += 380 - gap;
+              }
+              pushItem(ok, ox, ok === "peeler" ? 96 : 0);
+              if (ok === "peeler") { firstPeelerSeen = true; peelerPending = false; plog("peeler spawned"); }
+              lastObs = { kind: ok, track: distPx + ox };
+              obsSpan = ox - (W + 30); obsPeeler = ok === "peeler";
+              // Late runs throw pairs: a second ground hazard trailing
+              // the first, close enough that one jump — or one double
+              // jump — spans both. Peelers never pair: a pair must
+              // never mix "be airborne" with "stay grounded".
+              if (ok !== "peeler" && m >= 500 && Math.random() < 0.28) {
+                var ok2 = pool[Math.floor(Math.random() * pool.length)];
+                if (ok2 !== "peeler") {
+                  var ox2 = ox + 190 + Math.random() * 60;
+                  pushItem(ok2, ox2, 0);
+                  lastObs = { kind: ok2, track: distPx + ox2 };
+                  obsSpan = ox2 - (W + 30);
+                }
               }
             }
           } else if (roll < 0.60) {
-            // A topping arc: a short line at jump height, one flavor.
+            // A topping arc: a short line of one flavor. Cheap flavors
+            // ride low; a high-value arc rides at jump height.
             var ak = TOPPINGS[Math.floor(Math.random() * TOPPINGS.length)];
-            for (var a = 0; a < 3; a++) pushItem(ak, W + 30 + a * 54, 56);
+            var aOff = isHighValue(ak) ? 150 : 56;
+            for (var a = 0; a < 3; a++) pushItem(ak, W + 30 + a * 54, aOff);
           } else {
-            var tk = TOPPINGS[Math.floor(Math.random() * TOPPINGS.length)];
-            pushItem(tk, W + 30, Math.random() < 0.35 ? 56 : 0);
+            singleTopping();
           }
           // Gaps shrink as distance climbs — the steeper ramp.
           var shrink = Math.max(0.52, 1 - m / 2600);
@@ -11226,6 +11322,7 @@
         }
 
         function jump() {
+          slideT = 0; // jumping cancels a slide
           var airborne = player.y > 0.01 || player.vy < 0;
           if (!airborne && jumpsUsed === 0) {
             jumpsUsed = 1;
@@ -11246,6 +11343,26 @@
             }
             if (window.SFX) SFX("jump");
           }
+        }
+
+        // Slide: the Duck button, S, or ArrowDown. A timed crouch with a
+        // lowered hitbox (see playerBox) and its own pose (see
+        // drawSuperSpud) — the active way under a Hover Peeler, as an
+        // alternative to just staying grounded. On the ground it
+        // starts at once; commanded mid-air it slams him down first
+        // and the slide begins on touchdown. The peeler's collision
+        // is unchanged: grounded still clears it, a jump into it
+        // still ends the run — the slide only ducks him lower.
+        function slide() {
+          if (mode !== "running") return;
+          if (player.y > 0.01 || player.vy < 0) player.vy = Math.max(player.vy, 1500);
+          if (slideT <= 0) plog("slide started");
+          slideT = SLIDE_TIME;
+          if (window.SFX) SFX("slide");
+        }
+        function slideAction() {
+          if (!open) return;
+          if (mode === "running") slide();
         }
 
         function startRun() {
@@ -11576,6 +11693,10 @@
           // Squash decays toward zero from either side: positive is
           // the landing squash, negative is the double-jump stretch.
           squash = squash > 0 ? Math.max(0, squash - dt * 5.5) : Math.min(0, squash + dt * 5.5);
+          // The slide timer burns only while he is on the ground, so
+          // a slide commanded mid-air survives the slam down and runs
+          // its full course from touchdown.
+          if (slideT > 0 && player.y <= 0.01 && player.vy === 0) slideT = Math.max(0, slideT - dt);
           // Double-jump kick rings expand and fade where he kicked.
           for (var rg = rings.length - 1; rg >= 0; rg--) {
             rings[rg].life += dt;
@@ -11587,8 +11708,10 @@
           if (player.y <= 0.01) {
             dustTimer -= dt;
             if (dustTimer <= 0) {
-              dustTimer = 0.07 + Math.random() * 0.05;
+              dustTimer = slideT > 0 ? 0.03 : 0.07 + Math.random() * 0.05;
               dust.push({ x: player.x + 12 + Math.random() * 10, y: GROUND + 3 + Math.random() * 5, r: 2.5 + Math.random() * 3, life: 0 });
+              // Sliding skids a second, thicker spray off his boots.
+              if (slideT > 0) dust.push({ x: player.x + 30 + Math.random() * 34, y: GROUND + 3 + Math.random() * 4, r: 3 + Math.random() * 3.5, life: 0 });
             }
           }
           for (var d = dust.length - 1; d >= 0; d--) {
@@ -11605,6 +11728,12 @@
             var it = items[i];
             it.x -= sp * dt;
             if (it.kind === "rollingPin") { it.x -= 150 * dt; it.rot = (it.rot || 0) + dt * 7; }
+            // Probe log: a Hover Peeler that gets past him alive was
+            // passed — tagged with how he took it, grounded or slide.
+            if (it.kind === "peeler" && !it.passed && it.x + it.w < player.x) {
+              it.passed = true;
+              plog(slideT > 0 ? "peeler passed (slide)" : "peeler passed (grounded)");
+            }
             // Spud Magnet: nearby toppings and power-ups drift to him.
             if (magnetT > 0 && !isObstacle(it.kind)) {
               var mcx = it.x + it.w / 2, mcy = GROUND - it.yOff - it.h / 2;
@@ -11660,6 +11789,16 @@
         }
 
         function playerBox() {
+          // Sliding drops his box low and long, bottom edge where it
+          // always is. Every ground hazard's box still reaches him
+          // (they all sit on the ground), so a slide is no way past
+          // a fork — it only ducks him further under the Hover
+          // Peeler, whose own box is untouched: a plain grounded run
+          // clears it exactly as before, and any jump into it still
+          // ends the run.
+          if (slideT > 0 && player.y <= 0.01) {
+            return { x: player.x + 14, y: GROUND - player.y - 52, w: player.w - 28, h: 50 };
+          }
           // Forgiving box inside SuperSpud's figure: his raised fork
           // and flowing cape never count as a hit.
           return { x: player.x + 17, y: GROUND - player.y - player.h + 12, w: player.w - 34, h: player.h - 14 };
@@ -11880,6 +12019,10 @@
             bobY = Math.sin(t * 2.1) * 1.6;       // idle breathing on the start screen
           }
           if (squash !== 0) { sy *= 1 - 0.11 * squash; sx *= 1 + 0.09 * squash; }
+          // Sliding: flattened, stretched, and tipped forward into a
+          // skid — the visible half of the slide's lowered hitbox.
+          var sliding = slideT > 0 && !airborne && running;
+          if (sliding) { sy *= 0.58; sx *= 1.16; lean += 0.32; bobY = 0; }
 
           ctx.save();
           ctx.translate(cx, GROUND - player.y + bobY);
@@ -11887,7 +12030,7 @@
           ctx.scale(sx, sy);
           // The cape: streams behind his shoulder (image left), waving
           // harder the faster / higher he goes.
-          var flow = airborne ? 30 : (running ? 22 : 7);
+          var flow = airborne ? 30 : (sliding ? 34 : (running ? 22 : 7));
           var flut = Math.sin(t * (running ? 15 : 5)) * (running || airborne ? 5 : 2);
           var flut2 = Math.cos(t * (running ? 12 : 4) + 1.3) * 4;
           var capeG = ctx.createLinearGradient(-player.w * 0.1, -player.h + 26, -player.w * 0.1 - flow - 22, -player.h + 74);
@@ -11909,7 +12052,8 @@
           var cx = player.x + player.w / 2;
           var airborne = player.y > 1;
           var bob = airborne ? 0 : Math.abs(Math.sin(runPhase)) * 2.5;
-          var cy = GROUND - player.y - player.h / 2 - bob;
+          var bodyH = (slideT > 0 && !airborne) ? player.h * 0.62 : player.h;
+          var cy = GROUND - player.y - bodyH / 2 - bob;
           // Shadow
           var shScale = Math.max(0.45, 1 - player.y / 260);
           ctx.fillStyle = "rgba(90, 55, 10, " + (0.28 * shScale) + ")";
@@ -11921,8 +12065,8 @@
           if (airborne) { l1 = -6; l2 = 8; }
           else { l1 = Math.sin(runPhase) * 11; l2 = Math.sin(runPhase + 3.14) * 11; }
           ctx.beginPath();
-          ctx.moveTo(cx - 12, cy + player.h / 2 - 6); ctx.lineTo(cx - 12 + l1, GROUND - player.y + 2 - bob * 0.2);
-          ctx.moveTo(cx + 12, cy + player.h / 2 - 6); ctx.lineTo(cx + 12 + l2, GROUND - player.y + 2 - bob * 0.2);
+          ctx.moveTo(cx - 12, cy + bodyH / 2 - 6); ctx.lineTo(cx - 12 + l1, GROUND - player.y + 2 - bob * 0.2);
+          ctx.moveTo(cx + 12, cy + bodyH / 2 - 6); ctx.lineTo(cx + 12 + l2, GROUND - player.y + 2 - bob * 0.2);
           ctx.stroke();
           // Golden body, matching the ceremonial spud's gradient
           var g = ctx.createRadialGradient(cx - 14, cy - 16, 8, cx, cy, 46);
@@ -11935,7 +12079,7 @@
           ctx.strokeStyle = "#7c4c05";
           ctx.lineWidth = 2.5;
           ctx.beginPath();
-          ctx.ellipse(cx, cy, player.w / 2, player.h / 2, -0.06, 0, 6.29);
+          ctx.ellipse(cx, cy, player.w / 2, bodyH / 2, -0.06, 0, 6.29);
           ctx.fill(); ctx.stroke();
           // Spots
           ctx.fillStyle = "rgba(138, 86, 12, 0.8)";
@@ -12261,6 +12405,18 @@
         // The Spud Arcade menu opens the Runner from a plain button,
         // alongside the five-tap wordmark trigger (which is untouched).
         window.__spudRunnerOpen = openGame;
+        // Build-verification probe: a read-only snapshot so an
+        // automated check can drive a run past 500 m and confirm from
+        // the log that a Hover Peeler spawned and was passed.
+        window.__spudRunnerProbe = function () {
+          return {
+            mode: mode, dist: distM(), score: score(),
+            sliding: slideT > 0, playerY: Math.round(player.y),
+            peelerPending: peelerPending, firstPeelerSeen: firstPeelerSeen,
+            items: items.map(function (it) { return { kind: it.kind, x: Math.round(it.x) }; }),
+            log: probeLog.slice()
+          };
+        };
 
         function closeGame() {
           open = false;
@@ -12304,13 +12460,41 @@
             if (e.key === "Enter") { e.preventDefault(); lbSave(); }
           });
         }
-        stage.addEventListener("pointerdown", function (e) {
-          // The game-over name form and the mini leaderboard sit inside
-          // the stage: taps there type or save — never jump.
-          if (e.target && e.target.closest && e.target.closest("#spudGameLbForm, #spudGameLbMiniWrap")) return;
-          e.preventDefault();
-          pressAction();
-        });
+        // On-screen buttons replace the old stage gestures: tapping
+        // the stage no longer jumps and a swipe down on it no longer
+        // slides. The Jump (bottom right) and Duck (bottom left)
+        // buttons under the stage are the touch controls now — they
+        // sit in the thumb zones without covering the play area, and
+        // the same row works in the maximized layout. They act on
+        // pointerdown, the moment the press lands, so a Jump press
+        // mid-air still fires the double jump with no click delay;
+        // pressAction / slideAction keep their usual mode rules
+        // (Jump also starts a run from ready, Duck only slides while
+        // running), and the keyboard controls are unchanged.
+        function bindRunnerBtn(btn, action) {
+          if (!btn) return;
+          var lastPointer = 0;
+          btn.addEventListener("pointerdown", function (e) {
+            e.preventDefault();
+            lastPointer = Date.now();
+            btn.classList.add("held");
+            action();
+          });
+          var release = function () { btn.classList.remove("held"); };
+          btn.addEventListener("pointerup", release);
+          btn.addEventListener("pointercancel", release);
+          btn.addEventListener("pointerleave", release);
+          btn.addEventListener("click", function () {
+            // A real press already acted on pointerdown — ignore
+            // its click. Keyboard activation of a focused button
+            // (Enter) fires click with no pointerdown, so it acts.
+            if (Date.now() - lastPointer < 700) return;
+            action();
+          });
+          btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+        }
+        bindRunnerBtn(document.getElementById("spudGameJumpBtn"), pressAction);
+        bindRunnerBtn(document.getElementById("spudGameDuckBtn"), slideAction);
         overlay.addEventListener("pointerdown", function (e) {
           if (e.target !== overlay) return;
           // No penalty for the summoning burst: the game is opened by
@@ -12339,6 +12523,10 @@
           if (e.key === " " || e.key === "Spacebar" || e.key === "ArrowUp") {
             e.preventDefault();
             if (!e.repeat) pressAction();
+          }
+          if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+            e.preventDefault();
+            if (!e.repeat) slideAction();
           }
         });
 
