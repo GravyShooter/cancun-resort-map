@@ -2155,7 +2155,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v42.0.75</p>
+        <p class="version-stamp">v43.0.76</p>
       </footer>
     </div>
 
@@ -10053,14 +10053,22 @@
           fx.appendChild(cream);
           document.body.appendChild(fx);
 
-          // No tap-out: once the sequence starts it cannot be dismissed,
-          // cut short, restarted, or cleaned up early by tapping. The
-          // overlay intercepts every tap (pointer-events: auto above),
-          // and these handlers swallow taps/pointer events on the
-          // overlay itself and, in the capture phase, anywhere else on
-          // the page — including the logo — while it plays. The only
-          // way back to the normal page is cleanup(), called solely by
-          // the sequence's own completion timers below.
+          // No tap-out, and no penalty for extra taps: the spud is
+          // summoned by five OR MORE presses, so a burst rarely stops
+          // at exactly five — the 6th, 7th, 8th press lands while the
+          // celebration is already up. Those extra presses must do
+          // NOTHING: not dismiss the spud, not cut it short, not
+          // restart it. To guarantee that, the swallow handlers sit
+          // on the WINDOW in the capture phase — the very first stop
+          // an event makes on its way down, before the document, the
+          // overlay, the logo button, or anything else on the page
+          // can see the press and act on it — and on the overlay
+          // itself as a second layer. (Up through v42 the capture
+          // handlers sat on the document; the window is strictly
+          // earlier, so no other capture-phase listener anywhere can
+          // get to an extra press first.) The only way back to the
+          // normal page is cleanup(), called solely by the sequence's
+          // own completion timers below.
           var tapBlockTypes = ["click", "dblclick", "pointerdown", "pointerup", "mousedown", "mouseup", "touchstart", "touchend"];
           function swallowTap(e) {
             e.preventDefault();
@@ -10069,12 +10077,12 @@
           }
           for (var tb = 0; tb < tapBlockTypes.length; tb++) {
             fx.addEventListener(tapBlockTypes[tb], swallowTap, false);
-            document.addEventListener(tapBlockTypes[tb], swallowTap, true);
+            window.addEventListener(tapBlockTypes[tb], swallowTap, true);
           }
 
           function cleanup() {
             for (var rb = 0; rb < tapBlockTypes.length; rb++) {
-              document.removeEventListener(tapBlockTypes[rb], swallowTap, true);
+              window.removeEventListener(tapBlockTypes[rb], swallowTap, true);
             }
             if (fx.parentNode) fx.parentNode.removeChild(fx);
             playing = false;
@@ -10189,9 +10197,13 @@
           } catch (e) {}
         }
         function countLogoTap() {
-          // While the ceremonial spud is playing, logo presses are
-          // ignored entirely: they must not dismiss, restart, or
-          // re-trigger it, and they don't count toward a new sequence.
+          // Five OR MORE presses summon the spud — there is no
+          // penalty for pressing more than five. Once the fifth press
+          // starts the celebration, the counter latches for the whole
+          // show: presses 6, 7, 8… are pure no-ops. They don't
+          // dismiss the spud, don't restart it, and don't count
+          // toward a new sequence; the count simply stays at zero
+          // until the celebration's own cleanup unlatches it.
           if (playing) { taps = 0; return; }
           var now = Date.now();
           taps = (now - lastTap < 8000) ? taps + 1 : 1;
@@ -10201,13 +10213,25 @@
           playSpud();
         }
         tapTarget.addEventListener("pointerdown", function (e) {
+          // Third layer of the no-penalty rule: if a press somehow
+          // reaches the button while the celebration is playing (the
+          // window-capture swallow in playSpud should already have
+          // eaten it), swallow it here too rather than count it.
+          if (playing) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            return;
+          }
           if (e && e.pointerId !== undefined && tapTarget.setPointerCapture) {
             try { tapTarget.setPointerCapture(e.pointerId); } catch (err) {}
           }
           lastPointerTap = Date.now();
           countLogoTap();
         });
-        tapTarget.addEventListener("click", function () {
+        tapTarget.addEventListener("click", function (e) {
+          if (playing) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            return;
+          }
           if (Date.now() - lastPointerTap < 700) return;
           countLogoTap();
         });
