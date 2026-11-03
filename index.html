@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-03-runner-hazard-spacing · v73.1.86 -->
+<!-- build-2026-11-03-sky-peeler-icon-scale · v74.2.87 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -3250,7 +3250,7 @@
         </p>
         <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
         <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p class="version-stamp">v73.1.86</p>
+        <p class="version-stamp">v74.2.87</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -11998,7 +11998,23 @@
             ctx.beginPath(); ctx.ellipse(rp.x, rp.y, rp.r, rp.r * 0.36, 0, 0, 6.29); ctx.stroke();
           }
 
-          for (var i = 0; i < items.length; i++) drawItem(items[i], t);
+          // Readability pass: item ART is drawn oversized around
+          // each item's ground line — hazards big and sharp,
+          // pickups big and food-shaped — while every hitbox
+          // (DIMS, itemBox, spawn logic) stays exactly as it was.
+          // Only the pixels grow; the collision never moves.
+          for (var i = 0; i < items.length; i++) {
+            var dit = items[i];
+            var dvs = itemVisualScale(dit.kind);
+            if (dvs[0] === 1 && dvs[1] === 1) { drawItem(dit, t); continue; }
+            var dcx = dit.x + dit.w / 2, dgy = GROUND - dit.yOff;
+            ctx.save();
+            ctx.translate(dcx, dgy);
+            ctx.scale(dvs[0], dvs[1]);
+            ctx.translate(-dcx, -dgy);
+            drawItem(dit, t);
+            ctx.restore();
+          }
           drawSuperSpud(t);
           // Active power-up dressing on SuperSpud himself: a pulsing
           // magnet ring, a creamy shield bubble, a blink while the
@@ -12164,6 +12180,23 @@
           ctx.beginPath(); ctx.arc(cx + 15, cy + 4, 7, 0.25, 1.65); ctx.stroke();
         }
 
+        // Visual scale for item art only, [x, y] multipliers around
+        // the item's centre/ground line. The peeler returns 1: its
+        // branch draws its own oversized sky-peeler art instead.
+        function itemVisualScale(kind) {
+          switch (kind) {
+            case "knife": return [1.9, 1.22];
+            case "fork": return [1.8, 1.24];
+            case "masher": return [1.45, 1.4];
+            case "rollingPin": return [1.5, 1.45];
+            case "butterSlick": return [1.4, 1.9];
+            case "cream": case "bacon": case "cheese": case "chive":
+            case "butter": case "broccoli": case "chili":
+            case "magnet": case "shield": case "mult": return [1.55, 1.5];
+            default: return [1, 1];
+          }
+        }
+
         function drawItem(it, t) {
           var groundTop = GROUND - it.yOff;
           // Contact shadow so forks and toppings sit in the sunset
@@ -12174,6 +12207,22 @@
           var bobY = noBob ? 0 : Math.sin(t * 4 + it.seed) * 2.5;
           var top = groundTop - it.h + bobY;
           var cx = it.x + it.w / 2;
+          // Readability halo, scaled up with the art by the draw
+          // loop: hazards burn red, pickups and power-ups glow warm
+          // gold — danger never wears food colours.
+          if (isObstacle(it.kind)) {
+            var hg = ctx.createRadialGradient(cx, top + it.h / 2, 3, cx, top + it.h / 2, it.w * 1.05);
+            hg.addColorStop(0, "rgba(255, 45, 32, 0.30)");
+            hg.addColorStop(1, "rgba(255, 45, 32, 0)");
+            ctx.fillStyle = hg;
+            ctx.fillRect(cx - it.w * 1.1, top - it.h * 0.45, it.w * 2.2, it.h * 1.9);
+          } else {
+            var pg = ctx.createRadialGradient(cx, top + it.h / 2, 3, cx, top + it.h / 2, it.w * 1.05);
+            pg.addColorStop(0, "rgba(255, 205, 80, 0.32)");
+            pg.addColorStop(1, "rgba(255, 205, 80, 0)");
+            ctx.fillStyle = pg;
+            ctx.fillRect(cx - it.w * 1.1, top - it.h * 0.45, it.w * 2.2, it.h * 1.9);
+          }
           if (it.kind === "knife") {
             // Chef's Knife: tall blade stuck point-down, wooden handle up
             ctx.fillStyle = "#dfe5ec";
@@ -12232,29 +12281,117 @@
             ctx.strokeRect(cx - 8, groundTop - 13, 16, 7);
             return;
           } else if (it.kind === "peeler") {
-            // Hover Peeler: floats at jump height — run UNDER it
+            // SKY PEELER: the hitbox is unchanged (46×26 at jump
+            // height — grounded clears it, jumping into it ends the
+            // run), but the ART is a machine over three times that
+            // size: a dark serrated blade under a hazard-striped
+            // spine, red glow and outline, twin hover rotors, a
+            // blinking beacon, and a pulsing red band marking the
+            // exact kill zone. Nothing this red is ever food.
             var hov = Math.sin(t * 3.2 + it.seed) * 3;
             var pTop = top + hov;
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
-            ctx.lineWidth = 1.6;
-            ctx.setLineDash([3, 4]);
-            ctx.beginPath(); ctx.moveTo(cx, pTop - 12); ctx.lineTo(cx, pTop - 2); ctx.stroke();
+            var pcy = pTop + it.h / 2;
+            var pulse = 0.5 + 0.5 * Math.sin(t * 6 + it.seed);
+            // Wide soft shadow under the machine
+            ctx.fillStyle = "rgba(20, 6, 28, 0.22)";
+            ctx.beginPath(); ctx.ellipse(cx, GROUND + 9, 78, 5, 0, 0, 6.29); ctx.fill();
+            // Kill-zone band: the air the blade owns — hitbox height
+            // plus a breath — pulsing red with a dashed border and
+            // inward chevrons at both edges.
+            var kzX0 = cx - 90, kzW = 180, kzY0 = pTop - 7, kzH = it.h + 14;
+            ctx.fillStyle = "rgba(255, 38, 26, " + (0.10 + 0.09 * pulse) + ")";
+            ctx.fillRect(kzX0, kzY0, kzW, kzH);
+            ctx.strokeStyle = "rgba(255, 45, 32, " + (0.55 + 0.35 * pulse) + ")";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([9, 6]);
+            ctx.strokeRect(kzX0, kzY0, kzW, kzH);
             ctx.setLineDash([]);
-            ctx.fillStyle = "#dfe5ec";
-            ctx.strokeStyle = "#8d97a5";
-            ctx.lineWidth = 1.6;
+            ctx.fillStyle = "rgba(255, 45, 32, " + (0.6 + 0.35 * pulse) + ")";
             ctx.beginPath();
-            ctx.moveTo(it.x + 4, pTop + 6);
-            ctx.lineTo(it.x + it.w - 8, pTop + 2);
-            ctx.lineTo(it.x + it.w - 3, pTop + 11);
-            ctx.lineTo(it.x + 9, pTop + 15);
-            ctx.closePath(); ctx.fill(); ctx.stroke();
-            // The blade slot and red grip
-            ctx.strokeStyle = "#5c6672";
-            ctx.lineWidth = 2.4;
-            ctx.beginPath(); ctx.moveTo(it.x + 12, pTop + 9); ctx.lineTo(it.x + it.w - 13, pTop + 6); ctx.stroke();
-            ctx.fillStyle = "#c23b2e";
-            ctx.beginPath(); ctx.ellipse(it.x + it.w - 6, pTop + 6, 6, 4.6, 0.4, 0, 6.29); ctx.fill();
+            ctx.moveTo(kzX0 + 3, pcy - 8); ctx.lineTo(kzX0 + 3, pcy + 8); ctx.lineTo(kzX0 + 15, pcy);
+            ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(kzX0 + kzW - 3, pcy - 8); ctx.lineTo(kzX0 + kzW - 3, pcy + 8); ctx.lineTo(kzX0 + kzW - 15, pcy);
+            ctx.closePath(); ctx.fill();
+            // Hover rotors on dark struts above the spine
+            ctx.strokeStyle = "#22252b";
+            ctx.lineWidth = 5; ctx.lineCap = "round";
+            ctx.beginPath(); ctx.moveTo(cx - 52, pcy - 16); ctx.lineTo(cx - 52, pcy - 30); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx + 52, pcy - 16); ctx.lineTo(cx + 52, pcy - 30); ctx.stroke();
+            ctx.fillStyle = "#22252b";
+            ctx.beginPath(); ctx.ellipse(cx - 52, pcy - 32, 26, 5.5, 0, 0, 6.29); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(cx + 52, pcy - 32, 26, 5.5, 0, 0, 6.29); ctx.fill();
+            ctx.strokeStyle = "rgba(230, 235, 240, 0.75)";
+            ctx.lineWidth = 2;
+            var rph = (t * 22 + it.seed * 10) % 3.14;
+            ctx.beginPath(); ctx.ellipse(cx - 52, pcy - 32, 22 * Math.abs(Math.cos(rph)), 2.2, 0, 0, 6.29); ctx.stroke();
+            ctx.beginPath(); ctx.ellipse(cx + 52, pcy - 32, 22 * Math.abs(Math.sin(rph)), 2.2, 0, 0, 6.29); ctx.stroke();
+            // The blade: dark metal body, serrated lower edge,
+            // hazard-striped spine, red grip at the trailing end.
+            var bx0 = cx - 82, bx1 = cx + 82, by0 = pcy - 18, by1 = pcy + 6;
+            ctx.save();
+            ctx.shadowColor = "rgba(255, 30, 20, 0.85)";
+            ctx.shadowBlur = 16 + 8 * pulse;
+            var bladeG = ctx.createLinearGradient(0, by0, 0, by1 + 10);
+            bladeG.addColorStop(0, "#565d66");
+            bladeG.addColorStop(0.45, "#33383f");
+            bladeG.addColorStop(1, "#1d2025");
+            ctx.fillStyle = bladeG;
+            ctx.beginPath();
+            ctx.moveTo(bx0, by0);
+            ctx.lineTo(bx1, by0);
+            ctx.lineTo(bx1, by1);
+            for (var stx = bx1; stx > bx0; stx -= 11) {
+              ctx.lineTo(stx - 5.5, by1 + 10);
+              ctx.lineTo(Math.max(bx0, stx - 11), by1);
+            }
+            ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = "#ff2d20";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.restore();
+            // Hazard striping clipped into the spine band
+            ctx.save();
+            ctx.beginPath(); ctx.rect(bx0 + 3, by0 + 3, (bx1 - bx0) - 6, 9); ctx.clip();
+            for (var hst = bx0 - 12; hst < bx1 + 12; hst += 16) {
+              ctx.fillStyle = ((Math.round((hst - bx0) / 16) % 2) === 0) ? "#f7c948" : "#141519";
+              ctx.beginPath();
+              ctx.moveTo(hst, by0 + 13); ctx.lineTo(hst + 8, by0 + 2); ctx.lineTo(hst + 16, by0 + 2); ctx.lineTo(hst + 8, by0 + 13);
+              ctx.closePath(); ctx.fill();
+            }
+            ctx.restore();
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.55)";
+            ctx.lineWidth = 1.6;
+            ctx.beginPath(); ctx.moveTo(bx0 + 2, by0 + 13); ctx.lineTo(bx1 - 2, by0 + 13); ctx.stroke();
+            // Blade slot shine + rivets on the dark body
+            ctx.strokeStyle = "rgba(235, 240, 245, 0.5)";
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(bx0 + 14, by1 - 3); ctx.lineTo(bx1 - 40, by1 - 3); ctx.stroke();
+            ctx.fillStyle = "#0c0d10";
+            var rivX = [bx0 + 16, bx0 + 34, bx1 - 52];
+            for (var rv = 0; rv < rivX.length; rv++) {
+              ctx.beginPath(); ctx.arc(rivX[rv], by0 + 18, 2.4, 0, 6.29); ctx.fill();
+            }
+            // Red grip at the trailing (right) end of the blade
+            ctx.fillStyle = "#a01612";
+            ctx.strokeStyle = "#ff2d20";
+            ctx.lineWidth = 2;
+            ctx.fillRect(bx1 - 30, by0 + 13, 27, 12);
+            ctx.strokeRect(bx1 - 30, by0 + 13, 27, 12);
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.lineWidth = 2;
+            for (var gr = 0; gr < 3; gr++) {
+              ctx.beginPath(); ctx.moveTo(bx1 - 23 + gr * 7, by0 + 15); ctx.lineTo(bx1 - 23 + gr * 7, by0 + 23); ctx.stroke();
+            }
+            // Blinking warning beacon on the spine
+            ctx.fillStyle = "#22252b";
+            ctx.fillRect(cx - 2, by0 - 7, 4, 7);
+            ctx.save();
+            ctx.shadowColor = "rgba(255, 30, 20, 0.9)";
+            ctx.shadowBlur = 12 * pulse + 3;
+            ctx.fillStyle = pulse > 0.45 ? "#ff3527" : "#7d130d";
+            ctx.beginPath(); ctx.arc(cx, by0 - 10, 4.6, 0, 6.29); ctx.fill();
+            ctx.restore();
             return;
           } else if (it.kind === "rollingPin") {
             // Runaway Rolling Pin: rolling straight at him, faster
