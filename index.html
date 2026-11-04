@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-04-offline-cache · v112.1.97 -->
+<!-- build-2026-11-04-pregame-aim-settings · v113.1.98 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -2240,10 +2240,13 @@
         box-shadow: 0 3px 10px rgba(20, 20, 10, 0.45);
         pointer-events: none;
       }
-      /* Aim sensitivity: a slider in the controls row under the
-         stage. 100% is the shipped v77-tuned feel; the player can
-         soften or sharpen every look input (aim stick, touch
-         look-drag, pointer-locked mouse) from one place. */
+      /* Aim sensitivity: a slider on the pre-match settings panel
+         — shown before a match begins and gone once Confirm
+         settings starts it, so it is never on screen during play
+         (portrait, landscape, or maximized). 100% is the shipped
+         v77-tuned feel; the player can soften or sharpen every
+         look input (aim stick, touch look-drag, pointer-locked
+         mouse) from one place. */
       .ball3d-sens {
         flex: 1 1 190px; display: flex; align-items: center; gap: 8px;
         border: 1px solid var(--line); border-radius: 12px; padding: 6px 12px;
@@ -2256,6 +2259,9 @@
       }
       .ball3d-sensval { flex: none; min-width: 3.1em; text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
       .ball3d-sens:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+      /* On the settings panel the slider spans the panel's measure
+         instead of flexing inside the old controls row. */
+      .ball3d-settings .ball3d-sens { flex: none; width: 100%; max-width: 440px; }
       /* Rotate prompt: a small pill in the stage's top-left corner,
          shown only on portrait touch screens — a web page can't
          lock orientation, so it just suggests turning the phone,
@@ -3545,7 +3551,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v112.1.97</p>
+        <p class="version-stamp">v113.1.98</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -3840,18 +3846,23 @@
             <p id="ball3dHaul"></p>
             <button type="button" class="spudgame-btn" id="ball3dRestart">Rematch</button>
           </div>
+          <div class="spudgame-panel ball3d-settings" id="ball3dSettingsPanel" hidden>
+            <h3>Aim settings</h3>
+            <p>Set your aim sensitivity, then confirm — the match starts and the slider stays off the screen while you play.</p>
+            <label class="ball3d-sens" for="ball3dSens">Aim sensitivity <input type="range" id="ball3dSens" min="40" max="160" step="5" value="100"> <span class="ball3d-sensval" id="ball3dSensVal">100%</span></label>
+            <button type="button" class="spudgame-btn" id="ball3dConfirmSettings">Confirm settings</button>
+          </div>
           <div class="ball3d-stick" id="ball3dStick" hidden aria-hidden="true"><div class="ball3d-knob" id="ball3dKnob"></div></div>
           <div class="ball3d-stick ball3d-stick--right" id="ball3dStickR" hidden aria-hidden="true"><div class="ball3d-knob" id="ball3dKnobR"></div></div>
           <div class="ball3d-rotate" aria-hidden="true">Rotate your phone for a wider view</div>
         </div>
         <div class="ball3d-touchrow" aria-label="Tate-lo 3D controls">
           <div class="ball3d-sticklabel">Touch: left stick moves · right stick aims · double-tap right stick to shoot · double-tap left stick to jump</div>
-          <label class="ball3d-sens" for="ball3dSens">Aim sensitivity <input type="range" id="ball3dSens" min="40" max="160" step="5" value="100"> <span class="ball3d-sensval" id="ball3dSensVal">100%</span></label>
           <button type="button" class="ball3d-autofire" id="ball3dWeaponBtn">Blaster: Classic</button>
           <button type="button" class="ball3d-autofire" id="ball3dAutoFire" aria-pressed="false">Auto-fire: Off</button>
           <button type="button" class="ball-fire" id="ball3dFireBtn" style="flex:0 1 220px">SPLAT — hold to fire</button>
         </div>
-        <p class="spudgame-hint">Desktop: WASD + mouse (click to lock), click or Space to fire, E to jump. Touch: left stick moves, right stick aims — double-tap to shoot or jump, or leave Auto-fire on. Keys 1–5 swap blasters. Power-ups: Butter Shield eats a splat, Swift Sprout speeds you up, Extra Dollop doubles fire rate, Mega Mash supersizes shots. Splatted? You spectate until the round ends — in Splat Race you're back in seconds. Aim feeling twitchy? Tune the Aim sensitivity slider under the screen — and on a phone, turn it sideways for a wider view. Esc closes.</p>
+        <p class="spudgame-hint">Desktop: WASD + mouse (click to lock), click or Space to fire, E to jump. Touch: left stick moves, right stick aims — double-tap to shoot or jump, or leave Auto-fire on. Keys 1–5 swap blasters. Power-ups: Butter Shield eats a splat, Swift Sprout speeds you up, Extra Dollop doubles fire rate, Mega Mash supersizes shots. Splatted? You spectate until the round ends — in Splat Race you're back in seconds. Aim feeling twitchy? Tune the Aim sensitivity on the settings screen before the match — and on a phone, turn it sideways for a wider view. Esc closes.</p>
       </div>
     </div>
 
@@ -18127,6 +18138,9 @@
         var stage = document.getElementById("ball3dStage");
         var startPanel = document.getElementById("ball3dStartPanel");
         var overPanel = document.getElementById("ball3dOverPanel");
+        var settingsPanel = document.getElementById("ball3dSettingsPanel");
+        // Which start Confirm settings will run: "live" | "solo" | "restart".
+        var pendingStart = null;
         var roundEl = document.getElementById("ball3dRound");
         var scoreEl = document.getElementById("ball3dScore");
         var aliveEl = document.getElementById("ball3dAlive");
@@ -19109,6 +19123,7 @@
           for (var i = 0; i < fighters.length; i++) fighters[i].splats = 0;
           assignLoadouts();
           startPanel.hidden = true; overPanel.hidden = true;
+          if (settingsPanel) settingsPanel.hidden = true;
           lastTs = 0;
           startRound();
           cancelAnimationFrame(raf);
@@ -20924,6 +20939,8 @@
           tracers = []; parts = []; decals = []; projectiles = [];
           pitch = 0;
           startPanel.hidden = false; overPanel.hidden = true;
+          if (settingsPanel) settingsPanel.hidden = true;
+          pendingStart = null;
           var dlg = document.getElementById("spudArcade");
           if (dlg) dlg.hidden = true;
           overlay.hidden = false;
@@ -20938,6 +20955,8 @@
           fsActive = false;
           if (isMax) setMax(false);
           open = false; mode = "ready";
+          if (settingsPanel) settingsPanel.hidden = true;
+          pendingStart = null;
           cancelAnimationFrame(raf);
           if (document.exitPointerLock && document.pointerLockElement === canvas) { try { document.exitPointerLock(); } catch (e) {} }
           overlay.hidden = true;
@@ -20946,9 +20965,45 @@
         }
         window.__spudBall3dOpen = openBall3d;
         document.getElementById("spudBall3dClose").addEventListener("click", closeBall3d);
-        document.getElementById("ball3dStart").addEventListener("click", joinLive);
-        if (soloBtn) soloBtn.addEventListener("click", function () { if (mp.on) mpLeaveRoom(true); startMatch(); });
-        document.getElementById("ball3dRestart").addEventListener("click", onRestart);
+        // ----- Pre-match aim settings gate: the sensitivity slider
+        // lives on its own panel, shown before a match and never
+        // during play. Join / Solo / Rematch (and the ready / over
+        // shortcuts below) open it first; Confirm settings hides it
+        // and only then runs the pending start. -----
+        function showSettings(which) {
+          if (!settingsPanel) { // panel missing: start directly, as before
+            if (which === "solo") { if (mp.on) mpLeaveRoom(true); startMatch(); }
+            else if (which === "restart") onRestart();
+            else joinLive();
+            return;
+          }
+          if (!settingsPanel.hidden) return; // already up: keep the pending choice
+          pendingStart = which;
+          startPanel.hidden = true; overPanel.hidden = true;
+          settingsPanel.hidden = false;
+          var cb = document.getElementById("ball3dConfirmSettings");
+          if (cb) { try { cb.focus({ preventScroll: true }); } catch (e) { cb.focus(); } }
+          draw(0);
+        }
+        function confirmSettings() {
+          var which = pendingStart || "live";
+          pendingStart = null;
+          if (settingsPanel) settingsPanel.hidden = true;
+          if (which === "solo") { if (mp.on) mpLeaveRoom(true); startMatch(); }
+          else if (which === "restart") {
+            onRestart();
+            // In the live room a non-host can't start the rematch —
+            // onRestart() only posted a note, so put the over panel
+            // back up for that message.
+            if (mp.on && !mpIsHost() && mode === "over") overPanel.hidden = false;
+          }
+          else joinLive();
+        }
+        document.getElementById("ball3dStart").addEventListener("click", function () { showSettings("live"); });
+        if (soloBtn) soloBtn.addEventListener("click", function () { showSettings("solo"); });
+        document.getElementById("ball3dRestart").addEventListener("click", function () { showSettings("restart"); });
+        var confirmSettingsBtn = document.getElementById("ball3dConfirmSettings");
+        if (confirmSettingsBtn) confirmSettingsBtn.addEventListener("click", confirmSettings);
         // ----- Maximize / fullscreen: Maximize expands the dialog
         // to the full viewport (biggest canvas, compact HUD, controls
         // overlaid). Fullscreen asks the device for true fullscreen
@@ -21092,9 +21147,10 @@
           autoBtn.addEventListener("click", function () { autoFire = !autoFire; syncAutoBtn(); });
           syncAutoBtn();
         }
-        // Aim sensitivity slider: live-updates aimSens (used by the
-        // aim stick, the touch look-drag, and the pointer-locked
-        // mouse) and its % readout. Session-only — no storage.
+        // Aim sensitivity slider (on the pre-match settings panel):
+        // live-updates aimSens (used by the aim stick, the touch
+        // look-drag, and the pointer-locked mouse) and its %
+        // readout. Session-only — no storage.
         var sensEl = document.getElementById("ball3dSens");
         var sensValEl = document.getElementById("ball3dSensVal");
         if (sensEl) {
@@ -21122,8 +21178,8 @@
         }
         stage.addEventListener("pointerdown", function (e) {
           if (e.target && e.target.closest && e.target.closest(".spudgame-panel")) return;
-          if (mode === "ready") { joinLive(); return; }
-          if (mode === "over") { if (Date.now() - overAt > 600) onRestart(); return; }
+          if (mode === "ready") { showSettings("live"); return; }
+          if (mode === "over") { if (Date.now() - overAt > 600) showSettings("restart"); return; }
           if (mode !== "play" && mode !== "count") return;
           var p = stagePos(e);
           if (e.pointerType === "mouse") {
@@ -21176,7 +21232,14 @@
         document.addEventListener("keydown", function (e) {
           if (!open) return;
           if (e.key === "Escape") { closeBall3d(); return; }
-          if (mode === "ready" && (e.key === "a" || e.key === "A")) { e.preventDefault(); joinLive(); return; }
+          if (settingsPanel && !settingsPanel.hidden) {
+            // Settings are up: Enter / Space / A confirms and starts;
+            // every other key (arrows on the slider included) is the
+            // panel's own business, never match input.
+            if (e.key === "Enter" || e.key === " " || e.key === "a" || e.key === "A") { e.preventDefault(); confirmSettings(); }
+            return;
+          }
+          if (mode === "ready" && (e.key === "a" || e.key === "A")) { e.preventDefault(); showSettings("live"); return; }
           var k = e.key;
           if (k === "ArrowLeft" || k === "a" || k === "A") { keys.left = true; e.preventDefault(); }
           else if (k === "ArrowRight" || k === "d" || k === "D") { keys.right = true; e.preventDefault(); }
@@ -21185,8 +21248,8 @@
           else if (k === "e" || k === "E") { if (mode === "play") tryJump(player); }
           else if (k === " " || k === "Spacebar") {
             e.preventDefault();
-            if (mode === "ready") { joinLive(); return; }
-            if (mode === "over" && Date.now() - overAt > 600) { onRestart(); return; }
+            if (mode === "ready") { showSettings("live"); return; }
+            if (mode === "over" && Date.now() - overAt > 600) { showSettings("restart"); return; }
             keys.fire = true;
           }
         });
