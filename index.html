@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-04-pregame-aim-settings · v113.1.98 -->
+<!-- build-2026-11-04-spudkart-driving-routes · v115.1.98 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -2140,7 +2140,17 @@
       .ball-blaster:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
       @media print { .ballgame { display: none; } }
       /* ---------- Tate-lo 3D: first-person Spudball ---------- */
-      .ball3d-stage { background: #1a0f08; cursor: crosshair; }
+      .ball3d-stage { background: #10151b; cursor: crosshair; }
+      /* Pro-look pass (v114): the 3D dialog's own HUD strip reads as
+         one clean instrument line — hairline rule under it, tabular
+         figures, no wrap mid-match. Scoped to Tate-lo 3D only; the
+         2D game's shared .ball-hud is untouched. */
+      .ball3dgame .ball-hud {
+        font-size: 0.92rem; letter-spacing: 0.01em;
+        padding-bottom: 6px; margin-bottom: 6px;
+        border-bottom: 1px solid var(--line);
+      }
+      .ball3dgame .ball-roster { font-size: 0.8rem; letter-spacing: 0.01em; }
       .ball3d-card { width: min(880px, 100%); }
       /* Maximize / fullscreen controls in the 3D dialog header —
          the same pill styles Tate-lo 3D's Maximize button, now
@@ -2181,7 +2191,7 @@
       .ball3dgame.ball3d-max .ball3d-stage {
         flex: 1 1 auto; min-height: 0;
         align-items: center; justify-items: center;
-        background: #1a0f08;
+        background: #10151b;
       }
       .ball3dgame.ball3d-max .ball3d-stage canvas {
         align-self: center;
@@ -2194,7 +2204,9 @@
         position: absolute; left: 50%; transform: translateX(-50%);
         bottom: 12px; z-index: 6; margin: 0;
         max-width: calc(100% - 20px);
-        background: rgba(18, 24, 28, 0.55); padding: 6px; border-radius: 14px;
+        background: rgba(13, 18, 22, 0.66); padding: 6px; border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
       }
       .ball3dgame.ball3d-max .ball3d-sticklabel { display: none; }
       @media (min-width: 760px) {
@@ -2214,8 +2226,8 @@
       .ball3d-stick {
         position: absolute; left: 10px; bottom: 10px; z-index: 3;
         width: 84px; height: 84px; border-radius: 50%;
-        background: rgba(18, 24, 28, 0.30); border: 2px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 4px 16px rgba(20, 20, 10, 0.35), inset 0 0 24px rgba(0, 0, 0, 0.3);
+        background: rgba(13, 18, 22, 0.38); border: 1.5px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 6px 18px rgba(8, 12, 16, 0.35), inset 0 0 0 7px rgba(255, 255, 255, 0.05), inset 0 0 22px rgba(0, 0, 0, 0.28);
         touch-action: none; -webkit-user-select: none; user-select: none;
         -webkit-tap-highlight-color: transparent;
       }
@@ -2235,9 +2247,9 @@
       .ball3d-knob {
         position: absolute; left: 50%; top: 50%; width: 40px; height: 40px;
         margin: -20px 0 0 -20px; border-radius: 50%;
-        background: radial-gradient(circle at 35% 32%, #ffe9a3, #e8a91c 62%, #9c6d05);
-        border: 2px solid rgba(255, 255, 255, 0.85);
-        box-shadow: 0 3px 10px rgba(20, 20, 10, 0.45);
+        background: radial-gradient(circle at 35% 30%, #ffffff, #d9dfe5 55%, #a9b4be);
+        border: 1.5px solid rgba(16, 22, 28, 0.38);
+        box-shadow: 0 3px 9px rgba(8, 12, 16, 0.42), inset 0 -4px 7px rgba(16, 22, 28, 0.16);
         pointer-events: none;
       }
       /* Aim sensitivity: a slider on the pre-match settings panel
@@ -2269,8 +2281,8 @@
       .ball3d-rotate {
         position: absolute; top: 8px; left: 8px; z-index: 5; pointer-events: none;
         display: none; max-width: 64%;
-        background: rgba(18, 24, 28, 0.72); color: #fff7e0;
-        border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 999px;
+        background: rgba(13, 18, 22, 0.72); color: #f2f5f7;
+        border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 999px;
         font-size: 0.78rem; font-weight: 700; line-height: 1.25; padding: 6px 10px;
       }
       @media (orientation: portrait) and (max-width: 700px) and (pointer: coarse) {
@@ -2312,7 +2324,7 @@
         .ball3dgame .ball3d-stage {
           flex: 1 1 auto; min-height: 0;
           align-items: center; justify-items: center;
-          background: #1a0f08;
+          background: #10151b;
         }
         .ball3dgame .ball3d-stage canvas,
         .ball3dgame.ball3d-max .ball3d-stage canvas {
@@ -2327,7 +2339,9 @@
           position: absolute; left: 50%; transform: translateX(-50%);
           bottom: 8px; z-index: 6; margin: 0;
           max-width: calc(100% - 208px);
-          background: rgba(18, 24, 28, 0.55); padding: 5px; border-radius: 14px;
+          background: rgba(13, 18, 22, 0.66); padding: 5px; border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         }
         .ball3dgame .ball3d-sens { min-height: 48px; }
         .ball3dgame .ball3d-autofire { min-height: 48px; }
@@ -3551,7 +3565,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v113.1.98</p>
+        <p class="version-stamp">v115.1.99</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -3738,7 +3752,7 @@
             <p id="kartDriverDesc">Super Spud — the golden original. Even launch, even top speed, honest steering.</p>
             <p>Three laps, three rival spuds, and a racer of your own — pick one above, each drives a little differently. Your kart rolls on its own — steer with ◀ ▶, the arrow keys, or A / D, brake with ▼ or S for tight corners. Dragging on the road steers too.</p>
             <p>Hit a <strong>?</strong> topping box, then press <strong>Space</strong> or the Item button: Turbo Tater boost, Sour Cream Shield, Butter Trap, the <strong>Tater Fork</strong> (straight shot), the <strong>Seeking Spud Fork</strong> (it homes in), the <strong>Golden Leader Fork</strong> (it hunts whoever's first), <strong>Superstar Spud</strong> invincibility, <strong>Thunder Mash</strong> lightning that shrinks every rival, and the <strong>Rocket Russet</strong> autopilot burst. Trailing racers draw the stronger stuff — and bots and live rivals race with the exact same items.</p>
-            <p>Orange <strong>ramps</strong> launch you — tap <strong>Space</strong> or the Item button mid-air to trick and land with a boost. Gold <strong>Spud Coins</strong> on the road each nudge your top speed up a little (up to +12%). Butter slicks spin you out unless you're shielded, starred, or rocketing — and they catch rival karts too. Your Butter Trap item drops a fresh slick on the road right behind you, banana-style: it stays there for whoever comes next (including you, next lap), and a slick that catches someone melts away, then re-forms a few seconds later. And on the Prism Spud Skyway there's <strong>no guardrail</strong>: slide off the edge and you drop — then get fished back onto the road, a few seconds poorer.</p>
+            <p>Orange <strong>ramps</strong> launch you — tap <strong>Space</strong> or the Item button mid-air to trick and land with a boost. Gold <strong>Spud Coins</strong> on the road each nudge your top speed up a little (up to +12%). Butter slicks spin you out unless you're shielded, starred, or rocketing — and they catch rival karts too. Your Butter Trap item drops a fresh slick on the road right behind you, banana-style: it stays there for whoever comes next (including you, next lap), and a slick that catches someone melts away, then re-forms a few seconds later. And on the Prism Spud Skyway there's <strong>no guardrail</strong>: slide off the edge and you drop — then get fished back onto the road, a few seconds poorer. Every track also branches: a signposted <strong>alternate route</strong> peels off and rejoins with its own coins, a topping box, and a ramp — and each track hides a <strong>secret shortcut</strong> on one of its corners, marked by nothing but a faint gold dusting at the road's edge. Both are open to every racer, bots included.</p>
             <p><strong>Live room:</strong> press <strong>A</strong> (or tap Join) and you're in with whoever's racing right now — no lobby, no invites, no name form. Bots fill the empty grid slots and step aside as people arrive, and a bot takes your slot if you leave. Join mid-race and you spectate until the next race.</p>
             <button type="button" class="spudgame-btn" id="kartStart">Press A — join the live room</button>
             <button type="button" class="spudgame-btn" id="kartSolo" style="background:var(--panel-2);color:var(--ink);border:1px solid var(--line);box-shadow:none">Practice solo vs bots</button>
@@ -14376,6 +14390,13 @@
       // join; bots fill empty grid slots and step aside as humans
       // arrive), with a solo practice mode against bots if the room
       // can't be reached.
+      // v115: driving rebuilt — heading-integrated track geometry
+      // (the old offset accumulation spiralled on hairpins), a
+      // curve-follow assist with speed-sensitive steering in the
+      // arcade kart tradition, gentler curve values for phones, and
+      // a branching alternate route plus a hidden shortcut on every
+      // track. Rules, laps, items, rivals, and the room are as they
+      // were.
       (function () {
         var overlay = document.getElementById("spudKart");
         var canvas = document.getElementById("kartCanvas");
@@ -14417,7 +14438,8 @@
         var camH = 1500, camDepth = 0.68, drawDist = 220;
         var playerZ = camH * camDepth;
         var maxSpeed = segLen * 60; // 12000 world units / second
-        var centrifugal = 0.31;
+        // (v115: the old centrifugal fling is gone — see the steering
+        // block in update() for the curve-follow model that replaced it.)
         var LAPS = 3;
 
         // ----- Track -----
@@ -14455,6 +14477,50 @@
         var currentTrack = "resort";
         var trackLen = 0;
         var allBoxes = [], allSlicks = [], allCoins = [], allRamps = [];
+        // ----- Branch routes (v115): one signposted alternate and
+        // one hidden shortcut per track, original to Spud Kart. A
+        // route is a ribbon that eases off the main road inside its
+        // segment zone and rejoins at the end of it. While a kart is
+        // latched on, its lateral position is measured from the
+        // branch centreline; a shortcut's rate > 1 is its shorter
+        // path — the branch covers the same start-to-finish ground
+        // in less travel. Open to every racer, player and bots
+        // alike, and wide enough for touch steering. -----
+        var ROUTE_DEFS = {
+          resort: [
+            { kind: "alt", name: "Beach Service Road", start: 170, end: 222, side: 1, out: 2.0, width: 1.5, rate: 1.0 },
+            { kind: "secret", name: "Palm Grove Cut", start: 542, end: 588, side: 1, out: 1.5, width: 1.05, rate: 1.42 }
+          ],
+          rainbow: [
+            { kind: "alt", name: "Prism Detour", start: 442, end: 504, side: -1, out: 2.0, width: 1.5, rate: 1.0 },
+            { kind: "secret", name: "Starlight Slipstream", start: 370, end: 420, side: -1, out: 1.5, width: 1.05, rate: 1.42 }
+          ],
+          mash: [
+            { kind: "alt", name: "Lantern Lane", start: 288, end: 342, side: -1, out: 2.0, width: 1.5, rate: 1.0 },
+            { kind: "secret", name: "Moonlight Cut", start: 352, end: 398, side: 1, out: 1.5, width: 1.05, rate: 1.42 }
+          ]
+        };
+        var routeLoot = []; // branch coins / boxes / ramps for the built track
+        var myRoute = null, myLocal = 0; // the player's branch latch + centreline-relative lateral
+        function routeProfile(def, segPos) {
+          if (segPos < def.start || segPos > def.end) return 0;
+          var t = (segPos - def.start) / (def.end - def.start);
+          var s = Math.min(1, t / 0.16, (1 - t) / 0.16);
+          s = s * s * (3 - 2 * s); // smoothstep out and back
+          return def.side * def.out * s;
+        }
+        function routeAt(segPos) {
+          var defs = ROUTE_DEFS[currentTrack] || [];
+          for (var i = 0; i < defs.length; i++) if (segPos >= defs[i].start - 2 && segPos <= defs[i].end) return defs[i];
+          return null;
+        }
+        function effX() {
+          // The player's main-road-relative lateral: what the
+          // renderer, bump checks, and the live room all see.
+          if (!myRoute) return playerX;
+          var segPosF = ((position + playerZ) % trackLen) / segLen;
+          return routeProfile(myRoute, segPosF) + myLocal;
+        }
         function findSegment(z) {
           return segments[Math.floor(z / segLen) % segments.length];
         }
@@ -14467,35 +14533,38 @@
             addRoad(25, 25, 25, 2);
             addRoad(20, 20, 20, -2);
             addRoad(25, 25, 25, 0);
-            addRoad(20, 20, 20, 3);
-            addRoad(25, 25, 25, -3);
+            addRoad(20, 20, 20, 2.5);
+            addRoad(25, 25, 25, -2.5);
             addRoad(30, 30, 30, 0);
             addRoad(20, 20, 20, 1);
           } else if (id === "mash") {
+            // (v115: the Mash Mile's teeth are filed for phones —
+            // same sequence of corners, gentler values: 4/5s are now
+            // 3/3.5s, so a hairpin is a fast sweeper a thumb can hold.)
             addRoad(25, 25, 25, 0);
-            addRoad(20, 20, 20, 4);
-            addRoad(15, 15, 15, -4);
-            addRoad(20, 20, 20, 2);
-            addRoad(15, 15, 15, -5);
-            addRoad(20, 20, 20, 0);
-            addRoad(20, 20, 20, 5);
-            addRoad(15, 15, 15, -3);
             addRoad(20, 20, 20, 3);
+            addRoad(15, 15, 15, -3);
+            addRoad(20, 20, 20, 2);
+            addRoad(15, 15, 15, -3.5);
+            addRoad(20, 20, 20, 0);
+            addRoad(20, 20, 20, 3.5);
+            addRoad(15, 15, 15, -2.5);
+            addRoad(20, 20, 20, 2.5);
             addRoad(25, 25, 25, -1);
           } else {
             addRoad(30, 30, 30, 0);
             addRoad(25, 25, 25, 2);
             addRoad(20, 20, 20, 0);
-            addRoad(25, 25, 25, -3);
+            addRoad(25, 25, 25, -2.5);
             addRoad(20, 20, 30, 1);
             addRoad(25, 25, 25, -2);
             addRoad(30, 30, 30, 0);
-            addRoad(20, 20, 20, 4);
+            addRoad(20, 20, 20, 3);
             addRoad(25, 25, 25, -1);
           }
           trackLen = segments.length * segLen;
           // Segment extras beyond the original shape.
-          for (var e = 0; e < segments.length; e++) { segments[e].coins = []; segments[e].ramps = []; }
+          for (var e = 0; e < segments.length; e++) { segments[e].coins = []; segments[e].ramps = []; segments[e].bloot = []; }
           // Roadside dressing per theme: palms + resort blocks on the
           // coast, lanterns on the Mash Mile, nothing but sky on the
           // Skyway (its sprites stay empty on purpose).
@@ -14527,6 +14596,24 @@
           for (var r = 130; r < segments.length; r += rampEvery) {
             var ramp = { seg: segments[r] };
             segments[r].ramps.push(ramp); allRamps.push(ramp);
+          }
+          // Branch loot: coins strung along each route's line, plus
+          // a topping box and a jump ramp on the alternate. The
+          // secret pays in distance (its rate), not goodies.
+          routeLoot = [];
+          var rdefs = ROUTE_DEFS[id] || [];
+          for (var rd = 0; rd < rdefs.length; rd++) {
+            var rDef2 = rdefs[rd], rSpan = rDef2.end - rDef2.start;
+            var coinFr = rDef2.kind === "secret" ? [0.32, 0.52, 0.72] : [0.25, 0.45, 0.65, 0.82];
+            for (var cf = 0; cf < coinFr.length; cf++) routeLoot.push({ def: rDef2, segF: rDef2.start + rSpan * coinFr[cf], local: 0, type: "coin", taken: false, respawn: 0 });
+            if (rDef2.kind === "alt") {
+              routeLoot.push({ def: rDef2, segF: rDef2.start + rSpan * 0.5, local: 0.3, type: "box", taken: false, respawn: 0 });
+              routeLoot.push({ def: rDef2, segF: rDef2.start + rSpan * 0.68, local: 0, type: "ramp", taken: false, respawn: 0 });
+            }
+          }
+          for (var rl = 0; rl < routeLoot.length; rl++) {
+            var lSeg = segments[Math.floor(routeLoot[rl].segF) % segments.length];
+            if (lSeg) lSeg.bloot.push(routeLoot[rl]);
           }
         }
         buildTrack("resort");
@@ -14652,11 +14739,13 @@
           coins = 0; coinBonus = 0;
           airY = 0; airV = 0; trickDone = false; fallT = 0;
           projectiles = [];
+          myRoute = null; myLocal = 0;
           toasts = []; puffs = [];
           itemsUsed = 0; boxesHit = 0;
           mp.finished = false; mp.officialShown = false;
           for (var i = 0; i < allBoxes.length; i++) { allBoxes[i].taken = false; allBoxes[i].respawn = 0; }
           for (var ci = 0; ci < allCoins.length; ci++) { allCoins[ci].taken = false; allCoins[ci].respawn = 0; }
+          for (var rl9 = 0; rl9 < routeLoot.length; rl9++) { routeLoot[rl9].taken = false; routeLoot[rl9].respawn = 0; }
           // Dropped Butter Trap slicks belong to the last race: lift
           // them off the road; the track's own slicks reset. Preserved
           // rival objects also restart from the line at zero speed —
@@ -14671,6 +14760,7 @@
           for (var ri3 = 0; ri3 < rivals.length; ri3++) {
             rivals[ri3].dist = 0; rivals[ri3].txDist = 0; rivals[ri3].speed = 0;
             rivals[ri3].slowT = 0; rivals[ri3].spinT = 0;
+            rivals[ri3].route = null; rivals[ri3].rLocal = 0;
           }
           for (var ri2 = 0; ri2 < rivals.length; ri2++) {
             var rr2 = rivals[ri2];
@@ -15009,11 +15099,39 @@
           // the player's launch, like a real grid start.
           if (typeof r.speed !== "number") r.speed = 0;
           r.speed += (rTarget - r.speed) * Math.min(1, dt * (r.speed < rTarget ? 0.5 : 2.6));
-          r.dist += r.speed * dt;
+          r.dist += r.speed * dt * (r.route ? r.route.rate : 1);
           var rSpeed = r.speed;
-          r.offset += Math.sin(r.dist * 0.00006 + r.phase) * dt * 0.35;
-          r.offset = Math.max(-0.82, Math.min(0.82, r.offset));
-          if (!TRACK_DEFS[currentTrack].guard) r.offset = Math.max(-0.9, Math.min(0.9, r.offset)); // bots hug the Skyway ribbon
+          // Branch routes (v115): a seeded per-bot, per-lap roll —
+          // the same roll for every viewer of the host's sim —
+          // sends some bots down the alternate or the secret cut.
+          // While latched, a bot's offset is branch-centreline
+          // relative, exactly like the player's.
+          var rSegF = (((r.dist % trackLen) + trackLen) % trackLen) / segLen;
+          if (!r.route) {
+            var candB = routeAt(rSegF);
+            if (candB && rSegF >= candB.start - 2 && rSegF <= candB.start + 6) {
+              var lapB = Math.floor(Math.max(0, r.dist) / trackLen);
+              var seedB = Math.sin(r.slot * 127.1 + lapB * 311.7 + candB.start * 0.37) * 43758.5453;
+              if (seedB - Math.floor(seedB) < (candB.kind === "secret" ? 0.25 : 0.5)) {
+                r.route = candB;
+                r.rLocal = Math.max(-0.3, Math.min(0.3, r.offset - routeProfile(candB, rSegF)));
+              }
+            }
+          }
+          if (r.route) {
+            if (rSegF >= r.route.end || rSegF < r.route.start - 4) {
+              r.offset = Math.max(-0.85, Math.min(0.85, r.rLocal || 0)); r.route = null;
+            } else {
+              r.rLocal = (r.rLocal || 0) + (0 - (r.rLocal || 0)) * Math.min(1, dt * 0.9);
+              r.rLocal = Math.max(-r.route.width * 0.4, Math.min(r.route.width * 0.4, r.rLocal));
+              r.offset = routeProfile(r.route, rSegF) + r.rLocal;
+            }
+          }
+          if (!r.route) {
+            r.offset += Math.sin(r.dist * 0.00006 + r.phase) * dt * 0.35;
+            r.offset = Math.max(-0.82, Math.min(0.82, r.offset));
+            if (!TRACK_DEFS[currentTrack].guard) r.offset = Math.max(-0.9, Math.min(0.9, r.offset)); // bots hug the Skyway ribbon
+          }
           r.txDist = r.dist; r.txOffset = r.offset;
           // Bots crack boxes, bank coins, and catch ramps on their
           // own segment — the same road loot the player gets.
@@ -15032,6 +15150,17 @@
             for (var cc = 0; cc < rSegObj.coins.length; cc++) {
               var rCoin = rSegObj.coins[cc];
               if (!rCoin.taken && Math.abs(r.offset - rCoin.offset) < 0.45) { rCoin.taken = true; rCoin.respawn = 9; r.coins = (r.coins || 0) + 1; }
+            }
+            if (r.route && rSegObj.bloot) {
+              for (var bl3 = 0; bl3 < rSegObj.bloot.length; bl3++) {
+                var bL3 = rSegObj.bloot[bl3];
+                if (bL3.type === "ramp") { if (r.airT <= 0) r.airT = 0.9; }
+                else if (!bL3.taken && Math.abs((r.rLocal || 0) - bL3.local) < 0.45) {
+                  bL3.taken = true; bL3.respawn = bL3.type === "box" ? 7 : 9;
+                  if (bL3.type === "coin") r.coins = (r.coins || 0) + 1;
+                  else if (!r.item && r.boxCool <= 0) { r.item = rollItem(botRank(r)); r.useT = 0.8 + Math.random() * 2.8; r.boxCool = 3; }
+                }
+              }
             }
             for (var ss2 = 0; ss2 < rSegObj.slicks.length; ss2++) {
               var rSlick = rSegObj.slicks[ss2];
@@ -15112,15 +15241,59 @@
           if (mpSpectating || mode === "wait" || mode === "spectate") { spectateUpdate(dt); updateHud(); return; }
           var playerSegment = findSegment(position + playerZ);
           var speedPercent = speed / maxSpeed;
-          // Steering: keys, pads, or drag — smoothed so the kart has weight.
+          var segPosF = ((position + playerZ) % trackLen) / segLen;
+          // Branch latch (v115): drift onto a route's mouth and
+          // you're on it until it rejoins. The alternate opens to
+          // anyone wandering its side of the road; the secret only
+          // opens to a kart hugging the edge where it hides.
+          if (mode === "race" && fallT <= 0) {
+            if (!myRoute && airY <= 0) {
+              var candP = routeAt(segPosF);
+              if (candP && segPosF <= candP.start + 9) {
+                var mouth = candP.kind === "secret" ? 0.74 : 0.30;
+                if (playerX * candP.side > mouth) {
+                  myRoute = candP;
+                  myLocal = Math.max(-candP.width / 2, Math.min(candP.width / 2, playerX - routeProfile(candP, segPosF)));
+                  toast(candP.kind === "secret" ? "Secret route — " + candP.name + "!" : candP.name + "!");
+                  if (window.SFX) SFX("item");
+                }
+              }
+            } else if (myRoute && segPosF >= myRoute.end) {
+              playerX = Math.max(-0.9, Math.min(0.9, myLocal));
+              myRoute = null;
+            }
+          }
+          // Steering + curve following (v115): the bend is carried
+          // by the road itself now (see kBuildWindow's heading
+          // integration), so the kart only feels a gentle push wide
+          // from the curve, answered by a follow assist that holds
+          // the racing line — strong hands-off, so the kart drives
+          // the bend itself and stays predictable with no input,
+          // and faint while steering, so input always wins. The old
+          // model flung the kart outward at nearly the full power
+          // of the steering, which is what pinned it spinning
+          // against the outside of every hairpin. Steering is
+          // speed-sensitive too: full authority off the line,
+          // calmer at top speed, so a thumb twitch on a phone
+          // can't snap the kart around.
           var target = dragSteer !== null ? dragSteer : (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
           steerTarget = target;
-          steer += (steerTarget - steer) * Math.min(1, dt * 7);
-          if (spinT <= 0) playerX += dt * 2.1 * speedPercent * steer * 1.6 * DRIVER_DEFS[myDriver].steer;
-          playerX -= dt * 2.1 * speedPercent * playerSegment.curve * centrifugal * (spinT > 0 ? 0 : 1);
+          steer += (steerTarget - steer) * Math.min(1, dt * 10);
+          var latPos = myRoute ? myLocal : playerX;
+          if (spinT <= 0) {
+            var handsOff = Math.abs(steerTarget) < 0.05 && Math.abs(steer) < 0.08;
+            var steerAuthority = 2.9 * (1.12 - 0.38 * speedPercent) * DRIVER_DEFS[myDriver].steer;
+            latPos += dt * steerAuthority * speedPercent * steer;
+            latPos -= dt * playerSegment.curve * 0.13 * speedPercent * speedPercent; // the bend pushes gently wide…
+            var lineTarget = myRoute ? 0 : Math.max(-0.5, Math.min(0.5, playerSegment.curve * 0.10));
+            latPos += (lineTarget - latPos) * Math.min(1, dt * (handsOff ? 2.2 : 0.35)); // …the assist holds the line
+            if (rocketT > 0 && airY <= 0) latPos += (lineTarget - latPos) * Math.min(1, dt * 2.4); // Rocket Russet steers itself
+          }
+          if (myRoute) myLocal = latPos; else playerX = latPos;
           // Speed: the kart rolls on its own; boost, brake, grass, and
           // spins decide how fast.
-          var offRoad = TRACK_DEFS[currentTrack].guard && (playerX < -1 || playerX > 1);
+          var offRoad = myRoute ? Math.abs(myLocal) > myRoute.width / 2
+            : (TRACK_DEFS[currentTrack].guard && (playerX < -1 || playerX > 1));
           var topBoost = (1 + coinBonus) * DRIVER_DEFS[myDriver].top; // banked Spud Coins nudge the top speed up, and each racer has their own top end
           var targetSpeed = maxSpeed * topBoost;
           if (mp.finished) targetSpeed = 0; // home: coast while the host calls it
@@ -15129,13 +15302,13 @@
           else if (boostT > 0) targetSpeed = maxSpeed * 1.38 * topBoost;
           else if (starT > 0) targetSpeed = maxSpeed * 1.18 * topBoost;
           else if (keys.down) targetSpeed = maxSpeed * 0.45;
-          else if (offRoad) targetSpeed = maxSpeed * 0.32;
+          else if (offRoad) targetSpeed = maxSpeed * (myRoute ? 0.45 : 0.32); // a branch verge is kinder than the grass
           if (shrinkT > 0) targetSpeed = Math.min(targetSpeed, maxSpeed * 0.7);
           if (spinT > 0) targetSpeed = Math.min(targetSpeed, maxSpeed * 0.22);
           var rate = speed < targetSpeed ? (boostT > 0 || rocketT > 0 ? 0.95 : 0.85 * DRIVER_DEFS[myDriver].accel) : 2.6;
           speed += (targetSpeed - speed) * Math.min(1, dt * rate);
           if (mode === "count") speed = 0;
-          totalDist += speed * dt;
+          totalDist += speed * dt * (myRoute ? myRoute.rate : 1); // a shortcut's shorter path, paid out as pace
           position = totalDist % trackLen;
           raceTime += dt;
           if (boostT > 0) boostT -= dt;
@@ -15145,12 +15318,8 @@
           if (rocketT > 0) rocketT -= dt;
           if (boltFxT > 0) boltFxT -= dt;
           if (bumpCool > 0) bumpCool -= dt;
-          // Rocket Russet autopilot: it steers for the racing line
-          // while the burst lasts — hands off the wheel, mostly.
-          if (rocketT > 0 && spinT <= 0 && airY <= 0) {
-            var aimLine = Math.max(-0.55, Math.min(0.55, -playerSegment.curve * 0.16));
-            playerX += (aimLine - playerX) * Math.min(1, dt * 2.4);
-          }
+          // (Rocket Russet's autopilot steering is folded into the
+          // steering block above — it rides the same racing line.)
           // Air time off the ramps: gravity, then a landing — with a
           // trick boost if you styled it on the way down.
           if (airY > 0 || airV > 0) {
@@ -15168,7 +15337,7 @@
           if (fallT > 0) {
             fallT -= dt;
             if (fallT <= 0) { fallT = 0; playerX = 0; speed = maxSpeed * 0.3; toast("Fished out of the sky — go!"); }
-          } else if (!TRACK_DEFS[currentTrack].guard && airY <= 0 && Math.abs(playerX) > 1.12 && mode === "race") {
+          } else if (!myRoute && !TRACK_DEFS[currentTrack].guard && airY <= 0 && Math.abs(playerX) > 1.12 && mode === "race") {
             fallT = 1.15; spinT = 0;
             toast("Off the Skyway — you dropped!");
             if (window.SFX) SFX("spin");
@@ -15176,6 +15345,7 @@
           if (spinT > 0) { spinT -= dt; spinAngle += dt * 13; }
           else spinAngle *= Math.max(0, 1 - dt * 10);
           playerX = Math.max(-2.4, Math.min(2.4, playerX));
+          if (myRoute) myLocal = Math.max(-(myRoute.width / 2 + 0.55), Math.min(myRoute.width / 2 + 0.55, myLocal));
           // Exhaust puffs while rolling
           if (speed > 800 && Math.random() < 0.5) puffs.push({ life: 0, boost: boostT > 0 });
           for (var pf = puffs.length - 1; pf >= 0; pf--) { puffs[pf].life += dt; if (puffs[pf].life > 0.45) puffs.splice(pf, 1); }
@@ -15188,6 +15358,9 @@
           }
           for (var sk3 = 0; sk3 < allSlicks.length; sk3++) {
             if (allSlicks[sk3].taken) { allSlicks[sk3].respawn -= dt; if (allSlicks[sk3].respawn <= 0) allSlicks[sk3].taken = false; }
+          }
+          for (var rl7 = 0; rl7 < routeLoot.length; rl7++) {
+            if (routeLoot[rl7].taken) { routeLoot[rl7].respawn -= dt; if (routeLoot[rl7].respawn <= 0) routeLoot[rl7].taken = false; }
           }
           stepProjectiles(dt);
           // Rivals: simulated, or gliding to their published spots.
@@ -15203,9 +15376,10 @@
           if (mode !== "race") return;
           // Pickups, slicks, and bumps — all judged on the player's segment.
           var ps = findSegment(position + playerZ);
+          var pXNow = effX(); // main-road-relative, on a branch or off it
           for (var bx = 0; bx < ps.boxes.length; bx++) {
             var box = ps.boxes[bx];
-            if (!box.taken && Math.abs(playerX - box.offset) < 0.42) {
+            if (!box.taken && Math.abs(pXNow - box.offset) < 0.42) {
               box.taken = true; box.respawn = 7; boxesHit++;
               if (window.SFX) SFX("box");
               grantItem();
@@ -15213,11 +15387,27 @@
           }
           for (var cn3 = 0; cn3 < ps.coins.length; cn3++) {
             var coinIt = ps.coins[cn3];
-            if (!coinIt.taken && Math.abs(playerX - coinIt.offset) < 0.42) {
+            if (!coinIt.taken && Math.abs(pXNow - coinIt.offset) < 0.42) {
               coinIt.taken = true; coinIt.respawn = 9; coins++;
               coinBonus = Math.min(0.12, coins * 0.006);
               if (window.SFX) SFX("box");
               if (coins % 5 === 0) toast(coins + " Spud Coins — top speed +" + Math.round(coinBonus * 100) + "%!");
+            }
+          }
+          if (myRoute && ps.bloot) {
+            for (var bl2 = 0; bl2 < ps.bloot.length; bl2++) {
+              var bLoot = ps.bloot[bl2];
+              if (bLoot.type === "ramp") {
+                if (airY <= 0 && airV <= 0 && fallT <= 0 && speed > 2600) {
+                  airV = 10.5; airY = 0.02; trickDone = false;
+                  toast("Airborne — tap Space or Item to trick!");
+                  if (window.SFX) SFX("boost");
+                }
+              } else if (!bLoot.taken && Math.abs(myLocal - bLoot.local) < 0.45) {
+                bLoot.taken = true; bLoot.respawn = bLoot.type === "box" ? 7 : 9;
+                if (bLoot.type === "box") { boxesHit++; if (window.SFX) SFX("box"); grantItem(); }
+                else { coins++; coinBonus = Math.min(0.12, coins * 0.006); if (window.SFX) SFX("box"); }
+              }
             }
           }
           for (var rp2 = 0; rp2 < ps.ramps.length; rp2++) {
@@ -15230,7 +15420,7 @@
           for (var sl = 0; sl < ps.slicks.length; sl++) {
             var slick = ps.slicks[sl];
             if (slick.taken || raceTime < (slick.arm || 0)) continue;
-            if (Math.abs(playerX - slick.offset) < 0.36 && speed > 1500 && airY <= 0) {
+            if (Math.abs(pXNow - slick.offset) < 0.36 && speed > 1500 && airY <= 0) {
               slick.taken = true; slick.respawn = 9; // caught someone: melts away, re-forms a few seconds later
               if (shieldT > 0) { shieldT = 0; toast("Shield ate the butter slick!"); if (window.SFX) SFX("shield"); }
               else if (starT > 0 || rocketT > 0) { toast("Plowed straight through the butter!"); }
@@ -15241,11 +15431,11 @@
             for (var rv = 0; rv < rivals.length; rv++) {
               var rr = rivals[rv];
               var rSeg = Math.floor((rr.dist % trackLen) / segLen);
-              if ((rSeg === ps.index || rSeg === (ps.index + 1) % segments.length) && Math.abs(playerX - rr.offset) < 0.44) {
+              if ((rSeg === ps.index || rSeg === (ps.index + 1) % segments.length) && Math.abs(pXNow - rr.offset) < 0.44) {
                 bumpCool = 0.7;
                 if (starT > 0) { affectRival(rr, 0.9, 0.8); toast("Superstar check on " + rr.name + "!"); if (window.SFX) SFX("bump"); }
                 else if (shieldT > 0) { affectRival(rr, 0.8, 0.7); toast("Shield check on " + rr.name + "!"); if (window.SFX) SFX("bump"); }
-                else { speed = Math.min(speed, maxSpeed * rr.base * 0.55); playerX += (playerX < rr.offset ? -0.24 : 0.24); toast("Bumped " + rr.name + "!"); if (window.SFX) SFX("bump"); }
+                else { speed = Math.min(speed, maxSpeed * rr.base * 0.55); var bumpPush = (pXNow < rr.offset ? -0.24 : 0.24); if (myRoute) myLocal += bumpPush; else playerX += bumpPush; toast("Bumped " + rr.name + "!"); if (window.SFX) SFX("bump"); }
                 break;
               }
             }
@@ -15606,21 +15796,35 @@
           kBaseIdx = base.index;
           kBP = (position % segLen) / segLen;
           var N = segments.length;
-          var lat = new Float32Array(kWinMax + 8);
-          var dxs = -(base.curve * kBP);
-          var i, n;
-          lat[2] = 0; // boundary of the base segment (index offset +2)
-          for (n = 0; n <= kWinMax; n++) {
-            lat[n + 3] = lat[n + 2] + dxs;
-            dxs += segments[(kBaseIdx + n) % N].curve;
+          var i;
+          // Heading integration (v115) — the hairpin fix. The old
+          // build accumulated lateral offset directly (lat += dx;
+          // dx += curve): on any sustained bend dx grew without
+          // bound, the tangent angle ran past 90° within a few
+          // segments, and the ribbon curled into a spiral that the
+          // camera chased — the kart "freaking out and spinning
+          // around hairpin turns", hands-off included, because it
+          // was geometry, not input. Now each segment's curve is a
+          // small heading change and boundary points step one
+          // segment along the current heading: the turn rate is
+          // bounded by the curve value itself, and a bend stays a
+          // bend at any length.
+          var K = 0.0085; // radians of heading per curve unit per segment
+          var head = new Float32Array(kWinMax + 8);
+          head[2] = -(base.curve * K) * kBP;
+          for (i = 0; i <= kWinMax + 2; i++) head[i + 3] = head[i + 2] + segments[(kBaseIdx + i) % N].curve * K;
+          head[1] = head[2] - segments[(kBaseIdx - 1 + N) % N].curve * K;
+          head[0] = head[1] - segments[(kBaseIdx - 2 + N) % N].curve * K;
+          var lx = 0, lz = 0;
+          kGX[2] = 0; kGZ[2] = -kBP; // boundary of the base segment (index offset +2)
+          for (i = 2; i < kWinMax + 6; i++) {
+            lx += Math.sin(head[i]); lz += Math.cos(head[i]);
+            kGX[i + 1] = -lx; kGZ[i + 1] = lz - kBP;
           }
-          var dxm = -(base.curve * kBP) - segments[(kBaseIdx - 1 + N) % N].curve;
-          lat[1] = lat[2] - dxm;
-          var dxm2 = dxm - segments[(kBaseIdx - 2 + N) % N].curve;
-          lat[0] = lat[1] - dxm2;
-          for (i = 0; i < kWinMax + 8; i++) {
-            kGX[i] = -lat[i];
-            kGZ[i] = (i - 2) - kBP;
+          lx = 0; lz = 0;
+          for (i = 1; i >= 0; i--) {
+            lx -= Math.sin(head[i]); lz -= Math.cos(head[i]);
+            kGX[i] = -lx; kGZ[i] = lz - kBP;
           }
           kDrawN = Math.min(KGL_TIERS[kglTier].dist, kWinMax - 4);
         }
@@ -15748,6 +15952,7 @@
           if (mode === "ready") { kglTier = 0; kglFpsAvg = 60; }
           kglApplySize();
           kBuildWindow();
+          var pX = effX(); // the player's road-relative lateral, branch-aware
           var tier = KGL_TIERS[kglTier], fx = tier.fx;
           var spectating = mpSpectating || mode === "wait" || mode === "spectate";
           // Camera: rides at the player's distance (pulled back a
@@ -15755,7 +15960,7 @@
           // player kart's spot), 75% of the kart's lateral move.
           var eyeC = kCenterAt(spectating ? -5.1 : 0);
           var lookC = kCenterAt(12.1);
-          var eyeLat = playerX * 0.75 * KGL_HALF, lookLat = playerX * 0.9 * KGL_HALF;
+          var eyeLat = pX * 0.75 * KGL_HALF, lookLat = pX * 0.9 * KGL_HALF;
           kglEye = {
             x: eyeC.x + eyeC.ox * eyeLat, y: 7.5 + (spectating ? 0 : airY * 0.5), z: eyeC.z + eyeC.oz * eyeLat
           };
@@ -15848,6 +16053,36 @@
               if (theme === "rainbow") strip(dynTr, fr, -0.016, 0.016, 0.008, [1, 1, 1, 0.9]);
               else strip(dynOp, fr, -0.016, 0.016, 0.008, [0.969, 0.843, 0.455, 1]);
             }
+            // Branch routes (v115): the alternate and secret ribbons
+            // ease off the road and rejoin — drawn over the verge,
+            // edged white for the signposted alternate, gold for the
+            // secret. The alternate gets a gold chevron sign at its
+            // mouth; the secret gets only a faint gold dusting.
+            var rDefs3 = ROUTE_DEFS[currentTrack];
+            for (var rd3 = 0; rd3 < rDefs3.length; rd3++) {
+              var rDef3 = rDefs3[rd3];
+              if (seg.index < rDef3.start || seg.index > rDef3.end) continue;
+              var pA = routeProfile(rDef3, seg.index), pB = routeProfile(rDef3, seg.index + 1);
+              var hw3 = rDef3.width / 2;
+              var surfC = theme === "rainbow" ? (rDef3.kind === "secret" ? [0.55, 0.42, 0.85, 1] : [0.92, 0.92, 0.97, 1])
+                : theme === "night" ? (rDef3.kind === "secret" ? [0.52, 0.52, 0.45, 1] : [0.38, 0.35, 0.30, 1])
+                : (rDef3.kind === "secret" ? [0.78, 0.63, 0.33, 1] : [0.66, 0.58, 0.44, 1]);
+              var q1 = kPointAt(fr, pA - hw3, 0), q2 = kPointAt(fr, pA + hw3, 0), q3 = kPointAt(fr, pB + hw3, 1), q4 = kPointAt(fr, pB - hw3, 1);
+              kQuadC(dynOp, [q1.x, 0.012, q1.z], [q2.x, 0.012, q2.z], [q3.x, 0.012, q3.z], [q4.x, 0.012, q4.z], surfC);
+              var edgeC = rDef3.kind === "secret" ? [1, 0.82, 0.24, 1] : [0.96, 0.93, 0.86, 1];
+              var e1 = kPointAt(fr, pA - hw3, 0), e2 = kPointAt(fr, pA - hw3 + 0.07, 0), e3 = kPointAt(fr, pB - hw3 + 0.07, 1), e4 = kPointAt(fr, pB - hw3, 1);
+              kQuadC(dynOp, [e1.x, 0.02, e1.z], [e2.x, 0.02, e2.z], [e3.x, 0.02, e3.z], [e4.x, 0.02, e4.z], edgeC);
+              var e5 = kPointAt(fr, pA + hw3 - 0.07, 0), e6 = kPointAt(fr, pA + hw3, 0), e7 = kPointAt(fr, pB + hw3, 1), e8 = kPointAt(fr, pB + hw3 - 0.07, 1);
+              kQuadC(dynOp, [e5.x, 0.02, e5.z], [e6.x, 0.02, e6.z], [e7.x, 0.02, e7.z], [e8.x, 0.02, e8.z], edgeC);
+              if (seg.index === rDef3.start) {
+                if (rDef3.kind === "alt") {
+                  var chC2 = kPointAt(fr, rDef3.side * 1.3, 0.5), chL = kPointAt(fr, rDef3.side * 1.3 - 0.28, 0.15), chR = kPointAt(fr, rDef3.side * 1.3 + 0.28, 0.15);
+                  kTri(dynOp, kVert(chL.x, 0.03, chL.z, 0.5, 0.5, [1, 0.82, 0.24, 1]), kVert(chR.x, 0.03, chR.z, 0.5, 0.5, [1, 0.82, 0.24, 1]), kVert(chC2.x, 0.03, chC2.z, 0.5, 0.5, [1, 0.82, 0.24, 1]));
+                } else {
+                  kFlatDisc(dynTr, fr, rDef3.side * 0.88, 0.5, 1.1, 0.7, 0.015, [1, 0.82, 0.24, 0.35]);
+                }
+              }
+            }
             // Ramps: a real wedge rising across the segment
             if (seg.ramps && seg.ramps.length) {
               var rpA = kPointAt(fr, -1, 0), rpB = kPointAt(fr, 1, 0), rpC = kPointAt(fr, 1, 1), rpD = kPointAt(fr, -1, 1);
@@ -15902,6 +16137,38 @@
               }
             }
           }
+          // Branch loot, riding its segment's ribbon
+          for (var bl5 = 0; bl5 < routeLoot.length; bl5++) {
+            var bL5 = routeLoot[bl5];
+            if (bL5.taken) continue;
+            var lSegIdx = Math.floor(bL5.segF);
+            var lRel = ((lSegIdx - kBaseIdx) % N + N) % N;
+            if (lRel > kDrawN - 1) continue;
+            var lFr = kSegFrame(lRel);
+            var lOff = routeProfile(bL5.def, bL5.segF) + bL5.local;
+            var lDz = bL5.segF - lSegIdx;
+            var lPt = kPointAt(lFr, lOff, lDz);
+            if (bL5.type === "coin") {
+              var lCy = 1.3 + Math.sin(t * 2.6 + lSegIdx) * 0.14;
+              var lSpin = t * 3.4 + lSegIdx * 0.7;
+              var lAx = [Math.cos(lSpin), 0, Math.sin(lSpin)];
+              var LSEG = 14, lCoinC = [1, 0.82, 0.24, 1];
+              for (var lci = 0; lci < LSEG; lci++) {
+                var la1 = lci / LSEG * 6.2832, la2 = (lci + 1) / LSEG * 6.2832;
+                var lq1 = [lPt.x + lAx[0] * Math.cos(la1) * 1.1, lCy + Math.sin(la1) * 1.1, lPt.z + lAx[2] * Math.cos(la1) * 1.1];
+                var lq2 = [lPt.x + lAx[0] * Math.cos(la2) * 1.1, lCy + Math.sin(la2) * 1.1, lPt.z + lAx[2] * Math.cos(la2) * 1.1];
+                kTri(dynOp, kVert(lPt.x, lCy, lPt.z, 0.5, 0.5, lCoinC), kVert(lq1[0], lq1[1], lq1[2], 0.5, 0.5, lCoinC), kVert(lq2[0], lq2[1], lq2[2], 0.5, 0.5, lCoinC));
+              }
+            } else if (bL5.type === "box") {
+              var lBob = Math.sin(t * 3.4 + lSegIdx) * 0.22;
+              var lTb = { x: lPt.x, y: 1.74 + lBob, z: lPt.z, c: Math.cos(t * 1.4 + lSegIdx), s: Math.sin(t * 1.4 + lSegIdx), sc: 1 };
+              kBox(itemArr, lTb, 0, 0, 0, 2.8, 2.8, 2.8, [1, 1, 1], true);
+            } else if (bL5.type === "ramp") {
+              var lHw = bL5.def.width / 2;
+              var lw1 = kPointAt(lFr, lOff - lHw, lDz), lw2 = kPointAt(lFr, lOff + lHw, lDz), lw3 = kPointAt(lFr, lOff + lHw, Math.min(1, lDz + 0.85)), lw4 = kPointAt(lFr, lOff - lHw, Math.min(1, lDz + 0.85));
+              kQuadC(dynOp, [lw1.x, 0.03, lw1.z], [lw2.x, 0.03, lw2.z], [lw3.x, 0.95, lw3.z], [lw4.x, 0.95, lw4.z], [1, 0.69, 0.227, 1]);
+            }
+          }
           // Fork projectiles in flight
           for (var pj = 0; pj < projectiles.length; pj++) {
             var pr = projectiles[pj];
@@ -15934,7 +16201,7 @@
           // Player kart + exhaust
           if (!spectating) {
             var pkC = kCenterAt(5.1);
-            var kx = pkC.x + pkC.ox * playerX * KGL_HALF, kz = pkC.z + pkC.oz * playerX * KGL_HALF;
+            var kx = pkC.x + pkC.ox * pX * KGL_HALF, kz = pkC.z + pkC.oz * pX * KGL_HALF;
             var ky = airY * 1.15;
             if (fallT > 0) { var fallP = 1 - fallT / 1.15; ky -= fallP * fallP * 22; }
             var kYaw = Math.atan2(pkC.tz, pkC.tx) + steer * 0.22 + (spinT > 0 ? spinAngle : 0) + (fallT > 0 ? (1 - fallT / 1.15) * 9 : 0);
@@ -16347,7 +16614,7 @@
           if (!mp.on || !mp.myRef) return;
           try {
             mp.myRef.update({
-              dist: Math.round(totalDist), off: Math.round(playerX * 100) / 100,
+              dist: Math.round(totalDist), off: Math.round(effX() * 100) / 100,
               fin: !!mp.finished, spec: !!mpSpectating,
               ts: window.firebase && firebase.database ? firebase.database.ServerValue.TIMESTAMP : Date.now()
             });
@@ -18129,6 +18396,16 @@
       // particles). All rules, bots, blasters, modes, arenas,
       // scoring, controls, and the live room are unchanged; if
       // WebGL is unavailable the game shows an unsupported note.
+      // Pro-look pass (v114): visuals only — mipmapped, anisotropic
+      // textures; a painted sky graded to the arena fog (the smeared
+      // photo panorama is retired); muted, less noisy materials;
+      // dressed wall edges (pale trim band, shadowed base skirt,
+      // flat coping-stone tops) and stronger floor contact shading;
+      // sun-shaded fighter models with faces, cap brims, both arms,
+      // and graphite blasters; a compact two-thirds-scale viewmodel;
+      // a neutral vignette instead of the orange wash; and a quieter
+      // HUD (slate chips, thin crosshair, panel-backed banners,
+      // matte stick knobs). No gameplay value changed.
       (function () {
         var overlay = document.getElementById("spudBall3d");
         var canvas = document.getElementById("ball3dCanvas");
@@ -18170,17 +18447,17 @@
           gold: { color: "#e8a91c", light: "#ffd23e", dark: "#9c6d05", shot: "#ffcf3d", name: "Gold" },
           red: { color: "#cf3a4e", light: "#ff7a8a", dark: "#8f1f30", shot: "#ff5d7a", name: "Red" }
         };
-        var FOG = { r: 255, g: 176, b: 102 };
+        var FOG = { r: 243, g: 201, b: 160 };
 
         // ----- Max-out tables: arenas, modes, blasters, bot personas, power-ups -----
         var ARENAS = [
-          { name: "Golden Garden", fog: [255, 176, 102], skyTint: null, desc: "The original garden at golden hour — ivy stone, brick paths, balanced cover.",
+          { name: "Golden Garden", fog: [243, 201, 160], skyTint: null, desc: "The original garden at golden hour — ivy stone, brick paths, balanced cover.",
             cells: [[4,3,2],[13,10,2],[13,3,2],[4,10,2],[6,5,3],[11,8,3],[11,5,3],[6,8,3],[8,2,3],[9,11,3],[8,6,3],[9,7,3],[3,5,5],[14,8,5],[14,5,5],[3,8,5]] },
-          { name: "Midnight Mash Maze", fog: [92, 108, 168], skyTint: "rgba(30,40,96,0.38)", desc: "A moonlit hedge maze — denser cover, shorter sightlines, ambush country.",
+          { name: "Midnight Mash Maze", fog: [104, 120, 170], skyTint: "rgba(30,40,96,0.38)", desc: "A moonlit hedge maze — denser cover, shorter sightlines, ambush country.",
             cells: [[4,2,5],[13,11,5],[13,2,5],[4,11,5],[6,4,3],[11,9,3],[11,4,3],[6,9,3],[8,5,5],[9,8,5],[5,6,3],[12,6,3],[3,4,2],[14,9,2],[14,4,2],[3,9,2],[7,2,3],[10,11,3],[10,2,3],[7,11,3]] },
-          { name: "Butter Barn", fog: [255, 150, 80], skyTint: "rgba(120,50,10,0.16)", desc: "A crate-packed barn floor — tight corners, a stone spine, nowhere is safe for long.",
+          { name: "Butter Barn", fog: [238, 178, 138], skyTint: "rgba(120,50,10,0.16)", desc: "A crate-packed barn floor — tight corners, a stone spine, nowhere is safe for long.",
             cells: [[4,3,2],[5,3,2],[12,10,2],[13,10,2],[13,3,2],[12,3,2],[4,10,2],[5,10,2],[8,5,2],[9,8,2],[8,6,3],[9,7,3],[6,6,2],[11,7,2],[11,6,2],[6,7,2],[3,5,5],[14,8,5],[14,5,5],[3,8,5]] },
-          { name: "Frostbite Freezer Yard", fog: [186, 216, 238], skyTint: "rgba(210,232,248,0.30)", desc: "A pale, wide-open freezer yard — sparse pillars and long, exposed lanes for the Lance.",
+          { name: "Frostbite Freezer Yard", fog: [196, 220, 240], skyTint: "rgba(210,232,248,0.30)", desc: "A pale, wide-open freezer yard — sparse pillars and long, exposed lanes for the Lance.",
             cells: [[5,4,3],[12,9,3],[12,4,3],[5,9,3],[8,6,3],[9,7,3],[4,7,3],[13,6,3],[7,2,3],[10,11,3],[6,11,5],[11,2,5]] }
         ];
         var MODES = [
@@ -18240,32 +18517,32 @@
           }
         }
         function leaf(g, x, y, r, tone) {
-          var greens = ["#2e7d32", "#43a047", "#1b5e20", "#5da244", "#79b34a"];
+          var greens = ["#2c6e2e", "#3d8a3c", "#1e5622", "#55853f", "#689a48"];
           g.fillStyle = greens[Math.floor(tone * 5) % 5];
           g.beginPath(); g.ellipse(x, y, r, r * 0.62, tone * 2.4, 0, 6.29); g.fill();
           g.fillStyle = "rgba(255,255,190,0.20)";
           g.beginPath(); g.ellipse(x - r * 0.3, y - r * 0.25, r * 0.4, r * 0.22, tone * 2.4, 0, 6.29); g.fill();
         }
         function paintStone(g, ivyAmt) {
-          g.fillStyle = "#8f887a"; g.fillRect(0, 0, 128, 128);
+          g.fillStyle = "#7e786c"; g.fillRect(0, 0, 128, 128);
           var rows = 4, bh = 128 / rows;
           for (var r = 0; r < rows; r++) {
             var off = (r % 2) * 32;
             for (var bx = -1; bx < 3; bx++) {
               var x = bx * 64 + off, y = r * bh;
-              var tone = rr(-14, 14);
-              g.fillStyle = "rgb(" + (168 + tone | 0) + "," + (158 + tone | 0) + "," + (138 + tone * 0.8 | 0) + ")";
+              var tone = rr(-10, 10);
+              g.fillStyle = "rgb(" + (163 + tone | 0) + "," + (155 + tone | 0) + "," + (140 + tone * 0.8 | 0) + ")";
               g.fillRect(x + 2, y + 2, 60, bh - 4);
               var grd = g.createLinearGradient(x, y, x, y + bh);
-              grd.addColorStop(0, "rgba(255,240,200,0.20)"); grd.addColorStop(1, "rgba(40,30,10,0.22)");
+              grd.addColorStop(0, "rgba(255,244,214,0.14)"); grd.addColorStop(1, "rgba(38,32,22,0.20)");
               g.fillStyle = grd; g.fillRect(x + 2, y + 2, 60, bh - 4);
             }
           }
-          g.strokeStyle = "rgba(52,46,36,0.85)"; g.lineWidth = 2;
+          g.strokeStyle = "rgba(52,46,36,0.8)"; g.lineWidth = 2;
           for (var r2 = 0; r2 <= rows; r2++) { g.beginPath(); g.moveTo(0, r2 * bh); g.lineTo(128, r2 * bh); g.stroke(); }
-          speckle(g, 500, function () { return rnd() < 0.5 ? "rgba(60,50,35,0.16)" : "rgba(255,246,220,0.13)"; }, 1, 3);
-          // Warm sunset grime in the mortar lines.
-          speckle(g, 130, function () { return "rgba(190,110,40," + rr(0.05, 0.16) + ")"; }, 2, 6);
+          speckle(g, 240, function () { return rnd() < 0.5 ? "rgba(60,50,35,0.10)" : "rgba(255,246,220,0.08)"; }, 1, 3);
+          // Faint weathering in the mortar lines (neutral, not orange).
+          speckle(g, 70, function () { return "rgba(96,88,70," + rr(0.05, 0.12) + ")"; }, 2, 6);
           // Ivy creeping in from the top and corners: clustered
           // leaves on wandering vines, not a scatter of dots.
           g.strokeStyle = "rgba(34,72,26,0.75)"; g.lineWidth = 1.6;
@@ -18307,10 +18584,10 @@
         var texStoneIvy = makeTex(function (g) { paintStone(g, 1); });
         var texStone = makeTex(function (g) { paintStone(g, 0.22); });
         var texCrate = makeTex(function (g) {
-          g.fillStyle = "#9c6b32"; g.fillRect(0, 0, 128, 128);
+          g.fillStyle = "#8a5f30"; g.fillRect(0, 0, 128, 128);
           for (var p = 0; p < 4; p++) {
-            var y = p * 32, tone = rr(-12, 12);
-            g.fillStyle = "rgb(" + (178 + tone | 0) + "," + (128 + tone | 0) + "," + (66 + tone * 0.7 | 0) + ")";
+            var y = p * 32, tone = rr(-10, 10);
+            g.fillStyle = "rgb(" + (164 + tone | 0) + "," + (118 + tone | 0) + "," + (64 + tone * 0.7 | 0) + ")";
             g.fillRect(0, y + 1, 128, 30);
             g.strokeStyle = "rgba(90,55,18,0.35)"; g.lineWidth = 1;
             for (var gl = 0; gl < 5; gl++) {
@@ -18324,8 +18601,8 @@
             g.beginPath(); g.arc(8, y + 16, 2.4, 0, 6.29); g.fill();
             g.beginPath(); g.arc(120, y + 16, 2.4, 0, 6.29); g.fill();
           }
-          g.strokeStyle = "#6e4a1f"; g.lineWidth = 7; g.strokeRect(0, 0, 128, 128);
-          g.lineWidth = 11;
+          g.strokeStyle = "#64451f"; g.lineWidth = 7; g.strokeRect(0, 0, 128, 128);
+          g.lineWidth = 9;
           g.beginPath(); g.moveTo(0, 128); g.lineTo(128, 0); g.stroke();
           g.strokeStyle = "rgba(255,220,150,0.13)"; g.lineWidth = 2;
           g.beginPath(); g.moveTo(0, 124); g.lineTo(124, 0); g.stroke();
@@ -18342,7 +18619,7 @@
           speckle(g, 160, function () { return "rgba(60,35,8," + rr(0.06, 0.2) + ")"; }, 1, 4);
         });
         var texHedge = makeTex(function (g) {
-          g.fillStyle = "#26511f"; g.fillRect(0, 0, 128, 128);
+          g.fillStyle = "#224a1e"; g.fillRect(0, 0, 128, 128);
           for (var i = 0; i < 240; i++) leaf(g, rnd() * 128, rnd() * 128, rr(4, 9), rnd());
           for (var j = 0; j < 70; j++) leaf(g, rnd() * 128, rnd() * 96, rr(3, 6), rnd());
           g.fillStyle = "#ffb74d";
@@ -18360,17 +18637,17 @@
           g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
         });
         var texArch = makeTex(function (g) {
-          g.fillStyle = "#a03c22"; g.fillRect(0, 0, 128, 128);
+          g.fillStyle = "#8f3a24"; g.fillRect(0, 0, 128, 128);
           var bh = 16;
           for (var r = 0; r < 8; r++) {
             var off = (r % 2) * 21;
             for (var bx = -1; bx < 4; bx++) {
-              var tone = rr(-13, 13);
-              g.fillStyle = "rgb(" + (186 + tone | 0) + "," + (92 + tone * 0.6 | 0) + "," + (56 + tone * 0.4 | 0) + ")";
+              var tone = rr(-11, 11);
+              g.fillStyle = "rgb(" + (170 + tone | 0) + "," + (86 + tone * 0.6 | 0) + "," + (54 + tone * 0.4 | 0) + ")";
               g.fillRect(bx * 42 + off + 1.5, r * bh + 1.5, 39, bh - 3);
             }
           }
-          speckle(g, 260, function () { return rnd() < 0.5 ? "rgba(70,25,10,0.18)" : "rgba(255,210,160,0.14)"; }, 1, 3);
+          speckle(g, 170, function () { return rnd() < 0.5 ? "rgba(70,25,10,0.13)" : "rgba(255,210,160,0.09)"; }, 1, 3);
           // White efflorescence blooming on the brick faces and a
           // dark weather stain washing down from the top course.
           speckle(g, 90, function () { return "rgba(245,238,220," + rr(0.08, 0.2) + ")"; }, 2, 5);
@@ -18435,19 +18712,19 @@
           var c = document.createElement("canvas"); c.width = 2048; c.height = 150;
           var g = c.getContext("2d");
           var grad = g.createLinearGradient(0, 0, 0, 150);
-          grad.addColorStop(0, "#2c4a6e"); grad.addColorStop(0.42, "#7d7a8e");
-          grad.addColorStop(0.66, "#e8975a"); grad.addColorStop(0.88, "#ffc978"); grad.addColorStop(1, "#ffe3a1");
+          grad.addColorStop(0, "#2b4a6b"); grad.addColorStop(0.40, "#7d93a8");
+          grad.addColorStop(0.64, "#d9b48c"); grad.addColorStop(0.85, "#f4cf9a"); grad.addColorStop(1, "#ffe9bb");
           g.fillStyle = grad; g.fillRect(0, 0, 2048, 150);
-          // Sun: low, huge, with a layered glow — placed once per panorama.
+          // Sun: low and soft, with a restrained glow — placed once per panorama.
           var sx = 1560, sy = 128;
           var glow = g.createRadialGradient(sx, sy, 8, sx, sy, 300);
-          glow.addColorStop(0, "rgba(255,236,170,0.95)"); glow.addColorStop(0.25, "rgba(255,190,90,0.55)"); glow.addColorStop(1, "rgba(255,160,60,0)");
+          glow.addColorStop(0, "rgba(255,240,196,0.80)"); glow.addColorStop(0.25, "rgba(255,205,120,0.34)"); glow.addColorStop(1, "rgba(255,180,90,0)");
           g.fillStyle = glow; g.fillRect(sx - 300, 0, 600, 150);
-          g.fillStyle = "#fff3c4"; g.beginPath(); g.arc(sx, sy, 27, 0, 6.29); g.fill();
-          g.fillStyle = "#ffe9a3"; g.beginPath(); g.arc(sx, sy, 34, 0, 6.29); g.globalAlpha = 0.5; g.fill(); g.globalAlpha = 1;
+          g.fillStyle = "#fff6d8"; g.beginPath(); g.arc(sx, sy, 20, 0, 6.29); g.fill();
+          g.fillStyle = "#ffeec2"; g.beginPath(); g.arc(sx, sy, 26, 0, 6.29); g.globalAlpha = 0.45; g.fill(); g.globalAlpha = 1;
           // Clouds: small soft puffs (radial gradients, no hard edges),
           // each painted three times so the panorama wraps seamlessly.
-          for (var i = 0; i < 64; i++) {
+          for (var i = 0; i < 40; i++) {
             var cx = rnd() * 2048, cy = 8 + rnd() * 62, cw = rr(16, 44);
             for (var wrap = -1; wrap <= 1; wrap++) {
               var ox = cx + wrap * 2048;
@@ -18455,27 +18732,27 @@
                 var px2 = ox + (pf - 1.5) * cw * 0.42, py2 = cy + (pf % 2) * cw * 0.10;
                 var pr2 = cw * rr(0.30, 0.5);
                 var pg2 = g.createRadialGradient(px2, py2, 1, px2, py2, pr2);
-                pg2.addColorStop(0, "rgba(255,226,180,0.55)");
-                pg2.addColorStop(0.6, "rgba(244,178,128,0.28)");
-                pg2.addColorStop(1, "rgba(230,150,110,0)");
+                pg2.addColorStop(0, "rgba(255,246,232,0.34)");
+                pg2.addColorStop(0.6, "rgba(246,205,160,0.16)");
+                pg2.addColorStop(1, "rgba(240,190,150,0)");
                 g.fillStyle = pg2;
                 g.beginPath(); g.arc(px2, py2, pr2, 0, 6.29); g.fill();
               }
               var sh = g.createRadialGradient(ox, cy + cw * 0.30, 1, ox, cy + cw * 0.30, cw * 0.55);
-              sh.addColorStop(0, "rgba(96,66,100,0.20)"); sh.addColorStop(1, "rgba(96,66,100,0)");
+              sh.addColorStop(0, "rgba(80,70,88,0.14)"); sh.addColorStop(1, "rgba(80,70,88,0)");
               g.fillStyle = sh;
               g.beginPath(); g.arc(ox, cy + cw * 0.30, cw * 0.55, 0, 6.29); g.fill();
             }
           }
           // Distant tree line + garden silhouettes along the horizon.
-          g.fillStyle = "#3d5a2e";
+          g.fillStyle = "#43563a";
           for (var t = 0; t < 210; t++) {
-            var tx = rnd() * 2048, tr = rr(9, 26);
+            var tx = rnd() * 2048, tr = rr(8, 21);
             for (var wrap2 = -1; wrap2 <= 1; wrap2++) {
               g.beginPath(); g.arc(tx + wrap2 * 2048, 152 - tr * 0.4, tr, 0, 6.29); g.fill();
             }
           }
-          g.fillStyle = "#2e4523"; g.fillRect(0, 142, 2048, 8);
+          g.fillStyle = "#37492f"; g.fillRect(0, 142, 2048, 8);
           // Two stone arch silhouettes (the spawn gates, far off).
           g.fillStyle = "#6b543a";
           [420, 1420].forEach(function (ax) {
@@ -19770,7 +20047,12 @@
         loadReal("https://res.cloudinary.com/tyuni6qy/image/upload/w_1024,q_auto,f_auto/v1793679334/ad0bpdhlwzzf8y3v0mky.png", "stone");
         loadReal("https://res.cloudinary.com/tyuni6qy/image/upload/w_1024,q_auto,f_auto/v1793679331/mxpfqlpkjmhj2gejp2dv.png", "brick");
         loadReal("https://res.cloudinary.com/tyuni6qy/image/upload/w_1024,q_auto,f_auto/v1793679338/evmgogdgrrrzm8ljaujb.png", "grass");
-        loadReal("https://res.cloudinary.com/tyuni6qy/image/upload/w_2048,q_auto,f_auto/v1793679340/lmdtkikzerezva1mpii3.png", "sky");
+        // Pro-look pass (v114): the photo sky is retired for Tate-lo
+        // 3D — stretched across a 360° panorama it smeared into a flat
+        // orange wash. The painted sky below is graded to match the
+        // arena fog, so horizon, fog, and light now agree. (The photo
+        // stone / brick / grass materials stay; with mipmaps and
+        // anisotropy in the GL pipeline they read as real surfaces.)
         function texFor(type, mx, my) {
           if ((type === 1 || type === 3) && realTex.stone) return realTex.stone;
           if (type === 4 && realTex.brick) return realTex.brick;
@@ -19792,28 +20074,28 @@
           }
         }
         function paintGrassFloor(g) {
-          g.fillStyle = "#57963c"; g.fillRect(0, 0, 128, 128);
-          for (var i = 0; i < 2600; i++) {
-            g.fillStyle = rnd() < 0.5 ? "rgba(30,80,18,0.35)" : "rgba(150,210,90,0.30)";
+          g.fillStyle = "#4e8a3a"; g.fillRect(0, 0, 128, 128);
+          for (var i = 0; i < 2100; i++) {
+            g.fillStyle = rnd() < 0.5 ? "rgba(30,80,18,0.26)" : "rgba(148,198,92,0.22)";
             g.fillRect(rnd() * 128, rnd() * 128, 1.6, rr(2, 4.5));
           }
-          for (var j = 0; j < 260; j++) {
-            g.fillStyle = "rgba(230,220,130,0.20)";
+          for (var j = 0; j < 170; j++) {
+            g.fillStyle = "rgba(228,218,140,0.14)";
             g.fillRect(rnd() * 128, rnd() * 128, 1.4, 2.4);
           }
         }
         function paintBrickFloor(g) {
-          g.fillStyle = "#a0512f"; g.fillRect(0, 0, 128, 128);
+          g.fillStyle = "#93492c"; g.fillRect(0, 0, 128, 128);
           var bh = 21;
           for (var r = 0; r < 7; r++) {
             var off = (r % 2) * 21;
             for (var bx = -1; bx < 4; bx++) {
-              var tone = rr(-13, 13);
-              g.fillStyle = "rgb(" + (182 + tone | 0) + "," + (96 + tone * 0.6 | 0) + "," + (58 + tone * 0.4 | 0) + ")";
+              var tone = rr(-11, 11);
+              g.fillStyle = "rgb(" + (168 + tone | 0) + "," + (90 + tone * 0.6 | 0) + "," + (56 + tone * 0.4 | 0) + ")";
               g.fillRect(bx * 42 + off + 1.5, r * bh + 1.5, 39, bh - 3);
             }
           }
-          speckle(g, 240, function () { return rnd() < 0.5 ? "rgba(70,25,10,0.16)" : "rgba(255,210,160,0.12)"; }, 1, 3);
+          speckle(g, 160, function () { return rnd() < 0.5 ? "rgba(70,25,10,0.12)" : "rgba(255,210,160,0.08)"; }, 1, 3);
         }
         var grassData = null, brickData = null;
         function buildSamplers() {
@@ -19955,7 +20237,7 @@
         // Yaw transform for model building: local (lx fwd, ly up, lz right).
         function wXf(T, lx, ly, lz) { return [T.x + lx * T.c - lz * T.s, T.y + ly, T.z + lx * T.s + lz * T.c]; }
         function wEll(arr, T, cx, cy, cz, rx, ry, rz, colFn) {
-          var SEG = 10, RINGS = 7, pts = [], cols = [];
+          var SEG = 14, RINGS = 9, pts = [], cols = [];
           for (var j = 0; j <= RINGS; j++) {
             var ph = j / RINGS * Math.PI, sp = Math.sin(ph), cp = Math.cos(ph);
             for (var i = 0; i <= SEG; i++) {
@@ -20003,13 +20285,29 @@
           if (!wgl.getShaderParameter(s, wgl.COMPILE_STATUS)) return null;
           return s;
         }
-        function wMakeTex(src, repeat) {
+        var wglAniso = 1, wglAnisoExt = null;
+        function wMakeTex(src, repeat, mip) {
           var t = wgl.createTexture();
           wgl.bindTexture(wgl.TEXTURE_2D, t);
           wgl.pixelStorei(wgl.UNPACK_FLIP_Y_WEBGL, true);
           wgl.texImage2D(wgl.TEXTURE_2D, 0, wgl.RGBA, wgl.RGBA, wgl.UNSIGNED_BYTE, src);
-          wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_MIN_FILTER, wgl.LINEAR);
+          // Pro-look pass (v114): power-of-two surfaces (the wall
+          // atlas, the sky) get real mipmaps, and every surface gets
+          // anisotropic filtering where the device offers it — the
+          // two things that stop walls and floors smearing into
+          // streaks at glancing angles and distance.
+          if (mip) {
+            wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_MIN_FILTER, wgl.LINEAR_MIPMAP_LINEAR);
+            try { wgl.generateMipmap(wgl.TEXTURE_2D); } catch (e) {
+              wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_MIN_FILTER, wgl.LINEAR);
+            }
+          } else {
+            wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_MIN_FILTER, wgl.LINEAR);
+          }
           wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_MAG_FILTER, wgl.LINEAR);
+          if (wglAnisoExt && wglAniso > 1) {
+            try { wgl.texParameterf(wgl.TEXTURE_2D, wglAnisoExt.TEXTURE_MAX_ANISOTROPY_EXT, wglAniso); } catch (e) {}
+          }
           wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_WRAP_S, repeat ? wgl.REPEAT : wgl.CLAMP_TO_EDGE);
           wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_WRAP_T, wgl.CLAMP_TO_EDGE);
           wgl.pixelStorei(wgl.UNPACK_FLIP_Y_WEBGL, false);
@@ -20046,6 +20344,11 @@
           wgl.attachShader(wglProg, vs); wgl.attachShader(wglProg, fs); wgl.linkProgram(wglProg);
           if (!wgl.getProgramParameter(wglProg, wgl.LINK_STATUS)) return false;
           wgl.useProgram(wglProg);
+          wglAnisoExt = wgl.getExtension("EXT_texture_filter_anisotropic") ||
+            wgl.getExtension("WEBKIT_EXT_texture_filter_anisotropic") || null;
+          if (wglAnisoExt) {
+            try { wglAniso = Math.min(8, wgl.getParameter(wglAnisoExt.MAX_TEXTURE_MAX_ANISOTROPY_EXT) || 1); } catch (e) { wglAniso = 1; }
+          }
           wglA.pos = wgl.getAttribLocation(wglProg, "aPos");
           wglA.uv = wgl.getAttribLocation(wglProg, "aUV");
           wglA.col = wgl.getAttribLocation(wglProg, "aCol");
@@ -20139,7 +20442,7 @@
             if (src) { try { ag.drawImage(src, sx, sy, 256, 256); } catch (e) { ag.fillStyle = "#8f887a"; ag.fillRect(sx, sy, 256, 256); } }
           }
           if (wglTexAtlas) wgl.deleteTexture(wglTexAtlas);
-          wglTexAtlas = wMakeTex(ac, false);
+          wglTexAtlas = wMakeTex(ac, false, true);
           // Floor sheet (1152x896, 64 px per arena unit)
           var fc = document.createElement("canvas"); fc.width = 1152; fc.height = 896;
           var fg2 = fc.getContext("2d");
@@ -20156,7 +20459,7 @@
           var bt = document.createElement("canvas"); bt.width = 195; bt.height = 195;
           bt.getContext("2d").drawImage(brickC, 0, 0, 195, 195);
           fg2.fillStyle = fg2.createPattern(gt, "repeat"); fg2.fillRect(0, 0, 1152, 896);
-          fg2.fillStyle = "rgba(0,0,0,0.09)";
+          fg2.fillStyle = "rgba(0,0,0,0.045)";
           for (var cy2 = 0; cy2 < 28; cy2++) for (var cx2 = 0; cx2 < 36; cx2++)
             if ((cx2 + cy2) % 2 === 0) fg2.fillRect(cx2 * 32, cy2 * 32, 32, 32);
           fg2.save();
@@ -20166,8 +20469,10 @@
           fg2.clip();
           fg2.fillStyle = fg2.createPattern(bt, "repeat"); fg2.fillRect(0, 0, 1152, 896);
           fg2.restore();
-          // Contact shading: darken the ground against every wall.
-          fg2.fillStyle = "rgba(20,14,4,0.20)";
+          // Contact shading: darken the ground against every wall —
+          // a soft ambient-occlusion skirt so walls sit IN the
+          // ground instead of floating on it.
+          fg2.fillStyle = "rgba(20,14,4,0.24)";
           for (var wy = 0; wy < MH; wy++) for (var wx = 0; wx < MW; wx++) {
             if (solidAt(wx, wy)) continue;
             if (solidAt(wx + 1, wy)) fg2.fillRect((wx + 1) * 64 - 18, wy * 64, 18, 64);
@@ -20179,26 +20484,41 @@
           wglTexFloor = wMakeTex(fc, false);
           // Wall + floor geometry
           var arr = [];
-          function face(x1, y1, x2, y2, type, mx, my, sideShade) {
+          function face(x1, y1, x2, y2, type, mx, my, sideShade, nx, nz) {
             var slot = wSlotUV(wSlotFor(type, mx, my));
             var phase = (Math.abs(mx * 7 + my * 13) % 4) * 0.25;
             var ua = slot[0] + ((0 + phase) % 1) * 0.25, ub = slot[0] + ((1 + phase) % 1) * 0.25;
-            var cTop = [sideShade, sideShade, sideShade, 1], cBot = [sideShade * 0.74, sideShade * 0.74, sideShade * 0.74, 1];
+            var cTop = [sideShade, sideShade, sideShade, 1], cBot = [sideShade * 0.60, sideShade * 0.60, sideShade * 0.60, 1];
             wTri(arr, wVert(x1, 0, y1, ua, slot[1], cBot), wVert(x2, 0, y2, ub, slot[1], cBot), wVert(x2, 1, y2, ub, slot[3], cTop));
             wTri(arr, wVert(x1, 0, y1, ua, slot[1], cBot), wVert(x2, 1, y2, ub, slot[3], cTop), wVert(x1, 1, y1, ua, slot[3], cTop));
+            // Pro-look pass (v114): dressed edges on every exposed
+            // face — a pale stone trim band under the coping and a
+            // shadowed base skirt, each pushed a hair off the face
+            // so nothing z-fights. Pure geometry; collision and the
+            // grid are untouched.
+            var ox = nx * 0.008, oz = nz * 0.008;
+            var vTrim = slot[3] - (slot[3] - slot[1]) * 0.13;
+            var cTrim = [Math.min(1.18, sideShade * 1.16), Math.min(1.18, sideShade * 1.16), Math.min(1.18, sideShade * 1.13), 1];
+            wTri(arr, wVert(x1 + ox, 0.87, y1 + oz, ua, vTrim, cTrim), wVert(x2 + ox, 0.87, y2 + oz, ub, vTrim, cTrim), wVert(x2 + ox, 1, y2 + oz, ub, slot[3], cTrim));
+            wTri(arr, wVert(x1 + ox, 0.87, y1 + oz, ua, vTrim, cTrim), wVert(x2 + ox, 1, y2 + oz, ub, slot[3], cTrim), wVert(x1 + ox, 1, y1 + oz, ua, slot[3], cTrim));
+            var vSkirt = slot[1] + (slot[3] - slot[1]) * 0.10;
+            var cSkirt = [sideShade * 0.42, sideShade * 0.42, sideShade * 0.42, 1];
+            wTri(arr, wVert(x1 + ox, 0, y1 + oz, ua, slot[1], cSkirt), wVert(x2 + ox, 0, y2 + oz, ub, slot[1], cSkirt), wVert(x2 + ox, 0.10, y2 + oz, ub, vSkirt, cSkirt));
+            wTri(arr, wVert(x1 + ox, 0, y1 + oz, ua, slot[1], cSkirt), wVert(x2 + ox, 0.10, y2 + oz, ub, vSkirt, cSkirt), wVert(x1 + ox, 0.10, y1 + oz, ua, vSkirt, cSkirt));
           }
           for (var gy = 0; gy < MH; gy++) for (var gx = 0; gx < MW; gx++) {
             var type = GRID[gy][gx];
             if (!type) continue;
-            if (!solidAt(gx + 1, gy)) face(gx + 1, gy, gx + 1, gy + 1, type, gx, gy, 1.0);
-            if (!solidAt(gx - 1, gy)) face(gx, gy + 1, gx, gy, type, gx, gy, 1.0);
-            if (!solidAt(gx, gy + 1)) face(gx + 1, gy + 1, gx, gy + 1, type, gx, gy, 0.70);
-            if (!solidAt(gx, gy - 1)) face(gx, gy, gx + 1, gy, type, gx, gy, 0.70);
-            // Top cap
-            var slot2 = wSlotUV(wSlotFor(type, gx, gy));
-            var ct = [0.92, 0.92, 0.92, 1];
-            wTri(arr, wVert(gx, 1, gy, slot2[0], slot2[3], ct), wVert(gx + 1, 1, gy, slot2[2], slot2[3], ct), wVert(gx + 1, 1, gy + 1, slot2[2], slot2[1], ct));
-            wTri(arr, wVert(gx, 1, gy, slot2[0], slot2[3], ct), wVert(gx + 1, 1, gy + 1, slot2[2], slot2[1], ct), wVert(gx, 1, gy + 1, slot2[0], slot2[1], ct));
+            if (!solidAt(gx + 1, gy)) face(gx + 1, gy, gx + 1, gy + 1, type, gx, gy, 1.0, 1, 0);
+            if (!solidAt(gx - 1, gy)) face(gx, gy + 1, gx, gy, type, gx, gy, 1.0, -1, 0);
+            if (!solidAt(gx, gy + 1)) face(gx + 1, gy + 1, gx, gy + 1, type, gx, gy, 0.70, 0, 1);
+            if (!solidAt(gx, gy - 1)) face(gx, gy, gx + 1, gy, type, gx, gy, 0.70, 0, -1);
+            // Top cap: flat pale coping stone (white-UV point,
+            // tinted) instead of a smeared slice of the wall face —
+            // walls now read as built structures with a finished top.
+            var ct = [0.80, 0.77, 0.71, 1];
+            wTri(arr, wVert(gx, 1, gy, WGL_WHITE_U, WGL_WHITE_V, ct), wVert(gx + 1, 1, gy, WGL_WHITE_U, WGL_WHITE_V, ct), wVert(gx + 1, 1, gy + 1, WGL_WHITE_U, WGL_WHITE_V, ct));
+            wTri(arr, wVert(gx, 1, gy, WGL_WHITE_U, WGL_WHITE_V, ct), wVert(gx + 1, 1, gy + 1, WGL_WHITE_U, WGL_WHITE_V, ct), wVert(gx, 1, gy + 1, WGL_WHITE_U, WGL_WHITE_V, ct));
           }
           wgl.bindBuffer(wgl.ARRAY_BUFFER, wglWallBuf);
           wgl.bufferData(wgl.ARRAY_BUFFER, new Float32Array(arr), wgl.STATIC_DRAW);
@@ -20215,7 +20535,7 @@
           var sg = sc.getContext("2d");
           try { sg.drawImage(src, 0, 0, 2048, 256); } catch (e) { sg.fillStyle = "#e8975a"; sg.fillRect(0, 0, 2048, 256); }
           if (wglTexSky) wgl.deleteTexture(wglTexSky);
-          wglTexSky = wMakeTex(sc, true);
+          wglTexSky = wMakeTex(sc, true, true);
         }
 
         // ----- A Spudtan as a real 3D model -----
@@ -20225,14 +20545,28 @@
           var wPh = (f.x + f.y) * 9 + f.idx * 2.1;
           var bob = -Math.abs(Math.sin(wPh)) * 0.026 + Math.sin(elapsed * 2.3 + f.idx * 1.7) * 0.007;
           var T = { x: f.x, y: (f.z || 0) + bob, z: f.y, c: Math.cos(f.angle), s: Math.sin(f.angle) };
-          // Blob shadow (shrinks as he leaves the ground mid-jump)
+          // Pro-look pass (v114): analytic sun shading — shade each
+          // ellipsoid vertex by its true surface normal against one
+          // fixed sun direction, so fighters are lit like objects in
+          // the scene instead of flat-shaded by height alone.
+          function sunShade(cx, cy, cz, rx, ry, rz, lx, ly, lz) {
+            var nx = (lx - cx) / (rx * rx), ny = (ly - cy) / (ry * ry), nz = (lz - cz) / (rz * rz);
+            var nl = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+            nx /= nl; ny /= nl; nz /= nl;
+            var wx = nx * T.c - nz * T.s, wz = nx * T.s + nz * T.c;
+            var d = wx * -0.52 + ny * 0.78 + wz * 0.33;
+            return 0.68 + 0.44 * Math.max(0, d);
+          }
+          // Contact shadow: a tight core disc plus a wide soft skirt
+          // (shrinks as he leaves the ground mid-jump)
           var shScale = 1 / (1 + (f.z || 0) * 0.55);
-          wDisc(arrTr, f.x, 0.012, f.y, 0.34 * shScale, [0.09, 0.12, 0.03, 0.40 * shScale]);
+          wDisc(arrTr, f.x, 0.011, f.y, 0.52 * shScale, [0.07, 0.10, 0.03, 0.16 * shScale]);
+          wDisc(arrTr, f.x, 0.012, f.y, 0.34 * shScale, [0.09, 0.12, 0.03, 0.38 * shScale]);
           // Legs + boots
           wBox(arr, T, 0, 0.13, 0.10, 0.15, 0.26, 0.13, teamD);
           wBox(arr, T, 0, 0.13, -0.10, 0.15, 0.26, 0.13, teamD);
-          wBox(arr, T, 0.03, 0.03, 0.10, 0.24, 0.06, 0.14, [0.18, 0.13, 0.08]);
-          wBox(arr, T, 0.03, 0.03, -0.10, 0.24, 0.06, 0.14, [0.18, 0.13, 0.08]);
+          wBox(arr, T, 0.03, 0.03, 0.10, 0.24, 0.06, 0.14, [0.16, 0.12, 0.08]);
+          wBox(arr, T, 0.03, 0.03, -0.10, 0.24, 0.06, 0.14, [0.16, 0.12, 0.08]);
           // Potato body: skin up top, team vest across the torso.
           wEll(arr, T, 0, 0.55, 0, 0.27, 0.35, 0.235, function (lx, ly, lz, cp) {
             var h = ly; // local height: body centre 0.55, spans 0.20..0.90
@@ -20240,15 +20574,38 @@
             if (h > 0.60) base = skin;
             else if (h > 0.28) base = wMix(teamL, teamD, (0.60 - h) / 0.32);
             else base = teamD;
-            var sh = 0.82 + 0.30 * Math.max(0, cp);
+            var sh = sunShade(0, 0.55, 0, 0.27, 0.35, 0.235, lx, ly, lz);
             return [base[0] * sh, base[1] * sh, base[2] * sh, 1];
           });
-          // Helmet cap in team colours
-          wEll(arr, T, 0.02, 0.86, 0, 0.185, 0.085, 0.175, function () { return [teamC[0], teamC[1], teamC[2], 1]; });
-          // Arm + blaster, forward
-          wEll(arr, T, 0.10, 0.52, 0.26, 0.085, 0.15, 0.075, function (lx, ly) { return ly > 0.58 ? teamC : skin; });
-          wBox(arr, T, 0.36, 0.56, 0.10, 0.34, 0.085, 0.085, [0.22, 0.26, 0.30]);
-          wBox(arr, T, 0.33, 0.635, 0.10, 0.13, 0.06, 0.105, [0.99, 0.98, 0.94]);
+          // Belt line where the vest meets the legs
+          wBox(arr, T, 0, 0.27, 0, 0.545, 0.055, 0.455, [0.20, 0.15, 0.10]);
+          // Face: two eyes on the front of the head, so a Spudtan
+          // reads as a character, not a potato with a gun.
+          wBox(arr, T, 0.196, 0.76, 0.072, 0.035, 0.05, 0.032, [0.13, 0.10, 0.07]);
+          wBox(arr, T, 0.196, 0.76, -0.072, 0.035, 0.05, 0.032, [0.13, 0.10, 0.07]);
+          // Helmet cap in team colours, sun-shaded like the body,
+          // with a brim over the face
+          wEll(arr, T, 0.02, 0.86, 0, 0.185, 0.085, 0.175, function (lx, ly, lz) {
+            var sh = sunShade(0.02, 0.86, 0, 0.185, 0.085, 0.175, lx, ly, lz);
+            return [teamC[0] * sh, teamC[1] * sh, teamC[2] * sh, 1];
+          });
+          wBox(arr, T, 0.13, 0.885, 0, 0.20, 0.028, 0.21, teamD);
+          // Arms: the gun arm forward, the off arm down at his side
+          wEll(arr, T, 0.10, 0.52, 0.26, 0.085, 0.15, 0.075, function (lx, ly, lz) {
+            var base = ly > 0.58 ? teamC : skin;
+            var sh = sunShade(0.10, 0.52, 0.26, 0.085, 0.15, 0.075, lx, ly, lz);
+            return [base[0] * sh, base[1] * sh, base[2] * sh, 1];
+          });
+          wEll(arr, T, -0.02, 0.46, -0.26, 0.075, 0.16, 0.07, function (lx, ly, lz) {
+            var base = ly > 0.54 ? teamC : skin;
+            var sh = sunShade(-0.02, 0.46, -0.26, 0.075, 0.16, 0.07, lx, ly, lz);
+            return [base[0] * sh, base[1] * sh, base[2] * sh, 1];
+          });
+          // Blaster: graphite body, cream tank, team-colour tip and
+          // an accent band in team colours
+          wBox(arr, T, 0.36, 0.56, 0.10, 0.34, 0.085, 0.085, [0.17, 0.19, 0.22]);
+          wBox(arr, T, 0.33, 0.635, 0.10, 0.13, 0.06, 0.105, [0.97, 0.96, 0.92]);
+          wBox(arr, T, 0.44, 0.56, 0.10, 0.05, 0.095, 0.095, teamC);
           wBox(arr, T, 0.545, 0.56, 0.10, 0.05, 0.07, 0.07, teamL);
           if (f.shield) {
             var shP = 1 + 0.045 * Math.sin(elapsed * 3.1 + f.idx * 1.9);
@@ -20540,10 +20897,10 @@
             var p = wglProject(f.x, (f.z || 0) + 1.04, f.y);
             if (!p || p.f >= 8.5) continue;
             if (!losClear(cam.x, cam.y, f.x, f.y)) continue;
-            ctx.font = "700 17px 'Public Sans', sans-serif";
+            ctx.font = "700 15px 'Public Sans', sans-serif";
             var tw = ctx.measureText(f.name).width + 16;
-            ctx.fillStyle = "rgba(18,24,28,0.78)";
-            ctx.beginPath(); ctx.roundRect(p.x - tw / 2, p.y - 24, tw, 23, 11); ctx.fill();
+            ctx.fillStyle = "rgba(13,18,22,0.70)";
+            ctx.beginPath(); ctx.roundRect(p.x - tw / 2, p.y - 22, tw, 21, 7); ctx.fill();
             ctx.fillStyle = TEAM[f.team].light;
             ctx.fillText(f.name, p.x, p.y - 7.5);
           }
@@ -20553,10 +20910,10 @@
             var pp = wglProject(pw.x, 0.92, pw.y);
             if (!pp || pp.f >= 7) continue;
             if (!losClear(cam.x, cam.y, pw.x, pw.y)) continue;
-            ctx.font = "700 15px 'Public Sans', sans-serif";
+            ctx.font = "700 14px 'Public Sans', sans-serif";
             var tw2 = ctx.measureText(pw.def.name).width + 14;
-            ctx.fillStyle = "rgba(18,24,28,0.78)";
-            ctx.beginPath(); ctx.roundRect(pp.x - tw2 / 2, pp.y - 21, tw2, 21, 10); ctx.fill();
+            ctx.fillStyle = "rgba(13,18,22,0.70)";
+            ctx.beginPath(); ctx.roundRect(pp.x - tw2 / 2, pp.y - 21, tw2, 21, 7); ctx.fill();
             ctx.fillStyle = pw.def.color;
             ctx.fillText(pw.def.name, pp.x, pp.y - 6);
           }
@@ -20622,8 +20979,13 @@
           // back toward the viewer; the nozzle is at local y ≈ -215.
           // Bob sways the anchor; recoil slides the gun back along
           // its own axis, as before.
-          ctx.translate(668 + bobX + vmLean, 586 + bobY);
-          ctx.rotate(-0.62 + Math.sin(t * 1.35) * 0.008 + vmLean * 0.006);
+          // Pro-look pass (v114): the same tub blaster, drawn at
+          // two-thirds scale and seated lower in the corner, so it
+          // reads as a held weapon instead of a billboard — the
+          // view stays open and the crosshair owns the centre.
+          ctx.translate(706 + bobX * 0.7 + vmLean, 602 + bobY * 0.7);
+          ctx.rotate(-0.55 + Math.sin(t * 1.35) * 0.008 + vmLean * 0.006);
+          ctx.scale(0.66, 0.66);
           ctx.translate(0, rec * 0.8);
           // Forearm running off the bottom-right corner to the grip.
           var armG = ctx.createLinearGradient(40, 0, 170, 120);
@@ -20656,7 +21018,7 @@
           ctx.beginPath();
           ctx.moveTo(-66, -80); ctx.lineTo(66, -80); ctx.lineTo(64, -71); ctx.lineTo(-64, -71); ctx.closePath(); ctx.fill();
           ctx.fillStyle = "#fff";
-          ctx.font = "800 " + (weaponOf(player).label.length > 10 ? 12 : 16) + "px 'Baloo 2', sans-serif"; ctx.textAlign = "center";
+          ctx.font = "800 " + (weaponOf(player).label.length > 10 ? 12 : 16) + "px 'Public Sans', sans-serif"; ctx.textAlign = "center";
           ctx.fillText(weaponOf(player).label, 0, -54);
           ctx.textAlign = "left";
           // A shine sweeping the label band, on a slow loop.
@@ -20735,16 +21097,6 @@
             ctx.beginPath(); ctx.arc(12, -258, 2.6, 0, 6.29); ctx.fill();
             ctx.beginPath(); ctx.arc(4, -282, 2.2, 0, 6.29); ctx.fill();
           }
-          // Lingering cream mist drifting off the nozzle just after
-          // a shot, while the recoil is still settling.
-          if (flashT <= 0 && recoil > 0.25) {
-            ctx.fillStyle = "rgba(255,254,248," + (0.20 * recoil).toFixed(3) + ")";
-            for (var mf2 = 0; mf2 < 3; mf2++) {
-              var mfx = Math.sin(t * 3 + mf2 * 2.1) * 5 - mf2 * 4;
-              var mfy = -226 - mf2 * 9 - (1 - recoil) * 12;
-              ctx.beginPath(); ctx.arc(mfx, mfy, 4.5 + mf2 * 1.6, 0, 6.29); ctx.fill();
-            }
-          }
           ctx.restore();
         }
         function draw(t) {
@@ -20757,36 +21109,36 @@
           // Timer pill while playing.
           if (mode === "play") {
             var left = Math.max(0, Math.ceil(roundSeconds() - roundT));
-            ctx.font = "800 17px 'Baloo 2', sans-serif"; ctx.textAlign = "center";
+            ctx.font = "800 15px 'Public Sans', sans-serif"; ctx.textAlign = "center";
             var label2 = "0:" + (left < 10 ? "0" : "") + left;
-            var tw2 = ctx.measureText(label2).width + 24;
-            ctx.fillStyle = "rgba(18,24,28,0.78)";
-            ctx.beginPath(); ctx.roundRect(W / 2 - tw2 / 2, 10, tw2, 27, 999); ctx.fill();
+            var tw2 = ctx.measureText(label2).width + 22;
+            ctx.fillStyle = "rgba(13,18,22,0.72)";
+            ctx.beginPath(); ctx.roundRect(W / 2 - tw2 / 2, 10, tw2, 25, 8); ctx.fill();
             ctx.fillStyle = left <= 10 ? "#ff8f7a" : "#fff";
-            ctx.fillText(label2, W / 2, 29);
+            ctx.fillText(label2, W / 2, 27);
             ctx.textAlign = "left";
           }
           // Power-up toast: what you just grabbed, briefly.
           if (powerToast.t > 0 && powerToast.text) {
-            ctx.font = "800 15px 'Baloo 2', sans-serif"; ctx.textAlign = "center";
-            var ttw = ctx.measureText(powerToast.text).width + 24;
-            ctx.fillStyle = "rgba(18,24,28,0.78)";
-            ctx.beginPath(); ctx.roundRect(W / 2 - ttw / 2, 44, ttw, 25, 999); ctx.fill();
+            ctx.font = "700 14px 'Public Sans', sans-serif"; ctx.textAlign = "center";
+            var ttw = ctx.measureText(powerToast.text).width + 22;
+            ctx.fillStyle = "rgba(13,18,22,0.72)";
+            ctx.beginPath(); ctx.roundRect(W / 2 - ttw / 2, 42, ttw, 24, 8); ctx.fill();
             ctx.fillStyle = "#ffd23e";
-            ctx.fillText(powerToast.text, W / 2, 61);
+            ctx.fillText(powerToast.text, W / 2, 58);
             ctx.textAlign = "left";
           }
           // Crosshair + hit marker (only while you're in the fight).
           if ((mode === "play" || mode === "count") && player.alive) {
             var cxp = W / 2, cyp = H / 2, gap = 9 + recoil * 7;
-            ctx.strokeStyle = "rgba(20,20,16,0.65)"; ctx.lineWidth = 4; ctx.lineCap = "round";
+            ctx.strokeStyle = "rgba(16,20,24,0.42)"; ctx.lineWidth = 3.2; ctx.lineCap = "round";
             ctx.beginPath();
             ctx.moveTo(cxp - gap - 8, cyp); ctx.lineTo(cxp - gap, cyp);
             ctx.moveTo(cxp + gap, cyp); ctx.lineTo(cxp + gap + 8, cyp);
             ctx.moveTo(cxp, cyp - gap - 8); ctx.lineTo(cxp, cyp - gap);
             ctx.moveTo(cxp, cyp + gap); ctx.lineTo(cxp, cyp + gap + 8);
             ctx.stroke();
-            ctx.strokeStyle = "#fffef6"; ctx.lineWidth = 2;
+            ctx.strokeStyle = "#fffef6"; ctx.lineWidth = 1.6;
             ctx.beginPath();
             ctx.moveTo(cxp - gap - 8, cyp); ctx.lineTo(cxp - gap, cyp);
             ctx.moveTo(cxp + gap, cyp); ctx.lineTo(cxp + gap + 8, cyp);
@@ -20830,21 +21182,33 @@
             var title = mode === "wait" ? "LIVE ROOM" : (mode === "play" ? "SPLATTED!" : bannerText);
             var sub = mode === "wait" ? (mpSpectating ? "You're in — spectating until the next round starts" : "Waiting for the next round…") : (mode === "play" ? (curMode().respawn && player.respawnT > 0 ? "Back in " + Math.max(1, Math.ceil(player.respawnT)) + "s — Splat Race respawns you" : "Your Spudtans fight on — watching from behind the survivors") : bannerSub);
             var popS = mode === "count" ? Math.max(1, 1.3 - countT * 0.45) : (mode === "roundover" ? Math.max(1, 1.22 - overT * 0.35) : 1);
-            ctx.font = "800 " + Math.round(54 * popS) + "px 'Baloo 2', sans-serif";
-            ctx.lineWidth = 9; ctx.strokeStyle = "rgba(43,24,8,0.9)";
+            ctx.font = "800 " + Math.round(50 * popS) + "px 'Baloo 2', sans-serif";
+            // A single quiet panel behind the banner text instead of
+            // heavy per-letter outlines — cleaner at every size.
+            var bwT = ctx.measureText(title).width;
+            var bwS = 0;
+            if (sub) { ctx.font = "700 19px 'Public Sans', sans-serif"; bwS = ctx.measureText(sub).width; }
+            var bwP = Math.min(W - 48, Math.max(bwT, bwS) + 56);
+            ctx.fillStyle = "rgba(12,17,21,0.55)";
+            ctx.beginPath(); ctx.roundRect(W / 2 - bwP / 2, H / 2 - 78, bwP, sub ? 128 : 96, 14); ctx.fill();
+            ctx.font = "800 " + Math.round(50 * popS) + "px 'Baloo 2', sans-serif";
+            ctx.lineWidth = 5; ctx.strokeStyle = "rgba(20,14,6,0.55)";
             ctx.strokeText(title, W / 2, H / 2 - 10);
             ctx.fillStyle = "#ffd23e"; ctx.fillText(title, W / 2, H / 2 - 10);
             if (sub) {
-              ctx.font = "700 20px 'Public Sans', sans-serif";
-              ctx.lineWidth = 5;
+              ctx.font = "700 19px 'Public Sans', sans-serif";
+              ctx.lineWidth = 4;
               ctx.strokeText(sub, W / 2, H / 2 + 28);
               ctx.fillStyle = "#fff"; ctx.fillText(sub, W / 2, H / 2 + 28);
             }
             ctx.textAlign = "left";
           }
-          // Golden-hour grade over the whole frame.
-          var grade = ctx.createLinearGradient(0, 0, W, H);
-          grade.addColorStop(0, "rgba(255,170,70,0.05)"); grade.addColorStop(1, "rgba(200,80,20,0.07)");
+          // Frame finish (v114): a neutral cinematic vignette
+          // instead of the old orange wash — the scene's own colours
+          // carry the warmth now, the edges just settle down.
+          var grade = ctx.createRadialGradient(W / 2, H / 2, H * 0.42, W / 2, H / 2, H * 0.92);
+          grade.addColorStop(0, "rgba(10,14,18,0)");
+          grade.addColorStop(1, "rgba(10,14,18,0.17)");
           ctx.fillStyle = grade; ctx.fillRect(0, 0, W, H);
         }
         // ----- Main loop with adaptive render scale -----
