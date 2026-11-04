@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-04-carrot-limbs · v109.1.96 -->
+<!-- build-2026-11-04-offline-cache · v112.1.97 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -2212,15 +2212,15 @@
       }
       @media (min-width: 760px) { .ball3d-touchrow { max-width: 560px; margin-left: auto; margin-right: auto; } }
       .ball3d-stick {
-        position: absolute; left: 14px; bottom: 14px; z-index: 3;
-        width: 116px; height: 116px; border-radius: 50%;
-        background: rgba(18, 24, 28, 0.38); border: 2px solid rgba(255, 255, 255, 0.55);
+        position: absolute; left: 10px; bottom: 10px; z-index: 3;
+        width: 84px; height: 84px; border-radius: 50%;
+        background: rgba(18, 24, 28, 0.30); border: 2px solid rgba(255, 255, 255, 0.5);
         box-shadow: 0 4px 16px rgba(20, 20, 10, 0.35), inset 0 0 24px rgba(0, 0, 0, 0.3);
         touch-action: none; -webkit-user-select: none; user-select: none;
         -webkit-tap-highlight-color: transparent;
       }
       .ball3d-stick[hidden] { display: none; }
-      .ball3d-stick--right { left: auto; right: 14px; }
+      .ball3d-stick--right { left: auto; right: 10px; }
       .ball3d-autofire {
         appearance: none; cursor: pointer; flex: 0 0 auto; min-height: 56px;
         border: 1px solid var(--line); border-radius: 12px; padding: 6px 12px;
@@ -2233,12 +2233,98 @@
       }
       .ball3d-autofire:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
       .ball3d-knob {
-        position: absolute; left: 50%; top: 50%; width: 54px; height: 54px;
-        margin: -27px 0 0 -27px; border-radius: 50%;
+        position: absolute; left: 50%; top: 50%; width: 40px; height: 40px;
+        margin: -20px 0 0 -20px; border-radius: 50%;
         background: radial-gradient(circle at 35% 32%, #ffe9a3, #e8a91c 62%, #9c6d05);
         border: 2px solid rgba(255, 255, 255, 0.85);
         box-shadow: 0 3px 10px rgba(20, 20, 10, 0.45);
         pointer-events: none;
+      }
+      /* Aim sensitivity: a slider in the controls row under the
+         stage. 100% is the shipped v77-tuned feel; the player can
+         soften or sharpen every look input (aim stick, touch
+         look-drag, pointer-locked mouse) from one place. */
+      .ball3d-sens {
+        flex: 1 1 190px; display: flex; align-items: center; gap: 8px;
+        border: 1px solid var(--line); border-radius: 12px; padding: 6px 12px;
+        background: var(--panel-2); color: var(--ink-soft);
+        font-size: 0.85rem; font-weight: 700; line-height: 1.15; min-height: 56px;
+      }
+      .ball3d-sens input[type="range"] {
+        flex: 1 1 auto; min-width: 64px; height: 44px; margin: 0; padding: 0;
+        accent-color: var(--accent); cursor: pointer; touch-action: manipulation;
+      }
+      .ball3d-sensval { flex: none; min-width: 3.1em; text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+      .ball3d-sens:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+      /* Rotate prompt: a small pill in the stage's top-left corner,
+         shown only on portrait touch screens — a web page can't
+         lock orientation, so it just suggests turning the phone,
+         where the landscape layout below takes over. */
+      .ball3d-rotate {
+        position: absolute; top: 8px; left: 8px; z-index: 5; pointer-events: none;
+        display: none; max-width: 64%;
+        background: rgba(18, 24, 28, 0.72); color: #fff7e0;
+        border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 999px;
+        font-size: 0.78rem; font-weight: 700; line-height: 1.25; padding: 6px 10px;
+      }
+      @media (orientation: portrait) and (max-width: 700px) and (pointer: coarse) {
+        .ball3d-rotate { display: block; }
+      }
+      /* Portrait phones: slim the overlay and card padding and
+         compact the header, so the stage (and with it the canvas)
+         runs wider — and therefore taller — on a narrow screen. */
+      @media (max-width: 560px) {
+        .ball3dgame { padding: 4px; }
+        .ball3dgame .ball3d-card { padding: 10px 8px 12px; }
+        .ball3dgame .spudgame-head h2 { font-size: 1.08rem; }
+      }
+      /* Landscape phones: the dialog goes full-bleed and the card
+         becomes a flex column — compact header, one-line HUD, the
+         stage flexes to fill the rest, and the canvas takes the
+         largest 960:600 box that fits, centred. The sticks stay in
+         the stage's bottom corners, which are now the far sides of
+         a wide view with the gutters beside the canvas, and the
+         controls row floats bottom-centre between them (the same
+         overlay pattern as Maximize mode). */
+      @media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
+        .ball3dgame { padding: 0; }
+        .ball3dgame .ball3d-card {
+          position: relative;
+          width: 100%; height: 100vh; height: 100dvh; max-height: 100dvh;
+          margin: 0; border-radius: 0; border-left: 0; border-right: 0;
+          display: flex; flex-direction: column;
+          padding: 6px 8px 8px;
+        }
+        .ball3dgame .spudgame-head { margin-bottom: 0; }
+        .ball3dgame .spudgame-head h2 { font-size: 1.02rem; }
+        .ball3dgame .ball-hud {
+          font-size: 0.78rem; flex-wrap: nowrap; white-space: nowrap;
+          overflow: hidden; margin: 0; gap: 2px 10px;
+        }
+        .ball3dgame .ball-roster,
+        .ball3dgame .spudgame-hint { display: none; }
+        .ball3dgame .ball3d-stage {
+          flex: 1 1 auto; min-height: 0;
+          align-items: center; justify-items: center;
+          background: #1a0f08;
+        }
+        .ball3dgame .ball3d-stage canvas,
+        .ball3dgame.ball3d-max .ball3d-stage canvas {
+          align-self: center; justify-self: center;
+          width: min(100%, calc((100vh - 92px) * 1.6));
+          width: min(100%, calc((100dvh - 92px) * 1.6));
+          height: auto;
+        }
+        .ball3dgame .spudgame-panel { justify-self: stretch; align-self: stretch; }
+        .ball3dgame .ball3d-sticklabel { display: none; }
+        .ball3dgame .ball3d-touchrow {
+          position: absolute; left: 50%; transform: translateX(-50%);
+          bottom: 8px; z-index: 6; margin: 0;
+          max-width: calc(100% - 208px);
+          background: rgba(18, 24, 28, 0.55); padding: 5px; border-radius: 14px;
+        }
+        .ball3dgame .ball3d-sens { min-height: 48px; }
+        .ball3dgame .ball3d-autofire { min-height: 48px; }
       }
       .ball3dgame .kart-trackrow { margin: 2px 0; max-width: 560px; }
       .ball3dgame .kart-track-btn { min-height: 36px; font-size: 0.78rem; padding: 4px 6px; }
@@ -3459,7 +3545,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v109.1.96</p>
+        <p class="version-stamp">v112.1.97</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -3756,14 +3842,16 @@
           </div>
           <div class="ball3d-stick" id="ball3dStick" hidden aria-hidden="true"><div class="ball3d-knob" id="ball3dKnob"></div></div>
           <div class="ball3d-stick ball3d-stick--right" id="ball3dStickR" hidden aria-hidden="true"><div class="ball3d-knob" id="ball3dKnobR"></div></div>
+          <div class="ball3d-rotate" aria-hidden="true">Rotate your phone for a wider view</div>
         </div>
         <div class="ball3d-touchrow" aria-label="Tate-lo 3D controls">
           <div class="ball3d-sticklabel">Touch: left stick moves · right stick aims · double-tap right stick to shoot · double-tap left stick to jump</div>
+          <label class="ball3d-sens" for="ball3dSens">Aim sensitivity <input type="range" id="ball3dSens" min="40" max="160" step="5" value="100"> <span class="ball3d-sensval" id="ball3dSensVal">100%</span></label>
           <button type="button" class="ball3d-autofire" id="ball3dWeaponBtn">Blaster: Classic</button>
           <button type="button" class="ball3d-autofire" id="ball3dAutoFire" aria-pressed="false">Auto-fire: Off</button>
           <button type="button" class="ball-fire" id="ball3dFireBtn" style="flex:0 1 220px">SPLAT — hold to fire</button>
         </div>
-        <p class="spudgame-hint">Desktop: WASD + mouse (click to lock), click or Space to fire, E to jump. Touch: left stick moves, right stick aims — double-tap to shoot or jump, or leave Auto-fire on. Keys 1–5 swap blasters. Power-ups: Butter Shield eats a splat, Swift Sprout speeds you up, Extra Dollop doubles fire rate, Mega Mash supersizes shots. Splatted? You spectate until the round ends — in Splat Race you're back in seconds. Esc closes.</p>
+        <p class="spudgame-hint">Desktop: WASD + mouse (click to lock), click or Space to fire, E to jump. Touch: left stick moves, right stick aims — double-tap to shoot or jump, or leave Auto-fire on. Keys 1–5 swap blasters. Power-ups: Butter Shield eats a splat, Swift Sprout speeds you up, Extra Dollop doubles fire rate, Mega Mash supersizes shots. Splatted? You spectate until the round ends — in Splat Race you're back in seconds. Aim feeling twitchy? Tune the Aim sensitivity slider under the screen — and on a phone, turn it sideways for a wider view. Esc closes.</p>
       </div>
     </div>
 
@@ -10770,7 +10858,7 @@
         if ("serviceWorker" in navigator) {
           window.addEventListener("load", function () {
             try {
-              navigator.serviceWorker.register("data:application/javascript;base64,LyogT2ZmbGluZSBjYWNoZSBmb3IgdGhlIEV4Y2VsbGVuY2UgUml2aWVyYSBDYW5jdW4gcmVzb3J0IG1hcC4KICAgVGhlIHdob2xlIG1hcCBpcyBvbmUgc2VsZi1jb250YWluZWQgcGFnZSwgc28gY2FjaGluZyB0aGUgcGFnZSwgaXRzCiAgIG1hbmlmZXN0IGFuZCBpdHMgaWNvbnMgaXMgZW5vdWdoIHRvIGtlZXAgaXQgd29ya2luZyB3aXRoIG5vIGNvbm5lY3Rpb24KICAgb25jZSBpdCBoYXMgYmVlbiBvcGVuZWQgKG9yIGluc3RhbGxlZCkgYXQgbGVhc3Qgb25jZS4gKi8KdmFyIENBQ0hFID0gInNwdWRtYXBzLXYyIjsKdmFyIENPUkUgPSBbCiAgIi4uL2luZGV4Lmh0bWwiLAogICIuL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiLi9pY29uLTE5Mi5wbmciLAogICIuL2ljb24tNTEyLnBuZyIsCiAgIi4vaWNvbi1tYXNrYWJsZS01MTIucG5nIiwKICAiLi9hcHBsZS10b3VjaC1pY29uLnBuZyIsCiAgIi4vc3VwZXJzcHVkLnBuZyIKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiaW5zdGFsbCIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGZ1bmN0aW9uIChjYWNoZSkgewogICAgICByZXR1cm4gY2FjaGUuYWRkQWxsKENPUkUpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7CiAgICAgIHJldHVybiBzZWxmLnNraXBXYWl0aW5nKCk7CiAgICB9KQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJhY3RpdmF0ZSIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5rZXlzKCkudGhlbihmdW5jdGlvbiAoa2V5cykgewogICAgICByZXR1cm4gUHJvbWlzZS5hbGwoa2V5cy5tYXAoZnVuY3Rpb24gKGtleSkgewogICAgICAgIHJldHVybiBrZXkgPT09IENBQ0hFID8gbnVsbCA6IGNhY2hlcy5kZWxldGUoa2V5KTsKICAgICAgfSkpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7CiAgICAgIHJldHVybiBzZWxmLmNsaWVudHMuY2xhaW0oKTsKICAgIH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImZldGNoIiwgZnVuY3Rpb24gKGV2ZW50KSB7CiAgdmFyIHJlcSA9IGV2ZW50LnJlcXVlc3Q7CiAgaWYgKHJlcS5tZXRob2QgIT09ICJHRVQiKSByZXR1cm47CgogIC8qIFBhZ2VzOiBuZXR3b3JrIGZpcnN0IHNvIGEgcmVidWlsdCBtYXAgc2hvd3MgdXAsIGNhY2hlIGFzIHRoZSBvZmZsaW5lCiAgICAgZmFsbGJhY2sgc28gdGhlIG1hcCBzdGlsbCBvcGVucyB3aXRoIG5vIGNvbm5lY3Rpb24gYXQgYWxsLiAqLwogIGlmIChyZXEubW9kZSA9PT0gIm5hdmlnYXRlIikgewogICAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICAgIGZldGNoKHJlcSkudGhlbihmdW5jdGlvbiAocmVzKSB7CiAgICAgICAgdmFyIGNvcHkgPSByZXMuY2xvbmUoKTsKICAgICAgICBjYWNoZXMub3BlbihDQUNIRSkudGhlbihmdW5jdGlvbiAoY2FjaGUpIHsgY2FjaGUucHV0KCIuLi9pbmRleC5odG1sIiwgY29weSk7IH0pOwogICAgICAgIHJldHVybiByZXM7CiAgICAgIH0pLmNhdGNoKGZ1bmN0aW9uICgpIHsKICAgICAgICByZXR1cm4gY2FjaGVzLm1hdGNoKCIuLi9pbmRleC5odG1sIiwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSk7CiAgICAgIH0pCiAgICApOwogICAgcmV0dXJuOwogIH0KCiAgLyogRXZlcnl0aGluZyBlbHNlIChpY29ucywgbWFuaWZlc3QsIHRoZSBHb29nbGUgRm9udHMgc3R5bGVzaGVldCBhbmQgZm9udAogICAgIGZpbGVzKTogY2FjaGUgZmlyc3QsIHRoZW4gbmV0d29yayDigJQgYW5kIGtlZXAgd2hhdGV2ZXIgdGhlIG5ldHdvcmsKICAgICByZXR1cm5zIHNvIHRoZSBmb250cyB3b3JrIG9mZmxpbmUgdG9vIGFmdGVyIHRoZSBmaXJzdCBsb2FkLiAqLwogIGV2ZW50LnJlc3BvbmRXaXRoKAogICAgY2FjaGVzLm1hdGNoKHJlcSwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkudGhlbihmdW5jdGlvbiAoaGl0KSB7CiAgICAgIGlmIChoaXQpIHJldHVybiBoaXQ7CiAgICAgIHJldHVybiBmZXRjaChyZXEpLnRoZW4oZnVuY3Rpb24gKHJlcykgewogICAgICAgIGlmIChyZXMgJiYgKHJlcy5zdGF0dXMgPT09IDIwMCB8fCByZXMudHlwZSA9PT0gIm9wYXF1ZSIpKSB7CiAgICAgICAgICB2YXIgY29weSA9IHJlcy5jbG9uZSgpOwogICAgICAgICAgY2FjaGVzLm9wZW4oQ0FDSEUpLnRoZW4oZnVuY3Rpb24gKGNhY2hlKSB7IGNhY2hlLnB1dChyZXEsIGNvcHkpOyB9KTsKICAgICAgICB9CiAgICAgICAgcmV0dXJuIHJlczsKICAgICAgfSk7CiAgICB9KQogICk7Cn0pOwo=").catch(function () { /* worker unavailable on this host — the page still works online */ });
+              navigator.serviceWorker.register("sw.js").catch(function () { /* worker unavailable on this host — the page still works online */ });
             } catch (e) { /* never let worker registration break the page */ }
           });
         }
@@ -11615,11 +11703,13 @@
 
         // ---------- Offline notice ----------
         // The map itself is one self-contained page and the service worker
-        // (data:application/javascript;base64,LyogT2ZmbGluZSBjYWNoZSBmb3IgdGhlIEV4Y2VsbGVuY2UgUml2aWVyYSBDYW5jdW4gcmVzb3J0IG1hcC4KICAgVGhlIHdob2xlIG1hcCBpcyBvbmUgc2VsZi1jb250YWluZWQgcGFnZSwgc28gY2FjaGluZyB0aGUgcGFnZSwgaXRzCiAgIG1hbmlmZXN0IGFuZCBpdHMgaWNvbnMgaXMgZW5vdWdoIHRvIGtlZXAgaXQgd29ya2luZyB3aXRoIG5vIGNvbm5lY3Rpb24KICAgb25jZSBpdCBoYXMgYmVlbiBvcGVuZWQgKG9yIGluc3RhbGxlZCkgYXQgbGVhc3Qgb25jZS4gKi8KdmFyIENBQ0hFID0gInNwdWRtYXBzLXYyIjsKdmFyIENPUkUgPSBbCiAgIi4uL2luZGV4Lmh0bWwiLAogICIuL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiLi9pY29uLTE5Mi5wbmciLAogICIuL2ljb24tNTEyLnBuZyIsCiAgIi4vaWNvbi1tYXNrYWJsZS01MTIucG5nIiwKICAiLi9hcHBsZS10b3VjaC1pY29uLnBuZyIsCiAgIi4vc3VwZXJzcHVkLnBuZyIKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiaW5zdGFsbCIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGZ1bmN0aW9uIChjYWNoZSkgewogICAgICByZXR1cm4gY2FjaGUuYWRkQWxsKENPUkUpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7CiAgICAgIHJldHVybiBzZWxmLnNraXBXYWl0aW5nKCk7CiAgICB9KQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJhY3RpdmF0ZSIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5rZXlzKCkudGhlbihmdW5jdGlvbiAoa2V5cykgewogICAgICByZXR1cm4gUHJvbWlzZS5hbGwoa2V5cy5tYXAoZnVuY3Rpb24gKGtleSkgewogICAgICAgIHJldHVybiBrZXkgPT09IENBQ0hFID8gbnVsbCA6IGNhY2hlcy5kZWxldGUoa2V5KTsKICAgICAgfSkpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7CiAgICAgIHJldHVybiBzZWxmLmNsaWVudHMuY2xhaW0oKTsKICAgIH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImZldGNoIiwgZnVuY3Rpb24gKGV2ZW50KSB7CiAgdmFyIHJlcSA9IGV2ZW50LnJlcXVlc3Q7CiAgaWYgKHJlcS5tZXRob2QgIT09ICJHRVQiKSByZXR1cm47CgogIC8qIFBhZ2VzOiBuZXR3b3JrIGZpcnN0IHNvIGEgcmVidWlsdCBtYXAgc2hvd3MgdXAsIGNhY2hlIGFzIHRoZSBvZmZsaW5lCiAgICAgZmFsbGJhY2sgc28gdGhlIG1hcCBzdGlsbCBvcGVucyB3aXRoIG5vIGNvbm5lY3Rpb24gYXQgYWxsLiAqLwogIGlmIChyZXEubW9kZSA9PT0gIm5hdmlnYXRlIikgewogICAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICAgIGZldGNoKHJlcSkudGhlbihmdW5jdGlvbiAocmVzKSB7CiAgICAgICAgdmFyIGNvcHkgPSByZXMuY2xvbmUoKTsKICAgICAgICBjYWNoZXMub3BlbihDQUNIRSkudGhlbihmdW5jdGlvbiAoY2FjaGUpIHsgY2FjaGUucHV0KCIuLi9pbmRleC5odG1sIiwgY29weSk7IH0pOwogICAgICAgIHJldHVybiByZXM7CiAgICAgIH0pLmNhdGNoKGZ1bmN0aW9uICgpIHsKICAgICAgICByZXR1cm4gY2FjaGVzLm1hdGNoKCIuLi9pbmRleC5odG1sIiwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSk7CiAgICAgIH0pCiAgICApOwogICAgcmV0dXJuOwogIH0KCiAgLyogRXZlcnl0aGluZyBlbHNlIChpY29ucywgbWFuaWZlc3QsIHRoZSBHb29nbGUgRm9udHMgc3R5bGVzaGVldCBhbmQgZm9udAogICAgIGZpbGVzKTogY2FjaGUgZmlyc3QsIHRoZW4gbmV0d29yayDigJQgYW5kIGtlZXAgd2hhdGV2ZXIgdGhlIG5ldHdvcmsKICAgICByZXR1cm5zIHNvIHRoZSBmb250cyB3b3JrIG9mZmxpbmUgdG9vIGFmdGVyIHRoZSBmaXJzdCBsb2FkLiAqLwogIGV2ZW50LnJlc3BvbmRXaXRoKAogICAgY2FjaGVzLm1hdGNoKHJlcSwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkudGhlbihmdW5jdGlvbiAoaGl0KSB7CiAgICAgIGlmIChoaXQpIHJldHVybiBoaXQ7CiAgICAgIHJldHVybiBmZXRjaChyZXEpLnRoZW4oZnVuY3Rpb24gKHJlcykgewogICAgICAgIGlmIChyZXMgJiYgKHJlcy5zdGF0dXMgPT09IDIwMCB8fCByZXMudHlwZSA9PT0gIm9wYXF1ZSIpKSB7CiAgICAgICAgICB2YXIgY29weSA9IHJlcy5jbG9uZSgpOwogICAgICAgICAgY2FjaGVzLm9wZW4oQ0FDSEUpLnRoZW4oZnVuY3Rpb24gKGNhY2hlKSB7IGNhY2hlLnB1dChyZXEsIGNvcHkpOyB9KTsKICAgICAgICB9CiAgICAgICAgcmV0dXJuIHJlczsKICAgICAgfSk7CiAgICB9KQogICk7Cn0pOwo=, unchanged) caches it, the manifest and the icons,
-        // so after a first load the map, menus, hours, gems and the day
-        // plan all work with no signal. What still needs signal: Live
-        // group, The Wedding Wall, the weather fetch, and photo/GIF
-        // uploads. This bar says exactly that, only while offline.
+        // (sw.js, at the site root so it can control this page) precaches
+        // it plus every asset — manifest, icons, artwork, photos, game
+        // audio and Tate-lo's textures — so after a first load the map,
+        // menus, hours, gems and the day plan all work with no signal.
+        // What still needs signal: Live group, The Wedding Wall, the
+        // weather fetch, and photo/GIF uploads. This bar says exactly
+        // that, only while offline.
         var offBar = document.createElement("div");
         offBar.className = "offlinebar";
         offBar.id = "offlineBar";
@@ -14266,8 +14356,8 @@
       })();
     </script>
     <script>
-      // ---------- Spud Kart: Resort Grand Prix (pseudo-3D) ----------
-      // An original potato kart racer: a segmented pseudo-3D road in the
+      // ---------- Spud Kart: Resort Grand Prix (WebGL) ----------
+      // An original potato kart racer: a segmented road in the
       // OutRun tradition — projected segments, parallax sunset skyline,
       // sprite karts that scale with depth — restyled to SuperSpud's
       // sunset world. Three laps, topping-box items. Drop-in / drop-out
@@ -15162,436 +15252,717 @@
           if (raceTime > 300) showRaceOver(null, standingsText());
         }
 
-        // ----- Drawing -----
-        function polygon(x1, y1, x2, y2, x3, y3, x4, y4, color) {
-          ctx.fillStyle = color;
-          ctx.beginPath();
-          ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4);
-          ctx.closePath(); ctx.fill();
+        // ----- WebGL renderer (v111): the pseudo-3D road is retired -----
+        // Spud Kart now renders a true 3D track: the same segment /
+        // curve data the OutRun-style renderer projected is walked
+        // each frame to lay real ribbon geometry (verge, rumble,
+        // asphalt, dashes, start checkers, jump wedges) in a window
+        // around the camera, with 3D palms and resort blocks, low-
+        // poly kart models with potato drivers (Super Spud keeps his
+        // portrait, on a standee in the seat), spinning item cubes,
+        // Spud Coins, butter slicks, and fork projectiles — all under
+        // the theme sky for the chosen track. An Escape-style
+        // adaptive quality ladder steps render resolution, draw
+        // distance, and effect density down (and back up) to hold
+        // phone frame rates. Tracks, racers, items, rules, laps,
+        // and the live room are untouched; if WebGL is unavailable
+        // the game shows an unsupported-device note instead.
+        var kgl = null, kglCan = document.createElement("canvas");
+        var kglOK = false, kglTried = false;
+        var KGL_TIERS = [
+          { s: 1.30, dist: 220, fx: 1.0 }, { s: 1.15, dist: 190, fx: 0.9 }, { s: 1.0, dist: 155, fx: 0.75 },
+          { s: 0.82, dist: 120, fx: 0.55 }, { s: 0.66, dist: 90, fx: 0.38 }, { s: 0.50, dist: 64, fx: 0.25 }
+        ];
+        var kglTier = 0, kglFpsAvg = 60, kglFpsTime = 0;
+        var kglProg = null, kglA = {}, kglU = {};
+        var kglDynBuf = null, kglSkyBuf = null;
+        var kglTexWhite = null, kglTexGlow = null, kglTexSky = null, kglTexBldg = null, kglTexItem = null, kglTexFork = null, kglTexHero = null;
+        var kglSkyTheme = "";
+        var kglProjM = null, kglView = null, kglProjF = 1, kglAsp = 1.667;
+        var kglEye = { x: 0, y: 7.5, z: 0 }, kglAx = [1, 0, 0], kglAy = [0, 1, 0], kglAz = [0, 0, 1];
+        var kglNames = [];
+        var KGL_HALF = 13.25; // road half-width in GL units (roadWidth / 200)
+        // Track window: boundary points accumulated from the camera
+        // segment exactly like the old project() loop did (x += dx;
+        // dx += curve), stored as GL coords (X = -lateral, Z = ahead).
+        var kWinMax = 240, kGX = new Float32Array(kWinMax + 8), kGZ = new Float32Array(kWinMax + 8);
+        var kBaseIdx = 0, kBP = 0, kDrawN = 220;
+
+        function kIdent() { return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
+        function kMul(a, b) {
+          var o = new Float32Array(16);
+          for (var c = 0; c < 4; c++) for (var r = 0; r < 4; r++)
+            o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+          return o;
         }
-        function drawKart(cx, baseY, w, scheme, t, opts) {
-          opts = opts || {};
-          var h = w * 0.60;
-          ctx.save();
-          ctx.translate(cx, baseY);
-          if (opts.spin) ctx.rotate(Math.sin(opts.spin * 12) * 0.5);
-          if (opts.tilt) ctx.rotate(opts.tilt);
-          // shadow
-          ctx.fillStyle = "rgba(20,6,28,0.4)";
-          ctx.beginPath(); ctx.ellipse(0, -h * 0.04, w * 0.52, h * 0.13, 0, 0, 6.29); ctx.fill();
-          // boost flame
+        function kPersp(fovY, asp, near, far) {
+          var f = 1 / Math.tan(fovY / 2), o = new Float32Array(16);
+          o[0] = f / asp; o[5] = f; o[10] = (far + near) / (near - far); o[11] = -1;
+          o[14] = 2 * far * near / (near - far);
+          return o;
+        }
+        function kTrans(x, y, z) { var o = kIdent(); o[12] = x; o[13] = y; o[14] = z; return o; }
+        var kColCache = {};
+        function kCol(hex) {
+          if (kColCache[hex]) return kColCache[hex];
+          var n = parseInt(hex.slice(1), 16);
+          var c = [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+          kColCache[hex] = c; return c;
+        }
+        function kVert(x, y, z, u, v, col) { return [x, y, z, u, v, col[0], col[1], col[2], col.length > 3 ? col[3] : 1]; }
+        function kTri(arr, a, b2, c) { for (var i = 0; i < 9; i++) arr.push(a[i]); for (var j = 0; j < 9; j++) arr.push(b2[j]); for (var k = 0; k < 9; k++) arr.push(c[k]); }
+        function kQuad(arr, p1, p2, p3, p4, uv, col) {
+          kTri(arr, kVert(p1[0], p1[1], p1[2], uv[0], uv[1], col), kVert(p2[0], p2[1], p2[2], uv[2], uv[1], col), kVert(p3[0], p3[1], p3[2], uv[2], uv[3], col));
+          kTri(arr, kVert(p1[0], p1[1], p1[2], uv[0], uv[1], col), kVert(p3[0], p3[1], p3[2], uv[2], uv[3], col), kVert(p4[0], p4[1], p4[2], uv[0], uv[3], col));
+        }
+        function kQuadC(arr, p1, p2, p3, p4, col) { kQuad(arr, p1, p2, p3, p4, [0.5, 0.5, 0.5, 0.5], col); }
+        function kBill(arr, x, y, z, w, h, uv, col) {
+          // Full billboard using the camera's right/up axes.
+          var rx = [kglAx[0], kglAx[1], kglAx[2]], up = [kglAy[0], kglAy[1], kglAy[2]];
+          // Note: view x-axis points screen-left in this frame (forward = +Z), so negate.
+          rx = [-rx[0], -rx[1], -rx[2]];
+          var hw = w / 2, hh = h / 2;
+          kQuad(arr,
+            [x - rx[0] * hw - up[0] * hh, y - rx[1] * hw - up[1] * hh, z - rx[2] * hw - up[2] * hh],
+            [x + rx[0] * hw - up[0] * hh, y + rx[1] * hw - up[1] * hh, z + rx[2] * hw - up[2] * hh],
+            [x + rx[0] * hw + up[0] * hh, y + rx[1] * hw + up[1] * hh, z + rx[2] * hw + up[2] * hh],
+            [x - rx[0] * hw + up[0] * hh, y - rx[1] * hw + up[1] * hh, z - rx[2] * hw + up[2] * hh], uv, col);
+        }
+        function kXf(T, lx, ly, lz) { return [T.x + (lx * T.c - lz * T.s) * (T.sc || 1), T.y + ly * (T.sc || 1), T.z + (lx * T.s + lz * T.c) * (T.sc || 1)]; }
+        function kEll(arr, T, cx, cy, cz, rx, ry, rz, col) {
+          var SEG = 8, RINGS = 6, pts = [];
+          for (var j = 0; j <= RINGS; j++) {
+            var ph = j / RINGS * Math.PI, sp = Math.sin(ph), cp = Math.cos(ph);
+            for (var i = 0; i <= SEG; i++) {
+              var th = i / SEG * 6.2832;
+              pts.push(kXf(T, cx + Math.cos(th) * sp * rx, cy + cp * ry, cz + Math.sin(th) * sp * rz));
+            }
+          }
+          for (var j2 = 0; j2 < RINGS; j2++) for (var i2 = 0; i2 < SEG; i2++) {
+            var a = j2 * (SEG + 1) + i2, bq = a + SEG + 1;
+            var sh = 0.85 + 0.15 * (j2 / RINGS);
+            var cc = [col[0] * sh, col[1] * sh, col[2] * sh, col.length > 3 ? col[3] : 1];
+            kTri(arr, kVert(pts[a][0], pts[a][1], pts[a][2], 0.5, 0.5, cc), kVert(pts[bq][0], pts[bq][1], pts[bq][2], 0.5, 0.5, cc), kVert(pts[bq + 1][0], pts[bq + 1][1], pts[bq + 1][2], 0.5, 0.5, cc));
+            kTri(arr, kVert(pts[a][0], pts[a][1], pts[a][2], 0.5, 0.5, cc), kVert(pts[bq + 1][0], pts[bq + 1][1], pts[bq + 1][2], 0.5, 0.5, cc), kVert(pts[a + 1][0], pts[a + 1][1], pts[a + 1][2], 0.5, 0.5, cc));
+          }
+        }
+        function kBox(arr, T, cx, cy, cz, sx, sy, sz, col, tex) {
+          var hx = sx / 2, hy = sy / 2, hz = sz / 2;
+          var ns = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+          var shade = [0.88, 0.72, 1.0, 0.55, 0.95, 0.8];
+          for (var f = 0; f < 6; f++) {
+            var n = ns[f], cc = [col[0] * shade[f], col[1] * shade[f], col[2] * shade[f], col.length > 3 ? col[3] : 1];
+            var u, v, hu, hv;
+            if (n[0] !== 0) { u = [0, 0, 1]; v = [0, 1, 0]; hu = hz; hv = hy; }
+            else if (n[2] !== 0) { u = [1, 0, 0]; v = [0, 1, 0]; hu = hx; hv = hy; }
+            else { u = [1, 0, 0]; v = [0, 0, 1]; hu = hx; hv = hz; }
+            var ctr = [cx + n[0] * hx, cy + n[1] * hy, cz + n[2] * hz], p = [];
+            [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (sg) {
+              p.push(kXf(T, ctr[0] + u[0] * sg[0] * hu + v[0] * sg[1] * hv, ctr[1] + u[1] * sg[0] * hu + v[1] * sg[1] * hv, ctr[2] + u[2] * sg[0] * hu + v[2] * sg[1] * hv));
+            });
+            if (tex) kQuad(arr, p[0], p[1], p[2], p[3], [0, 0, 1, 1], cc);
+            else kQuadC(arr, p[0], p[1], p[2], p[3], cc);
+          }
+        }
+        function kCyl(arr, T, cx, cy, cz, r, len, col) {
+          // Cylinder with its axis along local Z (across the kart).
+          var SEG = 10, pts = [];
+          for (var i = 0; i <= SEG; i++) {
+            var th = i / SEG * 6.2832, co = Math.cos(th), si = Math.sin(th);
+            pts.push([kXf(T, cx + co * r, cy + si * r, cz - len / 2), kXf(T, cx + co * r, cy + si * r, cz + len / 2)]);
+          }
+          for (var i2 = 0; i2 < SEG; i2++) {
+            kTri(arr, kVert(pts[i2][0][0], pts[i2][0][1], pts[i2][0][2], 0.5, 0.5, col), kVert(pts[i2 + 1][0][0], pts[i2 + 1][0][1], pts[i2 + 1][0][2], 0.5, 0.5, col), kVert(pts[i2 + 1][1][0], pts[i2 + 1][1][1], pts[i2 + 1][1][2], 0.5, 0.5, col));
+            kTri(arr, kVert(pts[i2][0][0], pts[i2][0][1], pts[i2][0][2], 0.5, 0.5, col), kVert(pts[i2 + 1][1][0], pts[i2 + 1][1][1], pts[i2 + 1][1][2], 0.5, 0.5, col), kVert(pts[i2][1][0], pts[i2][1][1], pts[i2][1][2], 0.5, 0.5, col));
+          }
+        }
+        function kCone(arr, T, cx, cy, cz, r, len, col) {
+          // Cone pointing backwards (-X local): base at cx, apex at cx - len.
+          var SEG = 8;
+          var apex = kXf(T, cx - len, cy, cz);
+          for (var i = 0; i < SEG; i++) {
+            var a1 = i / SEG * 6.2832, a2 = (i + 1) / SEG * 6.2832;
+            var p1 = kXf(T, cx, cy + Math.cos(a1) * r, cz + Math.sin(a1) * r);
+            var p2 = kXf(T, cx, cy + Math.cos(a2) * r, cz + Math.sin(a2) * r);
+            kTri(arr, kVert(apex[0], apex[1], apex[2], 0.5, 0.5, col), kVert(p1[0], p1[1], p1[2], 0.5, 0.5, col), kVert(p2[0], p2[1], p2[2], 0.5, 0.5, col));
+          }
+        }
+        // Flat elliptical disc on the ground, aligned to a track frame.
+        function kFlatDisc(arr, fr, offset, dz, rx, rz, y, col) {
+          var c = kPointAt(fr, offset, dz), SEG = 14;
+          function pt(a) { return [c.x + fr.ox * Math.cos(a) * rx + fr.tx * Math.sin(a) * rz, y, c.z + fr.oz * Math.cos(a) * rx + fr.tz * Math.sin(a) * rz]; }
+          for (var i = 0; i < SEG; i++) {
+            var a1 = i / SEG * 6.2832, a2 = (i + 1) / SEG * 6.2832;
+            var p1 = pt(a1), p2 = pt(a2);
+            kTri(arr, kVert(c.x, y, c.z, 0.5, 0.5, col), kVert(p1[0], y, p1[2], 0.5, 0.5, col), kVert(p2[0], y, p2[2], 0.5, 0.5, col));
+          }
+        }
+
+        function kShader(type, src) {
+          var s = kgl.createShader(type);
+          kgl.shaderSource(s, src); kgl.compileShader(s);
+          if (!kgl.getShaderParameter(s, kgl.COMPILE_STATUS)) return null;
+          return s;
+        }
+        function kMakeTex(src, repeat) {
+          var t = kgl.createTexture();
+          kgl.bindTexture(kgl.TEXTURE_2D, t);
+          kgl.pixelStorei(kgl.UNPACK_FLIP_Y_WEBGL, true);
+          kgl.texImage2D(kgl.TEXTURE_2D, 0, kgl.RGBA, kgl.RGBA, kgl.UNSIGNED_BYTE, src);
+          kgl.texParameteri(kgl.TEXTURE_2D, kgl.TEXTURE_MIN_FILTER, kgl.LINEAR);
+          kgl.texParameteri(kgl.TEXTURE_2D, kgl.TEXTURE_MAG_FILTER, kgl.LINEAR);
+          kgl.texParameteri(kgl.TEXTURE_2D, kgl.TEXTURE_WRAP_S, repeat ? kgl.REPEAT : kgl.CLAMP_TO_EDGE);
+          kgl.texParameteri(kgl.TEXTURE_2D, kgl.TEXTURE_WRAP_T, kgl.CLAMP_TO_EDGE);
+          kgl.pixelStorei(kgl.UNPACK_FLIP_Y_WEBGL, false);
+          return t;
+        }
+        function initKgl() {
+          try {
+            kgl = kglCan.getContext("webgl", { antialias: true, alpha: false, powerPreference: "high-performance" }) ||
+              kglCan.getContext("experimental-webgl", { antialias: true, alpha: false });
+          } catch (e) { kgl = null; }
+          if (!kgl) return false;
+          var VS = [
+            "attribute vec3 aPos; attribute vec2 aUV; attribute vec4 aCol;",
+            "uniform mat4 uMVP; uniform mat4 uModel; uniform vec3 uCamPos;",
+            "varying vec2 vUV; varying vec4 vCol; varying float vDist;",
+            "void main(){ vUV = aUV; vCol = aCol;",
+            " vec4 wp = uModel * vec4(aPos, 1.0);",
+            " vDist = distance(wp.xyz, uCamPos);",
+            " gl_Position = uMVP * vec4(aPos, 1.0); }"
+          ].join("\n");
+          var FS = [
+            "precision mediump float;",
+            "varying vec2 vUV; varying vec4 vCol; varying float vDist;",
+            "uniform sampler2D uTex; uniform vec3 uFogColor; uniform vec3 uFogRange2;",
+            "void main(){ vec4 c = texture2D(uTex, vUV) * vCol;",
+            " float f = smoothstep(uFogRange2.x, uFogRange2.y, vDist) * uFogRange2.z;",
+            " c.rgb = mix(c.rgb, uFogColor, f);",
+            " gl_FragColor = c; }"
+          ].join("\n");
+          var vs = kShader(kgl.VERTEX_SHADER, VS), fs = kShader(kgl.FRAGMENT_SHADER, FS);
+          if (!vs || !fs) return false;
+          kglProg = kgl.createProgram();
+          kgl.attachShader(kglProg, vs); kgl.attachShader(kglProg, fs); kgl.linkProgram(kglProg);
+          if (!kgl.getProgramParameter(kglProg, kgl.LINK_STATUS)) return false;
+          kgl.useProgram(kglProg);
+          kglA.pos = kgl.getAttribLocation(kglProg, "aPos");
+          kglA.uv = kgl.getAttribLocation(kglProg, "aUV");
+          kglA.col = kgl.getAttribLocation(kglProg, "aCol");
+          kglU.mvp = kgl.getUniformLocation(kglProg, "uMVP");
+          kglU.model = kgl.getUniformLocation(kglProg, "uModel");
+          kglU.camPos = kgl.getUniformLocation(kglProg, "uCamPos");
+          kglU.fogColor = kgl.getUniformLocation(kglProg, "uFogColor");
+          kglU.fogRange2 = kgl.getUniformLocation(kglProg, "uFogRange2");
+          kglU.tex = kgl.getUniformLocation(kglProg, "uTex");
+          kglDynBuf = kgl.createBuffer();
+          kglSkyBuf = kgl.createBuffer();
+          (function () {
+            var arr = [], SEG = 48;
+            for (var i = 0; i < SEG; i++) {
+              var t1 = i / SEG, t2 = (i + 1) / SEG, a1 = t1 * 6.2832, a2 = t2 * 6.2832;
+              var x1 = Math.cos(a1) * 300, z1 = Math.sin(a1) * 300, x2 = Math.cos(a2) * 300, z2 = Math.sin(a2) * 300;
+              kQuad(arr, [x1, -60, z1], [x2, -60, z2], [x2, 140, z2], [x1, 140, z1], [t1, 0, t2, 1], [1, 1, 1, 1]);
+            }
+            kgl.bindBuffer(kgl.ARRAY_BUFFER, kglSkyBuf);
+            kgl.bufferData(kgl.ARRAY_BUFFER, new Float32Array(arr), kgl.STATIC_DRAW);
+            kglSkyBuf.count = arr.length / 9;
+          })();
+          var whiteC = document.createElement("canvas"); whiteC.width = 4; whiteC.height = 4;
+          var wg = whiteC.getContext("2d"); wg.fillStyle = "#fff"; wg.fillRect(0, 0, 4, 4);
+          kglTexWhite = kMakeTex(whiteC, false);
+          var glowC = document.createElement("canvas"); glowC.width = 128; glowC.height = 128;
+          var gg = glowC.getContext("2d");
+          var grd = gg.createRadialGradient(64, 64, 2, 64, 64, 62);
+          grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(0.35, "rgba(255,255,255,0.55)"); grd.addColorStop(1, "rgba(255,255,255,0)");
+          gg.fillStyle = grd; gg.fillRect(0, 0, 128, 128);
+          kglTexGlow = kMakeTex(glowC, false);
+          // Resort block texture (the old drawBuilding, as a skin).
+          var bc = document.createElement("canvas"); bc.width = 128; bc.height = 128;
+          var bg2 = bc.getContext("2d");
+          bg2.fillStyle = "#d9b57f"; bg2.fillRect(0, 0, 128, 128);
+          bg2.fillStyle = "rgba(255,240,190,0.9)";
+          for (var r2 = 0; r2 < 4; r2++) for (var c2 = 0; c2 < 3; c2++)
+            bg2.fillRect(128 * 0.14 + c2 * 128 * 0.28, 128 * 0.12 + r2 * 128 * 0.22, 128 * 0.16, 128 * 0.13);
+          bg2.fillStyle = "rgba(120,80,40,0.35)"; bg2.fillRect(0, 118, 128, 10);
+          kglTexBldg = kMakeTex(bc, false);
+          // Item box texture: pink topping box with a bold ?
+          var ic = document.createElement("canvas"); ic.width = 128; ic.height = 128;
+          var ig = ic.getContext("2d");
+          var igr = ig.createLinearGradient(0, 0, 0, 128);
+          igr.addColorStop(0, "#fff3f8"); igr.addColorStop(1, "#e88bb0");
+          ig.fillStyle = igr; ig.fillRect(0, 0, 128, 128);
+          ig.strokeStyle = "#fff"; ig.lineWidth = 7;
+          ig.beginPath(); ig.roundRect(5, 5, 118, 118, 20); ig.stroke();
+          ig.fillStyle = "#7d2a4e";
+          ig.font = "800 82px 'Baloo 2', sans-serif"; ig.textAlign = "center";
+          ig.fillText("?", 64, 96);
+          kglTexItem = kMakeTex(ic, false);
+          // Fork texture (the old drawForkShape, painted once, tinted per kind).
+          var fc2 = document.createElement("canvas"); fc2.width = 128; fc2.height = 128;
+          var fg3 = fc2.getContext("2d");
+          fg3.strokeStyle = "#ffffff"; fg3.lineCap = "round"; fg3.lineWidth = 10;
+          fg3.beginPath(); fg3.moveTo(64, 116); fg3.lineTo(64, 62); fg3.stroke();
+          fg3.lineWidth = 8;
+          fg3.beginPath(); fg3.moveTo(36, 62); fg3.lineTo(92, 62); fg3.stroke();
+          [36, 64, 92].forEach(function (fx2) { fg3.beginPath(); fg3.moveTo(fx2, 62); fg3.lineTo(fx2, 14); fg3.stroke(); });
+          kglTexFork = kMakeTex(fc2, false);
+          kgl.enable(kgl.DEPTH_TEST);
+          kgl.clearDepth(1);
+          return true;
+        }
+        function buildKglSky(theme) {
+          var sc = document.createElement("canvas"); sc.width = 1024; sc.height = 256;
+          var g = sc.getContext("2d");
+          var grd = g.createLinearGradient(0, 0, 0, 256);
+          var st, i;
+          if (theme === "rainbow") {
+            grd.addColorStop(0, "#0a0e33"); grd.addColorStop(0.6, "#2c1650"); grd.addColorStop(1, "#4a2066");
+            g.fillStyle = grd; g.fillRect(0, 0, 1024, 256);
+            g.fillStyle = "#fff";
+            for (i = 0; i < 170; i++) { g.globalAlpha = 0.3 + ((i * 37) % 60) / 100; g.fillRect((i * 137.31) % 1024, (i * 89.77) % 190, i % 5 === 0 ? 3 : 2, i % 5 === 0 ? 3 : 2); }
+            g.globalAlpha = 1;
+            var plG = g.createRadialGradient(784, 54, 6, 798, 66, 40);
+            plG.addColorStop(0, "#ffe1a1"); plG.addColorStop(0.6, "#e8a91c"); plG.addColorStop(1, "#a87408");
+            g.fillStyle = plG;
+            g.beginPath(); g.arc(798, 66, 34, 0, 6.29); g.fill();
+            g.strokeStyle = "rgba(255,225,161,0.75)"; g.lineWidth = 5;
+            g.beginPath(); g.ellipse(798, 72, 58, 13, -0.18, 0, 6.29); g.stroke();
+            g.fillStyle = "#171238"; g.fillRect(0, 170, 1024, 86);
+          } else if (theme === "night") {
+            grd.addColorStop(0, "#060d24"); grd.addColorStop(0.55, "#16294d"); grd.addColorStop(1, "#274b73");
+            g.fillStyle = grd; g.fillRect(0, 0, 1024, 256);
+            g.fillStyle = "#fff";
+            for (i = 0; i < 130; i++) { g.globalAlpha = 0.3 + ((i * 53) % 55) / 100; g.fillRect((i * 149.7) % 1024, (i * 71.3) % 180, 2, 2); }
+            g.globalAlpha = 1;
+            var mnG = g.createRadialGradient(819, 60, 8, 819, 60, 70);
+            mnG.addColorStop(0, "rgba(230,238,255,0.5)"); mnG.addColorStop(1, "rgba(230,238,255,0)");
+            g.fillStyle = mnG; g.fillRect(749, -10, 140, 140);
+            g.fillStyle = "#e9efff";
+            g.beginPath(); g.arc(819, 60, 26, 0, 6.29); g.fill();
+            g.fillStyle = "rgba(190,205,235,0.8)";
+            g.beginPath(); g.arc(808, 53, 5, 0, 6.29); g.fill();
+            g.beginPath(); g.arc(828, 71, 4, 0, 6.29); g.fill();
+            g.fillStyle = "rgba(8,16,36,0.9)"; g.fillRect(0, 156, 1024, 14);
+            g.fillStyle = "#060d24"; g.fillRect(0, 170, 1024, 86);
+          } else {
+            grd.addColorStop(0, "#2b1846"); grd.addColorStop(0.45, "#83325e"); grd.addColorStop(0.78, "#e2603f"); grd.addColorStop(1, "#f9b14a");
+            g.fillStyle = grd; g.fillRect(0, 0, 1024, 256);
+            var sg2 = g.createRadialGradient(717, 118, 6, 717, 118, 95);
+            sg2.addColorStop(0, "rgba(255,190,84,0.55)"); sg2.addColorStop(1, "rgba(255,150,64,0)");
+            g.fillStyle = sg2; g.fillRect(622, 23, 190, 190);
+            var sunG = g.createLinearGradient(0, 84, 0, 152);
+            sunG.addColorStop(0, "#ffe27a"); sunG.addColorStop(1, "#ff8f3d");
+            g.fillStyle = sunG;
+            g.beginPath(); g.arc(717, 118, 34, 0, 6.29); g.fill();
+            g.fillStyle = "rgba(255,178,148,0.5)";
+            for (i = 0; i < 7; i++) {
+              var cx = (i * 173 + 60) % 1024, cy = 26 + (i * 29) % 55;
+              g.beginPath(); g.ellipse(cx, cy, 40, 10, 0, 0, 6.29); g.ellipse(cx + 27, cy + 3, 26, 8, 0, 0, 6.29); g.fill();
+            }
+            var sea = g.createLinearGradient(0, 148, 0, 170);
+            sea.addColorStop(0, "#3fa7bd"); sea.addColorStop(1, "#1283a8");
+            g.fillStyle = sea; g.fillRect(0, 148, 1024, 22);
+            g.fillStyle = "rgba(36,18,51,0.85)";
+            for (i = 0; i < 12; i++) {
+              var bh = 24 + ((i * 37) % 30);
+              g.fillRect(i * 90 + 4, 170 - bh, 58, bh);
+            }
+            g.fillStyle = "#241233"; g.fillRect(0, 170, 1024, 86);
+          }
+          if (kglTexSky) kgl.deleteTexture(kglTexSky);
+          kglTexSky = kMakeTex(sc, true);
+          kglSkyTheme = theme;
+        }
+        function kglApplySize() {
+          var t = KGL_TIERS[kglTier];
+          var bw = Math.round(900 * t.s), bh = Math.round(540 * t.s);
+          if (kglCan.width !== bw || kglCan.height !== bh) { kglCan.width = bw; kglCan.height = bh; }
+          kgl.viewport(0, 0, bw, bh);
+        }
+        function kglAdapt(dt) {
+          if (dt > 0) kglFpsAvg = kglFpsAvg * 0.96 + (1 / Math.max(dt, 0.001)) * 0.04;
+          kglFpsTime += dt;
+          if (kglFpsTime < 1.6) return;
+          kglFpsTime = 0;
+          if (kglFpsAvg < 45 && kglTier < KGL_TIERS.length - 1) kglTier++;
+          else if (kglFpsAvg > 58 && kglTier > 0) kglTier--;
+        }
+
+        // ----- Track window geometry -----
+        function kBuildWindow() {
+          var base = findSegment(position);
+          kBaseIdx = base.index;
+          kBP = (position % segLen) / segLen;
+          var N = segments.length;
+          var lat = new Float32Array(kWinMax + 8);
+          var dxs = -(base.curve * kBP);
+          var i, n;
+          lat[2] = 0; // boundary of the base segment (index offset +2)
+          for (n = 0; n <= kWinMax; n++) {
+            lat[n + 3] = lat[n + 2] + dxs;
+            dxs += segments[(kBaseIdx + n) % N].curve;
+          }
+          var dxm = -(base.curve * kBP) - segments[(kBaseIdx - 1 + N) % N].curve;
+          lat[1] = lat[2] - dxm;
+          var dxm2 = dxm - segments[(kBaseIdx - 2 + N) % N].curve;
+          lat[0] = lat[1] - dxm2;
+          for (i = 0; i < kWinMax + 8; i++) {
+            kGX[i] = -lat[i];
+            kGZ[i] = (i - 2) - kBP;
+          }
+          kDrawN = Math.min(KGL_TIERS[kglTier].dist, kWinMax - 4);
+        }
+        function kBoundary(n) { // n in [-2, kWinMax]
+          return { x: kGX[n + 2], z: kGZ[n + 2] };
+        }
+        function kSegFrame(n) {
+          var p1 = kBoundary(n), p2 = kBoundary(n + 1);
+          var tx = p2.x - p1.x, tz = p2.z - p1.z;
+          var len = Math.sqrt(tx * tx + tz * tz) || 1;
+          tx /= len; tz /= len;
+          return { x: p1.x, z: p1.z, tx: tx, tz: tz, ox: -tz, oz: tx, len: len };
+        }
+        function kPointAt(fr, offset, dz) {
+          return { x: fr.x + fr.tx * dz * fr.len + fr.ox * offset * KGL_HALF, z: fr.z + fr.tz * dz * fr.len + fr.oz * offset * KGL_HALF };
+        }
+        function kCenterAt(zRel) {
+          var zn = zRel + kBP;
+          var i = Math.floor(zn);
+          if (i < -2) i = -2; if (i > kDrawN) i = kDrawN;
+          var fr = zn - i;
+          var p1 = kBoundary(i), p2 = kBoundary(i + 1);
+          var tx = p2.x - p1.x, tz = p2.z - p1.z;
+          var len = Math.sqrt(tx * tx + tz * tz) || 1;
+          tx /= len; tz /= len;
+          return { x: p1.x + (p2.x - p1.x) * fr, z: p1.z + (p2.z - p1.z) * fr, tx: tx, tz: tz, ox: -tz, oz: tx };
+        }
+        function kProject(wx, wy, wz) {
+          var rx = wx - kglEye.x, ry = wy - kglEye.y, rz = wz - kglEye.z;
+          var vx = rx * kglAx[0] + ry * kglAx[1] + rz * kglAx[2];
+          var vy = rx * kglAy[0] + ry * kglAy[1] + rz * kglAy[2];
+          var vf = -(rx * kglAz[0] + ry * kglAz[1] + rz * kglAz[2]);
+          if (vf < 0.1) return null;
+          var nx = kglProjF * vx / (kglAsp * vf), ny = kglProjF * vy / vf;
+          return { x: (nx * 0.5 + 0.5) * W, y: (0.5 - ny * 0.5) * H, f: vf };
+        }
+        function kSetAttribs() {
+          kgl.enableVertexAttribArray(kglA.pos);
+          kgl.enableVertexAttribArray(kglA.uv);
+          kgl.enableVertexAttribArray(kglA.col);
+          kgl.vertexAttribPointer(kglA.pos, 3, kgl.FLOAT, false, 36, 0);
+          kgl.vertexAttribPointer(kglA.uv, 2, kgl.FLOAT, false, 36, 12);
+          kgl.vertexAttribPointer(kglA.col, 4, kgl.FLOAT, false, 36, 20);
+        }
+        function kDrawDyn(arr, tex, blend, fogMax) {
+          if (!arr || !arr.length) return;
+          kgl.bindBuffer(kgl.ARRAY_BUFFER, kglDynBuf);
+          kgl.bufferData(kgl.ARRAY_BUFFER, new Float32Array(arr), kgl.DYNAMIC_DRAW);
+          if (blend === "add") { kgl.enable(kgl.BLEND); kgl.blendFunc(kgl.SRC_ALPHA, kgl.ONE); }
+          else if (blend === "normal") { kgl.enable(kgl.BLEND); kgl.blendFunc(kgl.SRC_ALPHA, kgl.ONE_MINUS_SRC_ALPHA); }
+          else kgl.disable(kgl.BLEND);
+          kgl.uniformMatrix4fv(kglU.mvp, false, kMul(kglProjM, kglView));
+          kgl.uniformMatrix4fv(kglU.model, false, kIdent());
+          kgl.uniform3f(kglU.fogRange2, 40, KGL_TIERS[kglTier].dist, fogMax == null ? 0.55 : fogMax);
+          kgl.bindTexture(kgl.TEXTURE_2D, tex);
+          kSetAttribs();
+          kgl.drawArrays(kgl.TRIANGLES, 0, arr.length / 9);
+          kgl.disable(kgl.BLEND);
+        }
+
+        // ----- A kart as a real 3D model -----
+        function buildKartModelGL(arr, arrTr, arrHero, px, py, pz, yawAng, scale, scheme, opts) {
+          var T = { x: px, y: py, z: pz, c: Math.cos(yawAng), s: Math.sin(yawAng), sc: scale };
+          var body = kCol(scheme.color), light = kCol(scheme.light), dark = kCol(scheme.dark), skin = kCol(scheme.skin);
+          // Wheels: big rears, smaller fronts
+          kCyl(arr, T, -1.02, 0.44, 1.22, 0.44, 0.34, [0.11, 0.10, 0.13]);
+          kCyl(arr, T, -1.02, 0.44, -1.22, 0.44, 0.34, [0.11, 0.10, 0.13]);
+          kCyl(arr, T, 1.02, 0.35, 1.13, 0.35, 0.28, [0.15, 0.13, 0.18]);
+          kCyl(arr, T, 1.02, 0.35, -1.13, 0.35, 0.28, [0.15, 0.13, 0.18]);
+          kCyl(arr, T, -1.02, 0.44, 1.42, 0.17, 0.06, [0.55, 0.58, 0.63]);
+          kCyl(arr, T, -1.02, 0.44, -1.42, 0.17, 0.06, [0.55, 0.58, 0.63]);
+          // Body: rear deck, side pods, stepped nose, seat back
+          kBox(arr, T, -0.45, 0.66, 0, 2.0, 0.52, 2.35, body);
+          kBox(arr, T, 0.05, 0.46, 1.22, 1.7, 0.34, 0.5, dark);
+          kBox(arr, T, 0.05, 0.46, -1.22, 1.7, 0.34, 0.5, dark);
+          kBox(arr, T, 0.95, 0.52, 0, 1.5, 0.38, 1.75, light);
+          kBox(arr, T, 1.35, 0.40, 0, 0.9, 0.26, 1.3, body);
+          kBox(arr, T, 1.0, 0.735, 0, 1.35, 0.05, 0.36, [0.96, 0.96, 0.94]);
+          kBox(arr, T, -1.28, 1.0, 0, 0.3, 0.85, 1.55, dark);
+          // Driver
+          if (opts.hero && kglTexHero) {
+            var hh = 1.95, hw = 1.55;
+            var b1 = kXf(T, -0.30, 0.72, -hw / 2), b2 = kXf(T, -0.30, 0.72, hw / 2), t2 = kXf(T, -0.30, 0.72 + hh, hw / 2), t1 = kXf(T, -0.30, 0.72 + hh, -hw / 2);
+            kQuad(arrHero, b1, b2, t2, t1, [1, 0.4, 0, 1], [1, 1, 1, 1]);
+          } else {
+            kEll(arr, T, -0.32, 1.28, 0, 0.42, 0.50, 0.40, skin);
+            kEll(arr, T, -0.32, 1.47, 0, 0.45, 0.30, 0.43, body);
+            kBox(arr, T, 0.10, 1.30, 0.14, 0.07, 0.07, 0.07, [0.2, 0.13, 0.05]);
+            kBox(arr, T, 0.10, 1.30, -0.14, 0.07, 0.07, 0.07, [0.2, 0.13, 0.05]);
+          }
           if (opts.flame) {
             var fl = 0.7 + Math.random() * 0.6;
-            ctx.fillStyle = "#ff8f3d";
-            ctx.beginPath(); ctx.moveTo(-w * 0.10, -h * 0.16); ctx.lineTo(0, -h * 0.16 - w * 0.20 * fl); ctx.lineTo(w * 0.10, -h * 0.16); ctx.closePath(); ctx.fill();
-            ctx.fillStyle = "#ffd23e";
-            ctx.beginPath(); ctx.moveTo(-w * 0.05, -h * 0.16); ctx.lineTo(0, -h * 0.16 - w * 0.12 * fl); ctx.lineTo(w * 0.05, -h * 0.16); ctx.closePath(); ctx.fill();
+            kCone(arrTr, T, -1.55, 0.55, 0.3, 0.24, 1.05 * fl, [1, 0.56, 0.24, 0.85]);
+            kCone(arrTr, T, -1.55, 0.55, -0.3, 0.24, 1.05 * fl, [1, 0.56, 0.24, 0.85]);
+            kCone(arrTr, T, -1.55, 0.55, 0.3, 0.13, 0.65 * fl, [1, 0.83, 0.24, 0.9]);
+            kCone(arrTr, T, -1.55, 0.55, -0.3, 0.13, 0.65 * fl, [1, 0.83, 0.24, 0.9]);
           }
-          // wheels: big rears, smaller fronts peeking out
-          ctx.fillStyle = "#1d1a22";
-          var ww = w * 0.17, wh = h * 0.46;
-          ctx.beginPath(); ctx.roundRect(-w * 0.56, -wh - h * 0.05, ww, wh, ww * 0.32); ctx.fill();
-          ctx.beginPath(); ctx.roundRect(w * 0.56 - ww, -wh - h * 0.05, ww, wh, ww * 0.32); ctx.fill();
-          ctx.fillStyle = "#8b93a1";
-          ctx.beginPath(); ctx.arc(-w * 0.475, -h * 0.28, ww * 0.26, 0, 6.29); ctx.fill();
-          ctx.beginPath(); ctx.arc(w * 0.475, -h * 0.28, ww * 0.26, 0, 6.29); ctx.fill();
-          ctx.fillStyle = "#26222e";
-          var fw = w * 0.11, fh = h * 0.30;
-          ctx.beginPath(); ctx.roundRect(-w * 0.40, -fh - h * 0.52, fw, fh, fw * 0.3); ctx.fill();
-          ctx.beginPath(); ctx.roundRect(w * 0.40 - fw, -fh - h * 0.52, fw, fh, fw * 0.3); ctx.fill();
-          // body: rear deck, side pods, nose
-          var bodyG = ctx.createLinearGradient(0, -h, 0, 0);
-          bodyG.addColorStop(0, scheme.light || scheme.color); bodyG.addColorStop(0.55, scheme.color); bodyG.addColorStop(1, scheme.dark);
-          ctx.fillStyle = bodyG;
-          ctx.strokeStyle = scheme.dark; ctx.lineWidth = Math.max(1.5, w * 0.012);
-          ctx.beginPath();
-          ctx.moveTo(-w * 0.46, -h * 0.10);
-          ctx.lineTo(-w * 0.40, -h * 0.58);
-          ctx.quadraticCurveTo(-w * 0.38, -h * 0.72, -w * 0.22, -h * 0.74);
-          ctx.lineTo(w * 0.22, -h * 0.74);
-          ctx.quadraticCurveTo(w * 0.38, -h * 0.72, w * 0.40, -h * 0.58);
-          ctx.lineTo(w * 0.46, -h * 0.10);
-          ctx.quadraticCurveTo(0, -h * 0.02, -w * 0.46, -h * 0.10);
-          ctx.closePath(); ctx.fill(); ctx.stroke();
-          // nose stripe
-          ctx.fillStyle = "rgba(255,255,255,0.85)";
-          ctx.beginPath();
-          ctx.moveTo(-w * 0.07, -h * 0.70); ctx.lineTo(w * 0.07, -h * 0.70); ctx.lineTo(w * 0.045, -h * 0.18); ctx.lineTo(-w * 0.045, -h * 0.18);
-          ctx.closePath(); ctx.fill();
-          // driver
-          if (opts.hero && spudReady) {
-            // SuperSpud's upper body rises out of the seat: crop the
-            // portrait to head, torso, and fork arm.
-            var iw = spudImg.naturalWidth || 480, ih = spudImg.naturalHeight || 500;
-            var dw = w * 0.62, dh = dw * (ih * 0.60) / iw;
-            ctx.drawImage(spudImg, 0, 0, iw, ih * 0.60, -dw / 2, -h * 0.66 - dh, dw, dh);
-          } else {
-            // Rival spud: a potato driver with a colored helmet.
-            var pg = ctx.createRadialGradient(-w * 0.05, -h * 1.06, w * 0.04, 0, -h * 0.94, w * 0.24);
-            pg.addColorStop(0, "#ffe1a1"); pg.addColorStop(0.6, scheme.skin); pg.addColorStop(1, "#b57f3e");
-            ctx.fillStyle = pg;
-            ctx.beginPath(); ctx.ellipse(0, -h * 0.94, w * 0.185, w * 0.21, 0, 0, 6.29); ctx.fill();
-            ctx.fillStyle = scheme.color;
-            ctx.beginPath(); ctx.ellipse(0, -h * 1.06, w * 0.195, w * 0.13, 0, Math.PI, 6.29); ctx.fill();
-            ctx.fillStyle = "#33220c";
-            ctx.beginPath(); ctx.arc(-w * 0.06, -h * 0.95, Math.max(1.4, w * 0.016), 0, 6.29); ctx.fill();
-            ctx.beginPath(); ctx.arc(w * 0.06, -h * 0.95, Math.max(1.4, w * 0.016), 0, 6.29); ctx.fill();
-            ctx.strokeStyle = "#5c3a08"; ctx.lineWidth = Math.max(1.2, w * 0.01);
-            ctx.beginPath(); ctx.arc(0, -h * 0.885, w * 0.055, 0.3, Math.PI - 0.3); ctx.stroke();
-          }
-          // shield bubble
-          if (opts.shield) {
-            ctx.strokeStyle = "rgba(255,254,248,0.9)"; ctx.lineWidth = Math.max(2, w * 0.016);
-            ctx.fillStyle = "rgba(255,254,248,0.16)";
-            ctx.beginPath(); ctx.ellipse(0, -h * 0.52, w * 0.60, h * 0.78, 0, 0, 6.29); ctx.fill(); ctx.stroke();
-          }
-          // Superstar Spud aura: gold ring + orbiting sparkles
-          if (opts.star) {
-            ctx.strokeStyle = "rgba(255,210,62,0.95)"; ctx.lineWidth = Math.max(2, w * 0.02);
-            ctx.fillStyle = "rgba(255,210,62,0.13)";
-            ctx.beginPath(); ctx.ellipse(0, -h * 0.52, w * 0.62, h * 0.82, 0, 0, 6.29); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = "#ffe98a";
-            for (var sk = 0; sk < 4; sk++) {
-              var sa = t * 3 + sk * 1.7;
-              var sx2 = Math.cos(sa) * w * 0.5, sy2 = -h * 0.55 + Math.sin(sa * 1.3) * h * 0.4;
-              ctx.beginPath(); ctx.arc(sx2, sy2, Math.max(1.2, w * 0.04), 0, 6.29); ctx.fill();
-            }
-          }
-          ctx.restore();
-          // name pill for rivals
-          if (opts.name && w > 74) {
-            ctx.font = "700 " + Math.max(11, w * 0.085) + "px 'Public Sans', sans-serif";
-            ctx.textAlign = "center";
-            var tw = ctx.measureText(opts.name).width + 16;
-            ctx.fillStyle = "rgba(18,24,28,0.82)";
-            ctx.beginPath(); ctx.roundRect(cx - tw / 2, baseY - h * 1.52, tw, Math.max(17, w * 0.13), 999); ctx.fill();
-            ctx.fillStyle = "#fff";
-            ctx.fillText(opts.name, cx, baseY - h * 1.52 + Math.max(12.5, w * 0.095));
-            ctx.textAlign = "left";
-          }
+          if (opts.shield) kEll(arrTr, T, 0, 0.95, 0, 2.05, 1.25, 1.65, [1, 1, 0.97, 0.16]);
+          if (opts.star) kEll(arrTr, T, 0, 0.95, 0, 2.15, 1.35, 1.75, [1, 0.82, 0.24, 0.15]);
         }
-        function drawForkShape(x, y, w, kind) {
-          ctx.save();
-          ctx.translate(x, y);
-          var col = kind === "golden" ? "#ffd23e" : kind === "homing" ? "#ff9a3d" : "#e8edf4";
-          if (kind === "golden") { ctx.shadowColor = "rgba(255,210,62,0.9)"; ctx.shadowBlur = w * 0.22; }
-          ctx.strokeStyle = col; ctx.lineCap = "round";
-          ctx.lineWidth = Math.max(1.6, w * 0.09);
-          ctx.beginPath(); ctx.moveTo(0, w * 0.52); ctx.lineTo(0, -w * 0.08); ctx.stroke();
-          ctx.lineWidth = Math.max(1.3, w * 0.07);
-          ctx.beginPath(); ctx.moveTo(-w * 0.2, -w * 0.05); ctx.lineTo(w * 0.2, -w * 0.05); ctx.stroke();
-          for (var fp = -1; fp <= 1; fp++) {
-            ctx.beginPath(); ctx.moveTo(fp * w * 0.2, -w * 0.05); ctx.lineTo(fp * w * 0.2, -w * 0.5); ctx.stroke();
+        function buildPalmGL(arr, px, pz, lean, fr, fx) {
+          var brown = [0.48, 0.32, 0.19], green = [0.18, 0.49, 0.23], green2 = [0.24, 0.58, 0.27];
+          var T0 = { x: px, y: 0, z: pz, c: 1, s: 0, sc: 1 };
+          var leanX = -fr.ox * lean * 1.7, leanZ = -fr.oz * lean * 1.7;
+          for (var i = 0; i < 5; i++) {
+            var f = i / 4;
+            kBox(arr, { x: px + leanX * f * f, y: 0, z: pz + leanZ * f * f, c: 1, s: 0, sc: 1 }, 0, 0.62 + i * 1.18, 0, 0.34 - i * 0.03, 1.3, 0.34 - i * 0.03, brown);
           }
-          ctx.restore();
+          var topX = px + leanX, topY = 6.1, topZ = pz + leanZ;
+          var fronds = fx > 0.6 ? 6 : fx > 0.35 ? 4 : 3;
+          for (var j = 0; j < fronds; j++) {
+            var a = j / fronds * 6.2832 + px * 1.7;
+            var Tf = { x: topX, y: topY - 0.28, z: topZ, c: Math.cos(a), s: Math.sin(a), sc: 1 };
+            kEll(arr, Tf, 0.95, 0, 0, 1.45, 0.15, 0.30, j % 2 ? green : green2);
+          }
+          kEll(arr, T0, leanX - 0.3, 5.85, leanZ, 0.28, 0.28, 0.28, [0.43, 0.29, 0.12]);
+          kEll(arr, T0, leanX + 0.3, 5.8, leanZ + 0.2, 0.24, 0.24, 0.24, [0.43, 0.29, 0.12]);
         }
-        function drawPalm(x, baseY, h, lean) {
-          ctx.save();
-          ctx.translate(x, baseY);
-          ctx.strokeStyle = "#7a5230";
-          ctx.lineWidth = h * 0.055; ctx.lineCap = "round";
-          ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(lean * h * 0.4, -h * 0.55, lean * h * 0.75, -h); ctx.stroke();
-          var tx = lean * h * 0.75, ty = -h;
-          ctx.strokeStyle = "#2e7d3b"; ctx.lineWidth = h * 0.045;
-          for (var i = 0; i < 6; i++) {
-            var a = Math.PI * (0.08 + i * 0.17);
-            ctx.beginPath(); ctx.moveTo(tx, ty);
-            ctx.quadraticCurveTo(tx + Math.cos(a) * h * 0.30, ty - Math.sin(a) * h * 0.26 - h * 0.05, tx + Math.cos(a) * h * 0.44, ty - Math.sin(a) * h * 0.16 + h * 0.10);
-            ctx.stroke();
-          }
-          ctx.fillStyle = "#6e4a1f";
-          ctx.beginPath(); ctx.arc(tx - h * 0.05, ty + h * 0.05, h * 0.045, 0, 6.29); ctx.fill();
-          ctx.beginPath(); ctx.arc(tx + h * 0.05, ty + h * 0.06, h * 0.04, 0, 6.29); ctx.fill();
-          ctx.restore();
-        }
-        function drawBuilding(x, baseY, w) {
-          var h = w * 1.15;
-          ctx.fillStyle = "#d9b57f";
-          ctx.fillRect(x - w / 2, baseY - h, w, h);
-          ctx.fillStyle = "#a34d2a";
-          ctx.beginPath(); ctx.moveTo(x - w * 0.62, baseY - h); ctx.lineTo(x, baseY - h - w * 0.30); ctx.lineTo(x + w * 0.62, baseY - h); ctx.closePath(); ctx.fill();
-          ctx.fillStyle = "rgba(255,240,190,0.9)";
-          var cols = 3, rows = 4, cw = w * 0.16, ch = h * 0.13;
-          for (var r2 = 0; r2 < rows; r2++) for (var c2 = 0; c2 < cols; c2++) {
-            ctx.fillRect(x - w / 2 + w * 0.14 + c2 * w * 0.28, baseY - h + h * 0.14 + r2 * h * 0.22, cw, ch);
-          }
-        }
-        function draw(t) {
-          // Sky: SuperSpud's sunset, with sun, clouds, sea band, skyline.
-          var sky = ctx.createLinearGradient(0, 0, 0, HORIZON + 30);
-          sky.addColorStop(0, "#2b1846"); sky.addColorStop(0.45, "#83325e");
-          sky.addColorStop(0.78, "#e2603f"); sky.addColorStop(1, "#f9b14a");
-          ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
-          var sunX = W * 0.70, sunY = HORIZON - 74;
-          var glow = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 130);
-          glow.addColorStop(0, "rgba(255,190,84,0.55)"); glow.addColorStop(1, "rgba(255,150,64,0)");
-          ctx.fillStyle = glow; ctx.fillRect(sunX - 130, sunY - 130, 260, 260);
-          var sunG = ctx.createLinearGradient(0, sunY - 48, 0, sunY + 48);
-          sunG.addColorStop(0, "#ffe27a"); sunG.addColorStop(1, "#ff8f3d");
-          ctx.fillStyle = sunG;
-          ctx.beginPath(); ctx.arc(sunX, sunY, 48, 0, 6.29); ctx.fill();
-          ctx.fillStyle = "rgba(255,178,148,0.5)";
-          var coff = (totalDist * 0.012) % 320;
-          for (var c = 0; c < 3; c++) {
-            var cx = ((c * 320 + 110 - coff) % (W + 180) + W + 180) % (W + 180) - 90;
-            var cy = 36 + c * 34;
-            ctx.beginPath(); ctx.ellipse(cx, cy, 38, 10, 0, 0, 6.29); ctx.ellipse(cx + 26, cy + 3, 25, 8, 0, 0, 6.29); ctx.fill();
-          }
-          // Sea band on the horizon, then skyline silhouettes.
-          var sea = ctx.createLinearGradient(0, HORIZON - 22, 0, HORIZON);
-          sea.addColorStop(0, "#3fa7bd"); sea.addColorStop(1, "#1283a8");
-          ctx.fillStyle = sea; ctx.fillRect(0, HORIZON - 22, W, 22);
-          ctx.fillStyle = "rgba(36,18,51,0.85)";
-          var off1 = (totalDist * 0.02) % 90;
-          for (var bx = -off1; bx < W; bx += 90) {
-            var bh = 24 + ((Math.floor((bx + off1) / 90) * 37) % 30);
-            ctx.fillRect(bx, HORIZON - 20 - bh, 58, bh + 20);
-          }
-          // Theme skies for the other two tracks paint over the
-          // sunset: the Skyway floats in a starry void under a
-          // ringed spud-planet; the Mash Mile runs under moonlight.
+
+        // ----- Frame render -----
+        function renderKartGL(t) {
           var theme = TRACK_DEFS[currentTrack].theme;
-          if (theme === "rainbow") {
-            var rsky = ctx.createLinearGradient(0, 0, 0, H);
-            rsky.addColorStop(0, "#0a0e33"); rsky.addColorStop(0.6, "#2c1650"); rsky.addColorStop(1, "#4a2066");
-            ctx.fillStyle = rsky; ctx.fillRect(0, 0, W, H);
-            ctx.fillStyle = "#fff";
-            for (var st = 0; st < 80; st++) {
-              var stx = (st * 137.31) % W, sty = (st * 89.77) % (HORIZON + 60);
-              var sta = 0.35 + 0.6 * Math.abs(Math.sin(t * 1.4 + st * 1.7));
-              ctx.globalAlpha = sta;
-              ctx.fillRect(stx, sty, st % 5 === 0 ? 3 : 2, st % 5 === 0 ? 3 : 2);
-            }
-            ctx.globalAlpha = 1;
-            var plX = W * 0.78, plY = 92;
-            var plG = ctx.createRadialGradient(plX - 14, plY - 14, 6, plX, plY, 52);
-            plG.addColorStop(0, "#ffe1a1"); plG.addColorStop(0.6, "#e8a91c"); plG.addColorStop(1, "#a87408");
-            ctx.fillStyle = plG;
-            ctx.beginPath(); ctx.arc(plX, plY, 44, 0, 6.29); ctx.fill();
-            ctx.strokeStyle = "rgba(255,225,161,0.75)"; ctx.lineWidth = 7;
-            ctx.beginPath(); ctx.ellipse(plX, plY + 6, 74, 16, -0.18, 0, 6.29); ctx.stroke();
-          } else if (theme === "night") {
-            var nsky = ctx.createLinearGradient(0, 0, 0, H);
-            nsky.addColorStop(0, "#060d24"); nsky.addColorStop(0.55, "#16294d"); nsky.addColorStop(1, "#274b73");
-            ctx.fillStyle = nsky; ctx.fillRect(0, 0, W, H);
-            ctx.fillStyle = "#fff";
-            for (var st2 = 0; st2 < 60; st2++) {
-              ctx.globalAlpha = 0.3 + 0.55 * Math.abs(Math.sin(t + st2 * 2.1));
-              ctx.fillRect((st2 * 149.7) % W, (st2 * 71.3) % (HORIZON - 30), 2, 2);
-            }
-            ctx.globalAlpha = 1;
-            var mnX = W * 0.8, mnY = 84;
-            var mnGlow = ctx.createRadialGradient(mnX, mnY, 10, mnX, mnY, 90);
-            mnGlow.addColorStop(0, "rgba(230,238,255,0.5)"); mnGlow.addColorStop(1, "rgba(230,238,255,0)");
-            ctx.fillStyle = mnGlow; ctx.fillRect(mnX - 90, mnY - 90, 180, 180);
-            ctx.fillStyle = "#e9efff";
-            ctx.beginPath(); ctx.arc(mnX, mnY, 34, 0, 6.29); ctx.fill();
-            ctx.fillStyle = "rgba(190,205,235,0.8)";
-            ctx.beginPath(); ctx.arc(mnX - 11, mnY - 7, 7, 0, 6.29); ctx.fill();
-            ctx.beginPath(); ctx.arc(mnX + 9, mnY + 11, 5, 0, 6.29); ctx.fill();
-            ctx.fillStyle = "rgba(8,16,36,0.9)"; ctx.fillRect(0, HORIZON - 14, W, 14);
+          if (theme !== kglSkyTheme) buildKglSky(theme);
+          if (spudReady && !kglTexHero) { try { kglTexHero = kMakeTex(spudImg, false); } catch (e) { kglTexHero = null; } }
+          if (mode === "ready") { kglTier = 0; kglFpsAvg = 60; }
+          kglApplySize();
+          kBuildWindow();
+          var tier = KGL_TIERS[kglTier], fx = tier.fx;
+          var spectating = mpSpectating || mode === "wait" || mode === "spectate";
+          // Camera: rides at the player's distance (pulled back a
+          // kart-length when spectating so the leader fills the
+          // player kart's spot), 75% of the kart's lateral move.
+          var eyeC = kCenterAt(spectating ? -5.1 : 0);
+          var lookC = kCenterAt(12.1);
+          var eyeLat = playerX * 0.75 * KGL_HALF, lookLat = playerX * 0.9 * KGL_HALF;
+          kglEye = {
+            x: eyeC.x + eyeC.ox * eyeLat, y: 7.5 + (spectating ? 0 : airY * 0.5), z: eyeC.z + eyeC.oz * eyeLat
+          };
+          var look = {
+            x: lookC.x + lookC.ox * lookLat, y: 1.1 + (spectating ? 0 : airY * 0.9), z: lookC.z + lookC.oz * lookLat
+          };
+          var zx = kglEye.x - look.x, zy = kglEye.y - look.y, zz = kglEye.z - look.z;
+          var zl = Math.sqrt(zx * zx + zy * zy + zz * zz) || 1;
+          kglAz = [zx / zl, zy / zl, zz / zl];
+          // xaxis = normalize(cross(up(0,1,0), zaxis)) = (zaxis.z, 0, -zaxis.x)
+          var axx = kglAz[2], axz = -kglAz[0];
+          var al = Math.sqrt(axx * axx + axz * axz) || 1;
+          kglAx = [axx / al, 0, axz / al];
+          kglAy = [
+            kglAz[1] * kglAx[2] - kglAz[2] * kglAx[1],
+            kglAz[2] * kglAx[0] - kglAz[0] * kglAx[2],
+            kglAz[0] * kglAx[1] - kglAz[1] * kglAx[0]
+          ];
+          var E = kglEye, AX = kglAx, AY = kglAy, AZ = kglAz;
+          kglView = new Float32Array([
+            AX[0], AY[0], AZ[0], 0, AX[1], AY[1], AZ[1], 0, AX[2], AY[2], AZ[2], 0,
+            -(AX[0] * E.x + AX[1] * E.y + AX[2] * E.z), -(AY[0] * E.x + AY[1] * E.y + AY[2] * E.z), -(AZ[0] * E.x + AZ[1] * E.y + AZ[2] * E.z), 1
+          ]);
+          kglAsp = kglCan.width / kglCan.height;
+          kglProjF = 1 / Math.tan(1.396 / 2); // 80-degree vertical FOV
+          kglProjM = kPersp(1.396, kglAsp, 0.1, 620);
+          var fogC = theme === "rainbow" ? [0.29, 0.125, 0.40] : theme === "night" ? [0.153, 0.294, 0.451] : [0.976, 0.694, 0.29];
+          kgl.useProgram(kglProg);
+          kgl.uniform3f(kglU.camPos, E.x, E.y, E.z);
+          kgl.uniform3f(kglU.fogColor, fogC[0], fogC[1], fogC[2]);
+          kgl.clearColor(fogC[0], fogC[1], fogC[2], 1);
+          kgl.clear(kgl.COLOR_BUFFER_BIT | kgl.DEPTH_BUFFER_BIT);
+          // Sky
+          kgl.depthMask(false);
+          kgl.uniformMatrix4fv(kglU.mvp, false, kMul(kglProjM, kMul(kglView, kTrans(E.x, 0, E.z))));
+          kgl.uniformMatrix4fv(kglU.model, false, kTrans(E.x, 0, E.z));
+          kgl.uniform3f(kglU.fogRange2, 40, tier.dist, 0);
+          kgl.bindTexture(kgl.TEXTURE_2D, kglTexSky);
+          kgl.bindBuffer(kgl.ARRAY_BUFFER, kglSkyBuf);
+          kSetAttribs();
+          kgl.drawArrays(kgl.TRIANGLES, 0, kglSkyBuf.count);
+          kgl.depthMask(true);
+          // ----- Batches -----
+          var dynOp = [], dynTr = [], bldgArr = [], itemArr = [], forkArr = [], glowArr = [], heroArr = [];
+          kglNames = [];
+          function strip(arr, fr, o1, o2, y, col) {
+            var a = kPointAt(fr, o1, 0), b2 = kPointAt(fr, o2, 0), c = kPointAt(fr, o2, 1), d = kPointAt(fr, o1, 1);
+            kQuadC(arr, [a.x, y, a.z], [b2.x, y, b2.z], [c.x, y, c.z], [d.x, y, d.z], col);
           }
-          // Road segments
-          var baseSegment = findSegment(position);
-          var basePercent = (position % segLen) / segLen;
-          var playerSegment = findSegment(position + playerZ);
-          var maxy = H, x = 0, dx = -(baseSegment.curve * basePercent);
-          var pkX = W / 2, pkW = W * 0.42;
-          var n, seg;
-          for (n = 0; n < drawDist; n++) {
-            seg = segments[(baseSegment.index + n) % segments.length];
-            seg.looped = seg.index < baseSegment.index;
-            seg.clip = maxy;
-            var camZ = position - (seg.looped ? trackLen : 0);
-            // The camera follows 75% of the kart's lateral move; the
-            // projected kart (drawn from this same segment origin)
-            // takes the remaining 25%, so steering visibly crosses
-            // the road without the road swinging wildly.
-            project(seg.p1, playerX * roadWidth * 0.75 - x, camH, camZ);
-            project(seg.p2, playerX * roadWidth * 0.75 - x - dx, camH, camZ);
-            x += dx; dx += seg.curve;
-            if (seg.p1.camera.z <= camDepth || seg.p2.screen.y >= seg.p1.screen.y || seg.p2.screen.y >= maxy) continue;
-            // verge strip
-            ctx.fillStyle = theme === "rainbow" ? "#171238" : theme === "night" ? (seg.alt ? "#2c4630" : "#27402b") : (seg.alt ? "#5da24e" : "#549a47");
-            ctx.fillRect(0, seg.p2.screen.y, W, seg.p1.screen.y - seg.p2.screen.y);
-            // rumble shoulders
-            if (theme !== "rainbow") // the Skyway has no shoulders at all — just edge glow
-            polygon(seg.p1.screen.x - seg.p1.screen.w * 1.14, seg.p1.screen.y, seg.p1.screen.x + seg.p1.screen.w * 1.14, seg.p1.screen.y,
-                    seg.p2.screen.x + seg.p2.screen.w * 1.14, seg.p2.screen.y, seg.p2.screen.x - seg.p2.screen.w * 1.14, seg.p2.screen.y,
-                    seg.alt ? "#e8e3d5" : "#c93b2e");
-            // asphalt
+          // Infinite ground sheet under everything (void plane on the Skyway)
+          var gy = theme === "rainbow" ? -8 : -0.06;
+          var gc = theme === "rainbow" ? [0.09, 0.05, 0.22, 1] : theme === "night" ? kCol("#27402b") : kCol("#549a47");
+          kQuadC(dynOp, [E.x - 380, gy, E.z - 60], [E.x + 380, gy, E.z - 60], [E.x + 380, gy, E.z + 460], [E.x - 380, gy, E.z + 460], [gc[0], gc[1], gc[2], 1]);
+          var N = segments.length;
+          for (var n = 0; n < kDrawN; n++) {
+            var seg = segments[(kBaseIdx + n) % N];
+            var fr = kSegFrame(n);
             var isStart = seg.index < 2;
-            polygon(seg.p1.screen.x - seg.p1.screen.w, seg.p1.screen.y, seg.p1.screen.x + seg.p1.screen.w, seg.p1.screen.y,
-                    seg.p2.screen.x + seg.p2.screen.w, seg.p2.screen.y, seg.p2.screen.x - seg.p2.screen.w, seg.p2.screen.y,
-                    isStart ? "#efe9da" : theme === "rainbow" ? RAINBOW[Math.floor(seg.index / 6) % 6] : theme === "night" ? (seg.alt ? "#454854" : "#3f424c") : (seg.alt ? "#5d616d" : "#565a64"));
+            // Verge / void strip
+            if (theme === "rainbow") strip(dynOp, fr, -3, 3, -7, [0.09, 0.05, 0.22, 1]);
+            else {
+              var vc = theme === "night" ? (seg.alt ? kCol("#2c4630") : kCol("#27402b")) : (seg.alt ? kCol("#5da24e") : kCol("#549a47"));
+              strip(dynOp, fr, -4.4, 4.4, -0.02, [vc[0], vc[1], vc[2], 1]);
+            }
+            // Rumble shoulders (not on the Skyway)
+            if (theme !== "rainbow") {
+              var rc = seg.alt ? [0.91, 0.89, 0.84, 1] : [0.79, 0.23, 0.18, 1];
+              strip(dynOp, fr, -1.14, -1, 0.004, rc);
+              strip(dynOp, fr, 1, 1.14, 0.004, rc);
+            }
+            // Road
+            var roadC;
+            if (isStart) roadC = [0.937, 0.914, 0.855, 1];
+            else if (theme === "rainbow") roadC = (function () { var c3 = kCol(RAINBOW[Math.floor(seg.index / 6) % 6]); return [c3[0], c3[1], c3[2], 1]; })();
+            else if (theme === "night") roadC = seg.alt ? [0.271, 0.282, 0.329, 1] : [0.247, 0.259, 0.298, 1];
+            else roadC = seg.alt ? [0.365, 0.380, 0.427, 1] : [0.337, 0.353, 0.392, 1];
+            strip(dynOp, fr, -1, 1, 0, roadC);
             if (theme === "rainbow") {
-              // glowing edge lines: the only thing between you and the sky
-              ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = Math.max(1, seg.p1.screen.w * 0.03);
-              ctx.beginPath(); ctx.moveTo(seg.p1.screen.x - seg.p1.screen.w, seg.p1.screen.y); ctx.lineTo(seg.p2.screen.x - seg.p2.screen.w, seg.p2.screen.y); ctx.stroke();
-              ctx.beginPath(); ctx.moveTo(seg.p1.screen.x + seg.p1.screen.w, seg.p1.screen.y); ctx.lineTo(seg.p2.screen.x + seg.p2.screen.w, seg.p2.screen.y); ctx.stroke();
+              strip(dynTr, fr, -1, -0.962, 0.012, [1, 1, 1, 0.85]);
+              strip(dynTr, fr, 0.962, 1, 0.012, [1, 1, 1, 0.85]);
             }
             if (isStart) {
-              ctx.fillStyle = "#33302e";
-              for (var sr = 0; sr < 2; sr++) for (var sc = 0; sc < 8; sc++) {
-                if ((sr + sc) % 2) continue;
-                var tt = (sr + 0.5) / 2;
-                var yy = seg.p1.screen.y + (seg.p2.screen.y - seg.p1.screen.y) * tt;
-                var xx = seg.p1.screen.x + (seg.p2.screen.x - seg.p1.screen.x) * tt;
-                var ww2 = (seg.p1.screen.w + (seg.p2.screen.w - seg.p1.screen.w) * tt) * 2 / 8;
-                ctx.fillRect(xx - ww2 * 4 + sc * ww2, yy - ww2 * 0.24, ww2, ww2 * 0.48);
+              for (var sr = 0; sr < 2; sr++) for (var scc = 0; scc < 8; scc++) {
+                if ((sr + scc) % 2) continue;
+                var o1 = -1 + scc * 0.25, d1 = sr * 0.5;
+                var a2 = kPointAt(fr, o1, d1), b3 = kPointAt(fr, o1 + 0.25, d1), c3 = kPointAt(fr, o1 + 0.25, d1 + 0.5), d3 = kPointAt(fr, o1, d1 + 0.5);
+                kQuadC(dynOp, [a2.x, 0.01, a2.z], [b3.x, 0.01, b3.z], [c3.x, 0.01, c3.z], [d3.x, 0.01, d3.z], [0.2, 0.188, 0.18, 1]);
               }
             } else if (seg.alt && Math.floor(seg.index / rumble) % 2 === 0) {
-              // dashed center line
-              polygon(seg.p1.screen.x - seg.p1.screen.w * 0.016, seg.p1.screen.y, seg.p1.screen.x + seg.p1.screen.w * 0.016, seg.p1.screen.y,
-                      seg.p2.screen.x + seg.p2.screen.w * 0.016, seg.p2.screen.y, seg.p2.screen.x - seg.p2.screen.w * 0.016, seg.p2.screen.y,
-                      theme === "rainbow" ? "rgba(255,255,255,0.9)" : "#f7d774");
+              if (theme === "rainbow") strip(dynTr, fr, -0.016, 0.016, 0.008, [1, 1, 1, 0.9]);
+              else strip(dynOp, fr, -0.016, 0.016, 0.008, [0.969, 0.843, 0.455, 1]);
             }
-            if (seg.index === playerSegment.index) { pkX = seg.p1.screen.x; pkW = seg.p1.screen.w; }
-            maxy = seg.p1.screen.y;
-          }
-          // Sprites, far to near: rival karts, boxes, slicks, roadside.
-          var segMap = {};
-          for (n = 0; n < drawDist; n++) segMap[segments[(baseSegment.index + n) % segments.length].index] = true;
-          for (n = drawDist - 1; n >= 0; n--) {
-            seg = segments[(baseSegment.index + n) % segments.length];
-            if (seg.p1.camera.z <= camDepth * 1.15) continue;
-            var scale = seg.p1.screen.scale;
-            ctx.save();
-            ctx.beginPath(); ctx.rect(0, 0, W, seg.clip); ctx.clip();
+            // Ramps: a real wedge rising across the segment
+            if (seg.ramps && seg.ramps.length) {
+              var rpA = kPointAt(fr, -1, 0), rpB = kPointAt(fr, 1, 0), rpC = kPointAt(fr, 1, 1), rpD = kPointAt(fr, -1, 1);
+              kQuadC(dynOp, [rpA.x, 0.02, rpA.z], [rpB.x, 0.02, rpB.z], [rpC.x, 1.1, rpC.z], [rpD.x, 1.1, rpD.z], [0.91, 0.416, 0.063, 1]);
+              var riA = kPointAt(fr, -0.68, 0), riB = kPointAt(fr, 0.68, 0), riC = kPointAt(fr, 0.68, 1), riD = kPointAt(fr, -0.68, 1);
+              kQuadC(dynOp, [riA.x, 0.035, riA.z], [riB.x, 0.035, riB.z], [riC.x, 1.115, riC.z], [riD.x, 1.115, riD.z], [1, 0.69, 0.227, 1]);
+              kQuadC(dynOp, [rpD.x, 1.1, rpD.z], [rpC.x, 1.1, rpC.z], [rpC.x, 0.02, rpC.z], [rpD.x, 0.02, rpD.z], [0.72, 0.31, 0.05, 1]);
+              var chA = kPointAt(fr, -0.16, 0.62), chB = kPointAt(fr, 0.16, 0.62), chC = kPointAt(fr, 0, 0.30);
+              kTri(dynOp, kVert(chA.x, 0.70, chA.z, 0.5, 0.5, [1, 0.97, 0.88, 1]), kVert(chB.x, 0.70, chB.z, 0.5, 0.5, [1, 0.97, 0.88, 1]), kVert(chC.x, 0.36, chC.z, 0.5, 0.5, [1, 0.97, 0.88, 1]));
+            }
+            // Roadside dressing
             for (var s = 0; s < seg.sprites.length; s++) {
               var spr = seg.sprites[s];
-              var sprX = seg.p1.screen.x + scale * spr.offset * roadWidth * W / 2;
-              var sprW = (spr.type === "building" ? 2100 : 1250) * scale * W / 2;
-              if (spr.type === "building") drawBuilding(sprX, seg.p1.screen.y, sprW);
-              else drawPalm(sprX, seg.p1.screen.y, sprW * 1.25, spr.lean || 0);
+              var sp = kPointAt(fr, spr.offset, 0);
+              if (spr.type === "building") {
+                var Tb = { x: sp.x, y: 0, z: sp.z, c: fr.tx, s: fr.tz, sc: 1 };
+                kBox(bldgArr, Tb, 0, 6, 0, 10.5, 12, 8, [1, 1, 1], true);
+                kBox(dynOp, Tb, 0, 12.4, 0, 11.6, 1.1, 9.2, kCol("#a34d2a"));
+              } else buildPalmGL(dynOp, sp.x, sp.z, spr.lean || 0, fr, fx);
             }
+            // Butter slicks
             for (var k = 0; k < seg.slicks.length; k++) {
               var slk = seg.slicks[k];
               if (slk.taken) continue;
-              var slX = seg.p1.screen.x + scale * slk.offset * roadWidth * W / 2;
-              var slW = 700 * scale * W / 2;
-              if (slW < 3) continue;
-              var slY = seg.p1.screen.y, slH = slW * 0.16;
-              // Butter slick: kept small like a Mario Kart hazard,
-              // but impossible to miss — a dark wet outline pops it
-              // off the grey asphalt at any distance, the body is
-              // saturated melted-butter yellow with a bright core,
-              // and a gloss sheen plus a sweeping shimmer streak
-              // make it twinkle well before you reach it.
-              ctx.fillStyle = "rgba(43,24,3,0.9)";
-              ctx.beginPath(); ctx.ellipse(slX, slY, slW * 0.56, slH * 1.3, 0, 0, 6.29); ctx.fill();
-              var slG = ctx.createRadialGradient(slX, slY - slH * 0.3, slW * 0.05, slX, slY, slW * 0.52);
-              slG.addColorStop(0, "#fff3a0"); slG.addColorStop(0.55, "#ffd21f"); slG.addColorStop(1, "#f59b0a");
-              ctx.fillStyle = slG;
-              ctx.beginPath(); ctx.ellipse(slX, slY, slW / 2, slH, 0, 0, 6.29); ctx.fill();
-              ctx.fillStyle = "rgba(255,255,255,0.85)";
-              ctx.beginPath(); ctx.ellipse(slX - slW * 0.16, slY - slH * 0.38, slW * 0.17, slH * 0.3, -0.25, 0, 6.29); ctx.fill();
-              var sweep = ((t * 0.9 + seg.index * 0.37) % 1.6) / 1.6;
-              if (sweep < 0.55) {
-                var shX = slX - slW * 0.42 + slW * 0.84 * (sweep / 0.55);
-                ctx.save();
-                ctx.beginPath(); ctx.ellipse(slX, slY, slW / 2, slH, 0, 0, 6.29); ctx.clip();
-                ctx.fillStyle = "rgba(255,255,255,0.5)";
-                ctx.beginPath(); ctx.ellipse(shX, slY, slW * 0.07, slH * 1.15, 0.35, 0, 6.29); ctx.fill();
-                ctx.restore();
-              }
+              kFlatDisc(dynTr, fr, slk.offset, 0, 1.95, 1.2, 0.012, [0.17, 0.09, 0.01, 0.9]);
+              kFlatDisc(dynTr, fr, slk.offset, 0, 1.7, 1.0, 0.02, [0.96, 0.61, 0.04, 0.95]);
+              kFlatDisc(dynTr, fr, slk.offset, 0, 1.2, 0.68, 0.028, [1, 0.83, 0.12, 0.95]);
             }
+            // Item boxes: spinning topping cubes
             for (var b2 = 0; b2 < seg.boxes.length; b2++) {
               var bxIt = seg.boxes[b2];
               if (bxIt.taken) continue;
-              var bxX = seg.p1.screen.x + scale * bxIt.offset * roadWidth * W / 2;
-              var bxW = 560 * scale * W / 2;
-              if (bxW < 5) continue;
-              var bob = Math.sin(t * 3.4 + seg.index) * bxW * 0.08;
-              var bxY = seg.p1.screen.y - bxW * 0.62 + bob;
-              var bg = ctx.createLinearGradient(bxX, bxY - bxW / 2, bxX, bxY + bxW / 2);
-              bg.addColorStop(0, "#fff3f8"); bg.addColorStop(1, "#e88bb0");
-              ctx.fillStyle = bg;
-              ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, bxW * 0.05);
-              ctx.beginPath(); ctx.roundRect(bxX - bxW / 2, bxY - bxW / 2, bxW, bxW, bxW * 0.18); ctx.fill(); ctx.stroke();
-              ctx.fillStyle = "#7d2a4e";
-              ctx.font = "800 " + bxW * 0.62 + "px 'Baloo 2', sans-serif";
-              ctx.textAlign = "center";
-              ctx.fillText("?", bxX, bxY + bxW * 0.22);
-              ctx.textAlign = "left";
+              var bp2 = kPointAt(fr, bxIt.offset, 0);
+              var bob = Math.sin(t * 3.4 + seg.index) * 0.22;
+              var Tbx = { x: bp2.x, y: 1.74 + bob, z: bp2.z, c: Math.cos(t * 1.4 + seg.index), s: Math.sin(t * 1.4 + seg.index), sc: 1 };
+              kBox(itemArr, Tbx, 0, 0, 0, 2.8, 2.8, 2.8, [1, 1, 1], true);
             }
-            for (var rp3 = 0; rp3 < seg.ramps.length; rp3++) {
-              var rmW1 = seg.p1.screen.w, rmW2 = seg.p2.screen.w;
-              if (rmW1 < 7) continue;
-              polygon(seg.p1.screen.x - rmW1, seg.p1.screen.y, seg.p1.screen.x + rmW1, seg.p1.screen.y,
-                      seg.p2.screen.x + rmW2, seg.p2.screen.y, seg.p2.screen.x - rmW2, seg.p2.screen.y, "#e86a10");
-              polygon(seg.p1.screen.x - rmW1 * 0.68, seg.p1.screen.y, seg.p1.screen.x + rmW1 * 0.68, seg.p1.screen.y,
-                      seg.p2.screen.x + rmW2 * 0.68, seg.p2.screen.y, seg.p2.screen.x - rmW2 * 0.68, seg.p2.screen.y, "#ffb03a");
-              var chY1 = seg.p1.screen.y, chY2 = seg.p2.screen.y;
-              ctx.fillStyle = "#fff7e0";
-              ctx.beginPath();
-              ctx.moveTo(seg.p1.screen.x - rmW1 * 0.16, chY1);
-              ctx.lineTo(seg.p1.screen.x + rmW1 * 0.16, chY1);
-              ctx.lineTo(seg.p2.screen.x, chY2 - (chY1 - chY2) * 0.4);
-              ctx.closePath(); ctx.fill();
-            }
-            for (var cn4 = 0; cn4 < seg.coins.length; cn4++) {
-              var cnIt = seg.coins[cn4];
+            // Spud Coins: spinning gold discs
+            for (var cn = 0; cn < seg.coins.length; cn++) {
+              var cnIt = seg.coins[cn];
               if (cnIt.taken) continue;
-              var cnX = seg.p1.screen.x + scale * cnIt.offset * roadWidth * W / 2;
-              var cnW = 500 * scale * W / 2;
-              if (cnW < 4) continue;
-              var spinW = Math.abs(Math.cos(t * 3.4 + seg.index * 0.7));
-              var cnY = seg.p1.screen.y - cnW * 0.52 + Math.sin(t * 2.6 + seg.index) * cnW * 0.05;
-              ctx.fillStyle = "#ffd23e"; ctx.strokeStyle = "#a87408"; ctx.lineWidth = Math.max(1, cnW * 0.07);
-              ctx.beginPath(); ctx.ellipse(cnX, cnY, Math.max(1.2, cnW * (0.13 + 0.37 * spinW)), cnW * 0.5, 0, 0, 6.29); ctx.fill(); ctx.stroke();
-              if (spinW > 0.4) { ctx.fillStyle = "rgba(168,116,8,0.85)"; ctx.beginPath(); ctx.arc(cnX, cnY, Math.max(0.8, cnW * 0.1), 0, 6.29); ctx.fill(); }
-            }
-            for (var pj = 0; pj < projectiles.length; pj++) {
-              var pr = projectiles[pj];
-              if (Math.floor((pr.dist % trackLen) / segLen) !== seg.index) continue;
-              var prX = seg.p1.screen.x + scale * pr.offset * roadWidth * W / 2;
-              var prW = 640 * scale * W / 2;
-              if (prW < 5) continue;
-              drawForkShape(prX, seg.p1.screen.y - prW * 0.55 + Math.sin(t * 9 + pr.dist * 0.01) * prW * 0.05, prW, pr.kind);
-            }
-            ctx.restore();
-            // Rival karts on this segment (unclipped by road, clipped by hills via seg.clip in their own save)
-            for (var ri = 0; ri < rivals.length; ri++) {
-              var r = rivals[ri];
-              if (Math.floor((r.dist % trackLen) / segLen) !== seg.index) continue;
-              var rScale = seg.p1.screen.scale;
-              var rX = seg.p1.screen.x + rScale * r.offset * roadWidth * W / 2;
-              var rW = 620 * rScale * W / 2;
-              if (rW < 8 || rW > 430) continue;
-              ctx.save();
-              ctx.beginPath(); ctx.rect(0, 0, W, seg.clip + 2); ctx.clip();
-              var rShrinkMul = r.shrinkT > 0 ? 0.6 : 1;
-              var rLift = r.airT > 0 ? Math.sin((1 - Math.max(0, r.airT) / 0.9) * Math.PI) * rW * 0.45 : 0;
-              drawKart(rX, seg.p1.screen.y + rW * 0.06 - rLift, rW * rShrinkMul, r, t, { name: r.name, spin: r.spinT > 0 ? t : 0, shield: r.shieldT > 0, star: r.starT > 0, flame: r.boostT > 0 || r.rocketT > 0 });
-              ctx.restore();
+              var cp3 = kPointAt(fr, cnIt.offset, 0);
+              var cy3 = 1.3 + Math.sin(t * 2.6 + seg.index) * 0.14;
+              var spinA = t * 3.4 + seg.index * 0.7;
+              var ax1 = [Math.cos(spinA), 0, Math.sin(spinA)], ax2 = [0, 1, 0];
+              var SEG2 = 14, coinC = [1, 0.82, 0.24, 1];
+              for (var ci = 0; ci < SEG2; ci++) {
+                var aa1 = ci / SEG2 * 6.2832, aa2 = (ci + 1) / SEG2 * 6.2832;
+                var q1 = [cp3.x + ax1[0] * Math.cos(aa1) * 1.1, cy3 + Math.sin(aa1) * 1.1, cp3.z + ax1[2] * Math.cos(aa1) * 1.1];
+                var q2 = [cp3.x + ax1[0] * Math.cos(aa2) * 1.1, cy3 + Math.sin(aa2) * 1.1, cp3.z + ax1[2] * Math.cos(aa2) * 1.1];
+                kTri(dynOp, kVert(cp3.x, cy3, cp3.z, 0.5, 0.5, coinC), kVert(q1[0], q1[1], q1[2], 0.5, 0.5, coinC), kVert(q2[0], q2[1], q2[2], 0.5, 0.5, coinC));
+              }
             }
           }
-          // Player kart: sits on the road at the player's own segment.
-          // Drawn much smaller than it used to be (205, was 320) and
-          // the camera rides further back, so the road ahead — rivals,
-          // slicks, corners — stays visible instead of hiding behind
-          // the driver.
-          var kartW = 205;
-          var kartX = pkX + playerX * pkW;
-          kartX = Math.max(kartW * 0.4, Math.min(W - kartW * 0.4, kartX));
-          var kartBaseY = H - 14 + (speed > 3000 && (playerX < -1 || playerX > 1) ? (Math.random() - 0.5) * 5 : Math.sin(t * 26) * Math.min(2.2, speed / maxSpeed * 2.2));
-          if (shrinkT > 0) kartW *= 0.62; // Thunder Mash mini-kart
-          if (fallT > 0) kartW *= Math.max(0.22, fallT / 1.15); // tumbling away into the sky
-          var airPx = airY * 115;
-          kartBaseY -= airPx;
-          // exhaust puffs (not while spectating — that's not your kart)
-          for (var p2i = 0; mpSpectating || mode === "wait" || mode === "spectate" ? false : p2i < puffs.length; p2i++) {
-            var pu = puffs[p2i], pa = 1 - pu.life / 0.45;
-            ctx.fillStyle = pu.boost ? "rgba(255,150,60," + 0.55 * pa + ")" : "rgba(230,225,215," + 0.4 * pa + ")";
-            ctx.beginPath(); ctx.ellipse(kartX + (p2i % 2 ? 26 : -26), kartBaseY + 6 + pu.life * 26, 7 + pu.life * 20, 5 + pu.life * 12, 0, 0, 6.29); ctx.fill();
+          // Fork projectiles in flight
+          for (var pj = 0; pj < projectiles.length; pj++) {
+            var pr = projectiles[pj];
+            var relD = ((pr.dist - position) % trackLen + trackLen) % trackLen;
+            var zRel = relD / segLen;
+            if (zRel > kDrawN - 2) continue;
+            var pc = kCenterAt(zRel);
+            var fxx = pc.x + pc.ox * pr.offset * KGL_HALF, fzz = pc.z + pc.oz * pr.offset * KGL_HALF;
+            var fyy = 1.76 + Math.sin(t * 9 + pr.dist * 0.01) * 0.16;
+            var fcol = pr.kind === "golden" ? [1, 0.82, 0.24, 1] : pr.kind === "homing" ? [1, 0.60, 0.24, 1] : [0.91, 0.93, 0.96, 1];
+            kBill(forkArr, fxx, fyy, fzz, 3.2, 3.2, [0, 0, 1, 1], fcol);
           }
-          if (!mpSpectating && mode !== "wait" && mode !== "spectate") {
-            if (airPx > 4) { ctx.fillStyle = "rgba(20,6,28,0.35)"; ctx.beginPath(); ctx.ellipse(kartX, H - 8, kartW * 0.42, kartW * 0.07, 0, 0, 6.29); ctx.fill(); }
-            drawKart(kartX, kartBaseY, kartW, DRIVER_DEFS[myDriver], t,
-              { hero: DRIVER_DEFS[myDriver].hero, flame: boostT > 0 || rocketT > 0, shield: shieldT > 0, star: starT > 0, spin: spinT > 0 ? spinAngle : 0, tilt: steer * 0.05 + (airY > 0 && trickDone ? Math.sin(elapsed * 18) * 0.3 : 0) });
+          // Rival karts
+          for (var ri = 0; ri < rivals.length; ri++) {
+            var r = rivals[ri];
+            var relR = ((r.dist - position) % trackLen + trackLen) % trackLen;
+            var zR = relR / segLen;
+            if (zR > kDrawN - 2 || zR < -2) continue;
+            var rc2 = kCenterAt(zR);
+            var rxx = rc2.x + rc2.ox * r.offset * KGL_HALF, rzz = rc2.z + rc2.oz * r.offset * KGL_HALF;
+            var rLift = r.airT > 0 ? Math.sin((1 - Math.max(0, r.airT) / 0.9) * Math.PI) * 1.4 : 0;
+            var rYaw = Math.atan2(rc2.tz, rc2.tx) + (r.spinT > 0 ? Math.sin(t * 12) * 0.5 : 0);
+            buildKartModelGL(dynOp, dynTr, heroArr, rxx, rLift, rzz, rYaw, r.shrinkT > 0 ? 0.6 : 1, r,
+              { hero: false, flame: r.boostT > 0 || r.rocketT > 0, shield: r.shieldT > 0, star: r.starT > 0 });
+            if (zR > 2.2 && zR < 12.8) {
+              var np = kProject(rxx, rLift + 2.9 * (r.shrinkT > 0 ? 0.6 : 1), rzz);
+              if (np && np.x > -80 && np.x < W + 80) kglNames.push({ x: np.x, y: np.y, name: r.name });
+            }
           }
-          // Countdown + toasts
+          // Player kart + exhaust
+          if (!spectating) {
+            var pkC = kCenterAt(5.1);
+            var kx = pkC.x + pkC.ox * playerX * KGL_HALF, kz = pkC.z + pkC.oz * playerX * KGL_HALF;
+            var ky = airY * 1.15;
+            if (fallT > 0) { var fallP = 1 - fallT / 1.15; ky -= fallP * fallP * 22; }
+            var kYaw = Math.atan2(pkC.tz, pkC.tx) + steer * 0.22 + (spinT > 0 ? spinAngle : 0) + (fallT > 0 ? (1 - fallT / 1.15) * 9 : 0);
+            var puffN = Math.floor(puffs.length * (0.4 + 0.6 * fx));
+            for (var p2i = 0; p2i < puffN; p2i++) {
+              var pu = puffs[p2i], pa = 1 - pu.life / 0.45;
+              var bx4 = kx - pkC.tx * (2.1 + pu.life * 1.6) + pkC.ox * (p2i % 2 ? 0.8 : -0.8);
+              var bz4 = kz - pkC.tz * (2.1 + pu.life * 1.6) + pkC.oz * (p2i % 2 ? 0.8 : -0.8);
+              var pcol2 = pu.boost ? [1, 0.59, 0.24, 0.55 * pa] : [0.90, 0.88, 0.84, 0.40 * pa];
+              kBill(glowArr, bx4, ky + 0.35 + pu.life * 0.5, bz4, 0.5 + pu.life * 1.8, 0.5 + pu.life * 1.8, [0, 0, 1, 1], pcol2);
+            }
+            buildKartModelGL(dynOp, dynTr, heroArr, kx, ky, kz, kYaw, shrinkT > 0 ? 0.62 : 1, DRIVER_DEFS[myDriver],
+              { hero: DRIVER_DEFS[myDriver].hero, flame: boostT > 0 || rocketT > 0, shield: shieldT > 0, star: starT > 0 });
+          }
+          // Flush
+          kDrawDyn(dynOp, kglTexWhite, null, 0.55);
+          kDrawDyn(bldgArr, kglTexBldg, null, 0.55);
+          kDrawDyn(itemArr, kglTexItem, null, 0.4);
+          kgl.depthMask(false);
+          kDrawDyn(dynTr, kglTexWhite, "normal", 0.55);
+          kDrawDyn(forkArr, kglTexFork, "normal", 0.3);
+          kDrawDyn(heroArr, kglTexHero, "normal", 0.3);
+          kDrawDyn(glowArr, kglTexGlow, "normal", 0.3);
+          kgl.depthMask(true);
+        }
+        // HUD overlays that used to ride at the end of the 2D draw:
+        // rival name pills (projected from the 3D scene), countdown,
+        // toasts, the Thunder Mash flash, speed, spectate banner.
+        function drawOverlaysKart(t) {
+          for (var ni = 0; ni < kglNames.length; ni++) {
+            var nm = kglNames[ni];
+            ctx.font = "700 15px 'Public Sans', sans-serif"; ctx.textAlign = "center";
+            var tw = ctx.measureText(nm.name).width + 16;
+            ctx.fillStyle = "rgba(18,24,28,0.82)";
+            ctx.beginPath(); ctx.roundRect(nm.x - tw / 2, nm.y - 20, tw, 21, 999); ctx.fill();
+            ctx.fillStyle = "#fff";
+            ctx.fillText(nm.name, nm.x, nm.y - 5);
+            ctx.textAlign = "left";
+          }
           if (mode === "count") {
             var num = Math.ceil(3 - countT);
             ctx.fillStyle = "rgba(20,8,30,0.35)"; ctx.fillRect(0, 0, W, H);
@@ -15643,6 +16014,29 @@
             ctx.textAlign = "left";
           }
         }
+        // draw dispatches: WebGL when it init'd, else the legacy
+        // pseudo-3D renderer below keeps the game playable anywhere.
+        function draw(t) {
+          if (!kglTried) { kglTried = true; try { kglOK = initKgl(); } catch (e) { kglOK = false; } }
+          if (kglOK) {
+            try {
+              renderKartGL(t);
+              ctx.imageSmoothingEnabled = true;
+              ctx.drawImage(kglCan, 0, 0, W, H);
+              drawOverlaysKart(t);
+              return;
+            } catch (e) { kglOK = false; }
+          }
+          // WebGL unavailable (or a GL frame failed): honest
+          // unsupported-device state — the retired pseudo-3D renderer
+          // is gone for good.
+          ctx.fillStyle = "#241233"; ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = "#ffd9a0"; ctx.font = "700 21px 'Public Sans', sans-serif"; ctx.textAlign = "center";
+          ctx.fillText("Spud Kart needs WebGL, which this device or browser", W / 2, H / 2 - 14);
+          ctx.fillText("hasn't made available — the rest of SpudMaps works as usual.", W / 2, H / 2 + 16);
+          ctx.textAlign = "left";
+        }
+
 
         function tick(ts) {
           if (!open) return;
@@ -15671,6 +16065,7 @@
             if (open && (mode === "race" || mode === "count")) SpudSfx.engine(speed / maxSpeed, boostT > 0);
             else SpudSfx.engineStop();
           }
+          if (kglOK) kglAdapt(dt);
           if (mode === "race" || mode === "count" || mode === "wait" || mode === "spectate") { updateHud(); draw(elapsed); }
           if (mode === "race" || mode === "count" || mode === "wait" || mode === "spectate" || mp.on) raf = requestAnimationFrame(tick);
         }
@@ -17716,6 +18111,13 @@
       // rates and the hunt path-follow rate) is cut by the same 0.70x
       // so it stays fair. Arenas, modes, blasters, power-ups, rules,
       // and multiplayer behaviour are unchanged.
+      // WebGL port (v111): the raycaster is replaced by a true WebGL
+      // renderer — real 3D arenas and Spudtan models, a real camera
+      // pitch (look up / down, range widened), and an Escape-style
+      // adaptive quality ladder (resolution, draw distance,
+      // particles). All rules, bots, blasters, modes, arenas,
+      // scoring, controls, and the live room are unchanged; if
+      // WebGL is unavailable the game shows an unsupported note.
       (function () {
         var overlay = document.getElementById("spudBall3d");
         var canvas = document.getElementById("ball3dCanvas");
@@ -18379,6 +18781,10 @@
         // Auto-fire: on by default for touch players, so the right thumb
         // never has to leave the aim stick to shoot.
         var autoFire = (typeof window !== "undefined" && ("ontouchstart" in window || (window.navigator && navigator.maxTouchPoints > 0)));
+        // Aim sensitivity multiplier, tuned by the in-game slider:
+        // 1 is exactly the shipped v77-tuned feel (the slider's
+        // 100% default), so nothing changes until the player moves it.
+        var aimSens = 1;
         var JUMP_V = 3.8, GRAV = 9.5; // hop apex ≈ 0.76 — enough to duck a level shot
         var pitch = 0;
         var walkT = 0, recoil = 0, flashT = 0, hitmarkT = 0, splatFlashT = 0;
@@ -19266,8 +19672,8 @@
             stepZ(player, dt);
             // Right stick aims: hold it off-centre to keep turning.
             if (aimStick) {
-              player.angle += aimStick.dx * 1.4 * dt;
-              pitch = Math.max(-26, Math.min(26, pitch - aimStick.dy * 58.8 * dt));
+              player.angle += aimStick.dx * 1.4 * aimSens * dt;
+              pitch = Math.max(-64, Math.min(64, pitch - aimStick.dy * 58.8 * aimSens * dt));
             }
             // Viewmodel lean: the gun trails your turns a little and
             // settles back to centre — pure view feel, no aim effect.
@@ -19436,6 +19842,729 @@
           leaves.push({ x: rr(1, 17), y: rr(1, 13), z: rr(0.1, 1.7), ph: rr(0, 6.28), fall: rr(0.05, 0.13), col: LEAF_COLS[li % LEAF_COLS.length] });
         }
 
+        // ----- WebGL renderer (v111): the raycaster is retired -----
+        // Tate-lo 3D now renders through a true WebGL pipeline in the
+        // same mould as Spud Escape: one shader (textured, vertex-
+        // coloured, warm distance fog), the arena baked into a static
+        // buffer per arena, Spudtan fighters as real 3D models built
+        // from ellipsoids and boxes (skin, team vest, cap, blaster),
+        // billboard power-ups / projectiles / splats, and a real
+        // camera with pitch — the aim stick, look-drag, and mouse
+        // already fed `pitch`; the raycaster could only slide its
+        // horizon a few pixels, so the pitch range is widened and the
+        // 3D camera genuinely looks up and down. (Shots still fly
+        // level at chest height, exactly as the rules always had it.)
+        // An Escape-style adaptive quality ladder steps the render
+        // resolution, the fog/cull distance, and the particle density
+        // down (and back up) to hold phone frame rates. Every rule,
+        // bot, blaster, mode, arena, score, and the multiplayer room
+        // are untouched — only this renderer changed. If WebGL is
+        // unavailable the game shows an unsupported-device note.
+        var wgl = null, wglCan = document.createElement("canvas");
+        var wglOK = false, wglTried = false;
+        var WGL_TIERS = [
+          { s: 1.25, dist: 26, fx: 1.0 }, { s: 1.05, dist: 22, fx: 0.9 }, { s: 0.85, dist: 18, fx: 0.75 },
+          { s: 0.68, dist: 14, fx: 0.55 }, { s: 0.52, dist: 10.5, fx: 0.38 }, { s: 0.40, dist: 8, fx: 0.25 }
+        ];
+        var wglTier = 0, wglFpsAvg = 60, wglFpsTime = 0;
+        var wglProg = null, wglA = {}, wglU = {};
+        var wglDynBuf = null, wglWallBuf = null, wglFloorBuf = null, wglSkyBuf = null;
+        var wglWallCount = 0;
+        var wglTexAtlas = null, wglTexFloor = null, wglTexSky = null, wglTexSplat = null, wglTexGlow = null, wglTexRing = null;
+        var wglTexPow = {};
+        var wglBuiltSig = "", wglSkySig = "";
+        var wglView = null, wglProjM = null, wglProjF = 1, wglAsp = 1.6;
+        var wglEye = { x: 0, y: 0.5, z: 0 }, wglCamR = [1, 0, 0], wglCamU = [0, 1, 0], wglCamF = [1, 0, 0];
+        var WGL_WHITE_U = 0.875, WGL_WHITE_V = 0.125; // atlas slot 15 centre (painted white)
+
+        function wIdent() { return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
+        function wMul(a, b) {
+          var o = new Float32Array(16);
+          for (var c = 0; c < 4; c++) for (var r = 0; r < 4; r++)
+            o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+          return o;
+        }
+        function wPersp(fovY, asp, near, far) {
+          var f = 1 / Math.tan(fovY / 2), o = new Float32Array(16);
+          o[0] = f / asp; o[5] = f; o[10] = (far + near) / (near - far); o[11] = -1;
+          o[14] = 2 * far * near / (near - far);
+          return o;
+        }
+        function wTrans(x, y, z) { var o = wIdent(); o[12] = x; o[13] = y; o[14] = z; return o; }
+        var wColCache = {};
+        function wCol(hex) {
+          if (wColCache[hex]) return wColCache[hex];
+          var n = parseInt(hex.slice(1), 16);
+          var c = [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+          wColCache[hex] = c; return c;
+        }
+        function wMix(c1, c2, t) { return [c1[0] + (c2[0] - c1[0]) * t, c1[1] + (c2[1] - c1[1]) * t, c1[2] + (c2[2] - c1[2]) * t]; }
+
+        // ----- Dynamic-batch vertex helpers (9 floats per vertex) -----
+        function wV(arr, x, y, z, u, v, col) { arr.push(x, y, z, u, v, col[0], col[1], col[2], col.length > 3 ? col[3] : 1); }
+        function wTri(arr, a, b2, c) { for (var i = 0; i < 9; i++) arr.push(a[i]); for (var j = 0; j < 9; j++) arr.push(b2[j]); for (var k = 0; k < 9; k++) arr.push(c[k]); }
+        function wVert(x, y, z, u, v, col) { return [x, y, z, u, v, col[0], col[1], col[2], col.length > 3 ? col[3] : 1]; }
+        // Quad from 4 corners (each [x,y,z]) with a uv rect [u0,v0,u1,v1] (v0 = bottom).
+        function wQuad(arr, p1, p2, p3, p4, uv, col) {
+          wTri(arr, wVert(p1[0], p1[1], p1[2], uv[0], uv[1], col), wVert(p2[0], p2[1], p2[2], uv[2], uv[1], col), wVert(p3[0], p3[1], p3[2], uv[2], uv[3], col));
+          wTri(arr, wVert(p1[0], p1[1], p1[2], uv[0], uv[1], col), wVert(p3[0], p3[1], p3[2], uv[2], uv[3], col), wVert(p4[0], p4[1], p4[2], uv[0], uv[3], col));
+        }
+        function wQuadC(arr, p1, p2, p3, p4, col) { // coloured quad (white-uv point)
+          wQuad(arr, p1, p2, p3, p4, [WGL_WHITE_U, WGL_WHITE_V, WGL_WHITE_U, WGL_WHITE_V], col);
+        }
+        // Camera-facing billboard centred at (x,y,z), w x h world units.
+        function wBill(arr, x, y, z, w, h, uv, col) {
+          var rx = wglCamR, up = wglCamU, hw = w / 2, hh = h / 2;
+          wQuad(arr,
+            [x - rx[0] * hw - up[0] * hh, y - rx[1] * hw - up[1] * hh, z - rx[2] * hw - up[2] * hh],
+            [x + rx[0] * hw - up[0] * hh, y + rx[1] * hw - up[1] * hh, z + rx[2] * hw - up[2] * hh],
+            [x + rx[0] * hw + up[0] * hh, y + rx[1] * hw + up[1] * hh, z + rx[2] * hw + up[2] * hh],
+            [x - rx[0] * hw + up[0] * hh, y - rx[1] * hw + up[1] * hh, z - rx[2] * hw + up[2] * hh], uv, col);
+        }
+        // Flat quad on the ground (y = height), centred (x,z), rotated by ang.
+        function wFlat(arr, x, y, z, w, h, ang, uv, col) {
+          var c = Math.cos(ang), s = Math.sin(ang), hw = w / 2, hh = h / 2;
+          function cor(dx, dz) { return [x + dx * c - dz * s, y, z + dx * s + dz * c]; }
+          wQuad(arr, cor(-hw, -hh), cor(hw, -hh), cor(hw, hh), cor(-hw, hh), uv, col);
+        }
+        // Flat filled disc on the ground (triangle fan).
+        function wDisc(arr, x, y, z, r, col) {
+          var SEG = 12, cu = WGL_WHITE_U, cv = WGL_WHITE_V;
+          for (var i = 0; i < SEG; i++) {
+            var a1 = i / SEG * 6.2832, a2 = (i + 1) / SEG * 6.2832;
+            wTri(arr, wVert(x, y, z, cu, cv, col),
+              wVert(x + Math.cos(a1) * r, y, z + Math.sin(a1) * r, cu, cv, col),
+              wVert(x + Math.cos(a2) * r, y, z + Math.sin(a2) * r, cu, cv, col));
+          }
+        }
+        // Yaw transform for model building: local (lx fwd, ly up, lz right).
+        function wXf(T, lx, ly, lz) { return [T.x + lx * T.c - lz * T.s, T.y + ly, T.z + lx * T.s + lz * T.c]; }
+        function wEll(arr, T, cx, cy, cz, rx, ry, rz, colFn) {
+          var SEG = 10, RINGS = 7, pts = [], cols = [];
+          for (var j = 0; j <= RINGS; j++) {
+            var ph = j / RINGS * Math.PI, sp = Math.sin(ph), cp = Math.cos(ph);
+            for (var i = 0; i <= SEG; i++) {
+              var th = i / SEG * 6.2832, lx = cx + Math.cos(th) * sp * rx, ly = cy + cp * ry, lz = cz + Math.sin(th) * sp * rz;
+              pts.push(wXf(T, lx, ly, lz));
+              cols.push(colFn(lx, ly, lz, cp));
+            }
+          }
+          for (var j2 = 0; j2 < RINGS; j2++) for (var i2 = 0; i2 < SEG; i2++) {
+            var a = j2 * (SEG + 1) + i2, bq = a + SEG + 1;
+            wTri(arr, wVert(pts[a][0], pts[a][1], pts[a][2], WGL_WHITE_U, WGL_WHITE_V, cols[a]),
+              wVert(pts[bq][0], pts[bq][1], pts[bq][2], WGL_WHITE_U, WGL_WHITE_V, cols[bq]),
+              wVert(pts[bq + 1][0], pts[bq + 1][1], pts[bq + 1][2], WGL_WHITE_U, WGL_WHITE_V, cols[bq + 1]));
+            wTri(arr, wVert(pts[a][0], pts[a][1], pts[a][2], WGL_WHITE_U, WGL_WHITE_V, cols[a]),
+              wVert(pts[bq + 1][0], pts[bq + 1][1], pts[bq + 1][2], WGL_WHITE_U, WGL_WHITE_V, cols[bq + 1]),
+              wVert(pts[a + 1][0], pts[a + 1][1], pts[a + 1][2], WGL_WHITE_U, WGL_WHITE_V, cols[a + 1]));
+          }
+        }
+        function wBox(arr, T, cx, cy, cz, sx, sy, sz, col) {
+          var hx = sx / 2, hy = sy / 2, hz = sz / 2;
+          var cs = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+          var shade = [0.88, 0.72, 1.0, 0.55, 0.95, 0.8];
+          for (var f = 0; f < 6; f++) {
+            var n = cs[f], cc = [col[0] * shade[f], col[1] * shade[f], col[2] * shade[f], col.length > 3 ? col[3] : 1];
+            var u = n[0] !== 0 ? [0, 0, 1] : [1, 0, 0], v = n[1] !== 0 ? [0, 0, 1] : [0, 1, 0];
+            if (n[1] !== 0) { u = [1, 0, 0]; v = [0, 0, 1]; }
+            var ctr = [cx + n[0] * hx, cy + n[1] * hy, cz + n[2] * hz];
+            var hu = n[0] !== 0 ? hz : (n[1] !== 0 ? hx : hx), hv = n[1] !== 0 ? hz : hy;
+            if (n[0] !== 0) { hu = hz; hv = hy; } else if (n[2] !== 0) { hu = hx; hv = hy; } else { hu = hx; hv = hz; }
+            var p = [];
+            [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (sg) {
+              var lx = ctr[0] + u[0] * sg[0] * hu + v[0] * sg[1] * hv;
+              var ly = ctr[1] + u[1] * sg[0] * hu + v[1] * sg[1] * hv;
+              var lz = ctr[2] + u[2] * sg[0] * hu + v[2] * sg[1] * hv;
+              p.push(wXf(T, lx, ly, lz));
+            });
+            wQuadC(arr, p[0], p[1], p[2], p[3], cc);
+          }
+        }
+
+        // ----- GL setup -----
+        function wShader(type, src) {
+          var s = wgl.createShader(type);
+          wgl.shaderSource(s, src); wgl.compileShader(s);
+          if (!wgl.getShaderParameter(s, wgl.COMPILE_STATUS)) return null;
+          return s;
+        }
+        function wMakeTex(src, repeat) {
+          var t = wgl.createTexture();
+          wgl.bindTexture(wgl.TEXTURE_2D, t);
+          wgl.pixelStorei(wgl.UNPACK_FLIP_Y_WEBGL, true);
+          wgl.texImage2D(wgl.TEXTURE_2D, 0, wgl.RGBA, wgl.RGBA, wgl.UNSIGNED_BYTE, src);
+          wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_MIN_FILTER, wgl.LINEAR);
+          wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_MAG_FILTER, wgl.LINEAR);
+          wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_WRAP_S, repeat ? wgl.REPEAT : wgl.CLAMP_TO_EDGE);
+          wgl.texParameteri(wgl.TEXTURE_2D, wgl.TEXTURE_WRAP_T, wgl.CLAMP_TO_EDGE);
+          wgl.pixelStorei(wgl.UNPACK_FLIP_Y_WEBGL, false);
+          return t;
+        }
+        function initWgl() {
+          try {
+            wgl = wglCan.getContext("webgl", { antialias: true, alpha: false, powerPreference: "high-performance" }) ||
+              wglCan.getContext("experimental-webgl", { antialias: true, alpha: false });
+          } catch (e) { wgl = null; }
+          if (!wgl) return false;
+          var VS = [
+            "attribute vec3 aPos; attribute vec2 aUV; attribute vec4 aCol;",
+            "uniform mat4 uMVP; uniform mat4 uModel; uniform vec3 uCamPos; uniform vec2 uFogRange;",
+            "varying vec2 vUV; varying vec4 vCol; varying float vDist;",
+            "void main(){ vUV = aUV; vCol = aCol;",
+            " vec4 wp = uModel * vec4(aPos, 1.0);",
+            " vDist = distance(wp.xyz, uCamPos);",
+            " gl_Position = uMVP * vec4(aPos, 1.0); }"
+          ].join("\n");
+          var FS = [
+            "precision mediump float;",
+            "varying vec2 vUV; varying vec4 vCol; varying float vDist;",
+            "uniform sampler2D uTex; uniform vec3 uFogColor; uniform vec3 uFogRange2; uniform vec4 uTint;",
+            "void main(){ vec4 c = texture2D(uTex, vUV) * vCol;",
+            " if (uTint.a > 0.001) c.rgb = mix(c.rgb, uTint.rgb, uTint.a);",
+            " float f = smoothstep(uFogRange2.x, uFogRange2.y, vDist) * uFogRange2.z;",
+            " c.rgb = mix(c.rgb, uFogColor, f);",
+            " gl_FragColor = c; }"
+          ].join("\n");
+          var vs = wShader(wgl.VERTEX_SHADER, VS), fs = wShader(wgl.FRAGMENT_SHADER, FS);
+          if (!vs || !fs) return false;
+          wglProg = wgl.createProgram();
+          wgl.attachShader(wglProg, vs); wgl.attachShader(wglProg, fs); wgl.linkProgram(wglProg);
+          if (!wgl.getProgramParameter(wglProg, wgl.LINK_STATUS)) return false;
+          wgl.useProgram(wglProg);
+          wglA.pos = wgl.getAttribLocation(wglProg, "aPos");
+          wglA.uv = wgl.getAttribLocation(wglProg, "aUV");
+          wglA.col = wgl.getAttribLocation(wglProg, "aCol");
+          wglU.mvp = wgl.getUniformLocation(wglProg, "uMVP");
+          wglU.model = wgl.getUniformLocation(wglProg, "uModel");
+          wglU.camPos = wgl.getUniformLocation(wglProg, "uCamPos");
+          wglU.fogRange = wgl.getUniformLocation(wglProg, "uFogRange");
+          wglU.fogRange2 = wgl.getUniformLocation(wglProg, "uFogRange2");
+          wglU.fogColor = wgl.getUniformLocation(wglProg, "uFogColor");
+          wglU.tint = wgl.getUniformLocation(wglProg, "uTint");
+          wglU.tex = wgl.getUniformLocation(wglProg, "uTex");
+          wglDynBuf = wgl.createBuffer();
+          wglWallBuf = wgl.createBuffer();
+          wglFloorBuf = wgl.createBuffer();
+          wglSkyBuf = wgl.createBuffer();
+          // Sky cylinder: radius 40, panorama u = theta / 2pi so the
+          // sun sits at the same bearing as the old panorama slice.
+          (function () {
+            var arr = [], SEG = 48;
+            for (var i = 0; i < SEG; i++) {
+              var t1 = i / SEG, t2 = (i + 1) / SEG, a1 = t1 * 6.2832, a2 = t2 * 6.2832;
+              var x1 = Math.cos(a1) * 40, z1 = Math.sin(a1) * 40, x2 = Math.cos(a2) * 40, z2 = Math.sin(a2) * 40;
+              wQuad(arr, [x1, 0.3, z1], [x2, 0.3, z2], [x2, 9, z2], [x1, 9, z1], [t1, 0, t2, 1], [1, 1, 1, 1]);
+            }
+            wgl.bindBuffer(wgl.ARRAY_BUFFER, wglSkyBuf);
+            wgl.bufferData(wgl.ARRAY_BUFFER, new Float32Array(arr), wgl.STATIC_DRAW);
+            wglSkyBuf.count = arr.length / 9;
+          })();
+          // Soft round glow sprite, and a ring sprite, painted once.
+          var glowC = document.createElement("canvas"); glowC.width = 128; glowC.height = 128;
+          var gg = glowC.getContext("2d");
+          var grd = gg.createRadialGradient(64, 64, 2, 64, 64, 62);
+          grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(0.35, "rgba(255,255,255,0.55)"); grd.addColorStop(1, "rgba(255,255,255,0)");
+          gg.fillStyle = grd; gg.fillRect(0, 0, 128, 128);
+          wglTexGlow = wMakeTex(glowC, false);
+          var ringC = document.createElement("canvas"); ringC.width = 128; ringC.height = 128;
+          var rg = ringC.getContext("2d");
+          rg.strokeStyle = "rgba(255,255,255,0.95)"; rg.lineWidth = 9;
+          rg.beginPath(); rg.arc(64, 64, 52, 0, 6.29); rg.stroke();
+          rg.strokeStyle = "rgba(255,255,255,0.35)"; rg.lineWidth = 20;
+          rg.beginPath(); rg.arc(64, 64, 52, 0, 6.29); rg.stroke();
+          wglTexRing = wMakeTex(ringC, false);
+          wglTexSplat = wMakeTex(splatSprite, false);
+          for (var pi = 0; pi < POWERTYPES.length; pi++) wglTexPow[POWERTYPES[pi].id] = wMakeTex(powerSpriteFor(POWERTYPES[pi]), false);
+          wgl.enable(wgl.DEPTH_TEST);
+          wgl.clearDepth(1);
+          return true;
+        }
+        function wglApplySize() {
+          var t = WGL_TIERS[wglTier];
+          var bw = Math.round(960 * t.s), bh = Math.round(600 * t.s);
+          if (wglCan.width !== bw || wglCan.height !== bh) { wglCan.width = bw; wglCan.height = bh; }
+          wgl.viewport(0, 0, bw, bh);
+        }
+        // Escape-style ladder: rolling fps average; step down under
+        // 45 fps, back up over 58, checked every ~1.6 s.
+        function adaptWgl(dt) {
+          if (dt > 0) wglFpsAvg = wglFpsAvg * 0.96 + (1 / Math.max(dt, 0.001)) * 0.04;
+          wglFpsTime += dt;
+          if (wglFpsTime < 1.6) return;
+          wglFpsTime = 0;
+          if (wglFpsAvg < 45 && wglTier < WGL_TIERS.length - 1) wglTier++;
+          else if (wglFpsAvg > 58 && wglTier > 0) wglTier--;
+        }
+
+        // ----- Textures rebuilt when the arena or the photo
+        // textures change: a wall atlas (the same paints texFor
+        // picks, plus the real stone / brick when they arrive), and
+        // a floor sheet painted with the raycaster's own rules
+        // (grass everywhere, brick cross paths + centre plaza,
+        // contact shading against the walls). -----
+        function wSlotFor(type, mx, my) {
+          if ((type === 1 || type === 3) && realTex.stone) return 10;
+          if (type === 4 && realTex.brick) return 11;
+          var vars = { 1: [0, 1], 2: [4, 5], 3: [2, 3], 4: [6, 7], 5: [8, 9] }[type] || [2, 3];
+          return vars[Math.abs((mx | 0) * 7 + (my | 0) * 13) % vars.length];
+        }
+        function wSlotUV(slot) {
+          var col = slot % 4, row = Math.floor(slot / 4);
+          return [col * 0.25, 1 - (row + 1) * 0.25, (col + 1) * 0.25, 1 - row * 0.25]; // u0, vBot, u1, vTop
+        }
+        function buildWglArena() {
+          // Atlas
+          var ac = document.createElement("canvas"); ac.width = 1024; ac.height = 1024;
+          var ag = ac.getContext("2d");
+          var sources = [texStoneIvy, texStoneBloom, texStone, texStoneCracked, texCrate, texCrateDark, texArch, texBrickMoss, texHedge, texHedgeBerry, realTex.stone, realTex.brick];
+          for (var si = 0; si < 16; si++) {
+            var sx = (si % 4) * 256, sy = Math.floor(si / 4) * 256;
+            if (si === 15) { ag.fillStyle = "#ffffff"; ag.fillRect(sx, sy, 256, 256); continue; }
+            var src = sources[si];
+            if (src) { try { ag.drawImage(src, sx, sy, 256, 256); } catch (e) { ag.fillStyle = "#8f887a"; ag.fillRect(sx, sy, 256, 256); } }
+          }
+          if (wglTexAtlas) wgl.deleteTexture(wglTexAtlas);
+          wglTexAtlas = wMakeTex(ac, false);
+          // Floor sheet (1152x896, 64 px per arena unit)
+          var fc = document.createElement("canvas"); fc.width = 1152; fc.height = 896;
+          var fg2 = fc.getContext("2d");
+          var grassC = document.createElement("canvas"); grassC.width = 128; grassC.height = 128;
+          var ggc = grassC.getContext("2d");
+          if (realTex.grass) { try { ggc.drawImage(realTex.grass, 0, 0, 128, 128); } catch (e) { paintGrassFloor(ggc); } }
+          else paintGrassFloor(ggc);
+          var brickC = document.createElement("canvas"); brickC.width = 128; brickC.height = 128;
+          var bgc = brickC.getContext("2d");
+          if (realTex.brick) { try { bgc.drawImage(realTex.brick, 0, 0, 128, 128); } catch (e) { paintBrickFloor(bgc); } }
+          else paintBrickFloor(bgc);
+          var gt = document.createElement("canvas"); gt.width = 178; gt.height = 178;
+          gt.getContext("2d").drawImage(grassC, 0, 0, 178, 178);
+          var bt = document.createElement("canvas"); bt.width = 195; bt.height = 195;
+          bt.getContext("2d").drawImage(brickC, 0, 0, 195, 195);
+          fg2.fillStyle = fg2.createPattern(gt, "repeat"); fg2.fillRect(0, 0, 1152, 896);
+          fg2.fillStyle = "rgba(0,0,0,0.09)";
+          for (var cy2 = 0; cy2 < 28; cy2++) for (var cx2 = 0; cx2 < 36; cx2++)
+            if ((cx2 + cy2) % 2 === 0) fg2.fillRect(cx2 * 32, cy2 * 32, 32, 32);
+          fg2.save();
+          fg2.beginPath();
+          fg2.rect(8.25 * 64, 0, 1.5 * 64, 896); fg2.rect(0, 6.25 * 64, 1152, 1.5 * 64);
+          fg2.moveTo(9 * 64 + 80, 7 * 64); fg2.arc(9 * 64, 7 * 64, 80, 0, 6.29);
+          fg2.clip();
+          fg2.fillStyle = fg2.createPattern(bt, "repeat"); fg2.fillRect(0, 0, 1152, 896);
+          fg2.restore();
+          // Contact shading: darken the ground against every wall.
+          fg2.fillStyle = "rgba(20,14,4,0.20)";
+          for (var wy = 0; wy < MH; wy++) for (var wx = 0; wx < MW; wx++) {
+            if (solidAt(wx, wy)) continue;
+            if (solidAt(wx + 1, wy)) fg2.fillRect((wx + 1) * 64 - 18, wy * 64, 18, 64);
+            if (solidAt(wx - 1, wy)) fg2.fillRect(wx * 64, wy * 64, 18, 64);
+            if (solidAt(wx, wy + 1)) fg2.fillRect(wx * 64, (wy + 1) * 64 - 18, 64, 18);
+            if (solidAt(wx, wy - 1)) fg2.fillRect(wx * 64, wy * 64, 64, 18);
+          }
+          if (wglTexFloor) wgl.deleteTexture(wglTexFloor);
+          wglTexFloor = wMakeTex(fc, false);
+          // Wall + floor geometry
+          var arr = [];
+          function face(x1, y1, x2, y2, type, mx, my, sideShade) {
+            var slot = wSlotUV(wSlotFor(type, mx, my));
+            var phase = (Math.abs(mx * 7 + my * 13) % 4) * 0.25;
+            var ua = slot[0] + ((0 + phase) % 1) * 0.25, ub = slot[0] + ((1 + phase) % 1) * 0.25;
+            var cTop = [sideShade, sideShade, sideShade, 1], cBot = [sideShade * 0.74, sideShade * 0.74, sideShade * 0.74, 1];
+            wTri(arr, wVert(x1, 0, y1, ua, slot[1], cBot), wVert(x2, 0, y2, ub, slot[1], cBot), wVert(x2, 1, y2, ub, slot[3], cTop));
+            wTri(arr, wVert(x1, 0, y1, ua, slot[1], cBot), wVert(x2, 1, y2, ub, slot[3], cTop), wVert(x1, 1, y1, ua, slot[3], cTop));
+          }
+          for (var gy = 0; gy < MH; gy++) for (var gx = 0; gx < MW; gx++) {
+            var type = GRID[gy][gx];
+            if (!type) continue;
+            if (!solidAt(gx + 1, gy)) face(gx + 1, gy, gx + 1, gy + 1, type, gx, gy, 1.0);
+            if (!solidAt(gx - 1, gy)) face(gx, gy + 1, gx, gy, type, gx, gy, 1.0);
+            if (!solidAt(gx, gy + 1)) face(gx + 1, gy + 1, gx, gy + 1, type, gx, gy, 0.70);
+            if (!solidAt(gx, gy - 1)) face(gx, gy, gx + 1, gy, type, gx, gy, 0.70);
+            // Top cap
+            var slot2 = wSlotUV(wSlotFor(type, gx, gy));
+            var ct = [0.92, 0.92, 0.92, 1];
+            wTri(arr, wVert(gx, 1, gy, slot2[0], slot2[3], ct), wVert(gx + 1, 1, gy, slot2[2], slot2[3], ct), wVert(gx + 1, 1, gy + 1, slot2[2], slot2[1], ct));
+            wTri(arr, wVert(gx, 1, gy, slot2[0], slot2[3], ct), wVert(gx + 1, 1, gy + 1, slot2[2], slot2[1], ct), wVert(gx, 1, gy + 1, slot2[0], slot2[1], ct));
+          }
+          wgl.bindBuffer(wgl.ARRAY_BUFFER, wglWallBuf);
+          wgl.bufferData(wgl.ARRAY_BUFFER, new Float32Array(arr), wgl.STATIC_DRAW);
+          wglWallCount = arr.length / 9;
+          var farr = [];
+          wQuad(farr, [0, 0, 0], [MW, 0, 0], [MW, 0, MH], [0, 0, MH], [0, 1, 1, 0], [1, 1, 1, 1]);
+          wgl.bindBuffer(wgl.ARRAY_BUFFER, wglFloorBuf);
+          wgl.bufferData(wgl.ARRAY_BUFFER, new Float32Array(farr), wgl.STATIC_DRAW);
+          wglFloorBuf.count = farr.length / 9;
+        }
+        function buildWglSky() {
+          var src = skySource();
+          var sc = document.createElement("canvas"); sc.width = 2048; sc.height = 256;
+          var sg = sc.getContext("2d");
+          try { sg.drawImage(src, 0, 0, 2048, 256); } catch (e) { sg.fillStyle = "#e8975a"; sg.fillRect(0, 0, 2048, 256); }
+          if (wglTexSky) wgl.deleteTexture(wglTexSky);
+          wglTexSky = wMakeTex(sc, true);
+        }
+
+        // ----- A Spudtan as a real 3D model -----
+        function buildFighterGL(arr, arrTr, f) {
+          var tc = TEAM[f.team], skin = wCol(SKINS[f.skinIdx % SKINS.length]);
+          var teamC = wCol(tc.color), teamL = wCol(tc.light), teamD = wCol(tc.dark);
+          var wPh = (f.x + f.y) * 9 + f.idx * 2.1;
+          var bob = -Math.abs(Math.sin(wPh)) * 0.026 + Math.sin(elapsed * 2.3 + f.idx * 1.7) * 0.007;
+          var T = { x: f.x, y: (f.z || 0) + bob, z: f.y, c: Math.cos(f.angle), s: Math.sin(f.angle) };
+          // Blob shadow (shrinks as he leaves the ground mid-jump)
+          var shScale = 1 / (1 + (f.z || 0) * 0.55);
+          wDisc(arrTr, f.x, 0.012, f.y, 0.34 * shScale, [0.09, 0.12, 0.03, 0.40 * shScale]);
+          // Legs + boots
+          wBox(arr, T, 0, 0.13, 0.10, 0.15, 0.26, 0.13, teamD);
+          wBox(arr, T, 0, 0.13, -0.10, 0.15, 0.26, 0.13, teamD);
+          wBox(arr, T, 0.03, 0.03, 0.10, 0.24, 0.06, 0.14, [0.18, 0.13, 0.08]);
+          wBox(arr, T, 0.03, 0.03, -0.10, 0.24, 0.06, 0.14, [0.18, 0.13, 0.08]);
+          // Potato body: skin up top, team vest across the torso.
+          wEll(arr, T, 0, 0.55, 0, 0.27, 0.35, 0.235, function (lx, ly, lz, cp) {
+            var h = ly; // local height: body centre 0.55, spans 0.20..0.90
+            var base;
+            if (h > 0.60) base = skin;
+            else if (h > 0.28) base = wMix(teamL, teamD, (0.60 - h) / 0.32);
+            else base = teamD;
+            var sh = 0.82 + 0.30 * Math.max(0, cp);
+            return [base[0] * sh, base[1] * sh, base[2] * sh, 1];
+          });
+          // Helmet cap in team colours
+          wEll(arr, T, 0.02, 0.86, 0, 0.185, 0.085, 0.175, function () { return [teamC[0], teamC[1], teamC[2], 1]; });
+          // Arm + blaster, forward
+          wEll(arr, T, 0.10, 0.52, 0.26, 0.085, 0.15, 0.075, function (lx, ly) { return ly > 0.58 ? teamC : skin; });
+          wBox(arr, T, 0.36, 0.56, 0.10, 0.34, 0.085, 0.085, [0.22, 0.26, 0.30]);
+          wBox(arr, T, 0.33, 0.635, 0.10, 0.13, 0.06, 0.105, [0.99, 0.98, 0.94]);
+          wBox(arr, T, 0.545, 0.56, 0.10, 0.05, 0.07, 0.07, teamL);
+          if (f.shield) {
+            var shP = 1 + 0.045 * Math.sin(elapsed * 3.1 + f.idx * 1.9);
+            wEll(arrTr, T, 0, 0.52, 0, 0.40 * shP, 0.52 * shP, 0.38 * shP, function () { return [1, 0.82, 0.24, 0.26]; });
+          }
+        }
+
+        // ----- Frame render -----
+        var wglBatches = null;
+        function wBQ(key, arr) { (wglBatches[key] = wglBatches[key] || []).push(arr); }
+        function wSetAttribs() {
+          wgl.enableVertexAttribArray(wglA.pos);
+          wgl.enableVertexAttribArray(wglA.uv);
+          wgl.enableVertexAttribArray(wglA.col);
+          wgl.vertexAttribPointer(wglA.pos, 3, wgl.FLOAT, false, 36, 0);
+          wgl.vertexAttribPointer(wglA.uv, 2, wgl.FLOAT, false, 36, 12);
+          wgl.vertexAttribPointer(wglA.col, 4, wgl.FLOAT, false, 36, 20);
+        }
+        function wDrawBuf(buf, count, tex, model, fogMax) {
+          wgl.uniformMatrix4fv(wglU.mvp, false, wMul(wglProjM, wMul(wglView, model)));
+          wgl.uniformMatrix4fv(wglU.model, false, model);
+          wgl.uniform3f(wglU.fogRange2, 5, Math.max(7, WGL_TIERS[wglTier].dist + 2), fogMax);
+          wgl.bindTexture(wgl.TEXTURE_2D, tex);
+          wgl.bindBuffer(wgl.ARRAY_BUFFER, buf);
+          wSetAttribs();
+          wgl.drawArrays(wgl.TRIANGLES, 0, count);
+        }
+        function wDrawDyn(arr, tex, blend) {
+          if (!arr || !arr.length) return;
+          wgl.bindBuffer(wgl.ARRAY_BUFFER, wglDynBuf);
+          wgl.bufferData(wgl.ARRAY_BUFFER, new Float32Array(arr), wgl.DYNAMIC_DRAW);
+          if (blend === "add") { wgl.enable(wgl.BLEND); wgl.blendFunc(wgl.SRC_ALPHA, wgl.ONE); }
+          else if (blend === "normal") { wgl.enable(wgl.BLEND); wgl.blendFunc(wgl.SRC_ALPHA, wgl.ONE_MINUS_SRC_ALPHA); }
+          else wgl.disable(wgl.BLEND);
+          wDrawBuf(wglDynBuf, arr.length / 9, tex, wIdent(), 0.55);
+          wgl.disable(wgl.BLEND);
+        }
+        function wglProject(wx, wy, wz) {
+          var rx = wx - wglEye.x, ry = wy - wglEye.y, rz = wz - wglEye.z;
+          var vx = rx * wglCamR[0] + ry * wglCamR[1] + rz * wglCamR[2];
+          var vy = rx * wglCamU[0] + ry * wglCamU[1] + rz * wglCamU[2];
+          var vf = rx * wglCamF[0] + ry * wglCamF[1] + rz * wglCamF[2];
+          if (vf < 0.05) return null;
+          var nx = wglProjF * vx / (wglAsp * vf), ny = wglProjF * vy / vf;
+          return { x: (nx * 0.5 + 0.5) * W, y: (0.5 - ny * 0.5) * H, f: vf };
+        }
+        function renderWorldGL(cam) {
+          var sig = arenaIdx + "|" + (realTex.stone ? 1 : 0) + (realTex.brick ? 1 : 0) + (realTex.grass ? 1 : 0);
+          if (sig !== wglBuiltSig) { wglBuiltSig = sig; buildWglArena(); }
+          var ssig = realTex.sky ? "real" : "paint";
+          if (ssig !== wglSkySig) { wglSkySig = ssig; buildWglSky(); }
+          if (mode === "ready") { wglTier = 0; wglFpsAvg = 60; }
+          wglApplySize();
+          var tier = WGL_TIERS[wglTier];
+          // Camera: eye at chest height + jump, real pitch from the
+          // same `pitch` the sticks / mouse feed (atan of the old
+          // horizon shift, so 100% sensitivity feels identical).
+          var eyeH = 0.5 + (cam.z || 0) + (player && player.alive ? Math.sin(walkT * 2) * 0.008 : 0);
+          var pAng = Math.atan2(pitch, PROJ);
+          var ca = Math.cos(cam.a), sa = Math.sin(cam.a), cp = Math.cos(pAng), sp = Math.sin(pAng);
+          wglEye = { x: cam.x, y: eyeH, z: cam.y };
+          wglCamF = [ca * cp, sp, sa * cp];
+          wglCamR = [-sa, 0, ca];
+          wglCamU = [
+            wglCamR[1] * wglCamF[2] - wglCamR[2] * wglCamF[1],
+            wglCamR[2] * wglCamF[0] - wglCamR[0] * wglCamF[2],
+            wglCamR[0] * wglCamF[1] - wglCamR[1] * wglCamF[0]
+          ];
+          var R = wglCamR, U = wglCamU, F = wglCamF, E = wglEye;
+          wglView = new Float32Array([
+            R[0], U[0], -F[0], 0, R[1], U[1], -F[1], 0, R[2], U[2], -F[2], 0,
+            -(R[0] * E.x + R[1] * E.y + R[2] * E.z), -(U[0] * E.x + U[1] * E.y + U[2] * E.z), (F[0] * E.x + F[1] * E.y + F[2] * E.z), 1
+          ]);
+          wglAsp = wglCan.width / wglCan.height;
+          var tanV = Math.tan(FOV / 2) / wglAsp;
+          wglProjF = 1 / tanV;
+          wglProjM = wPersp(Math.atan(tanV) * 2, wglAsp, 0.05, 120);
+          wgl.useProgram(wglProg);
+          wgl.uniform3f(wglU.camPos, E.x, E.y, E.z);
+          wgl.uniform3f(wglU.fogColor, FOG.r / 255, FOG.g / 255, FOG.b / 255);
+          wgl.uniform2f(wglU.fogRange, 5, tier.dist + 2);
+          wgl.clearColor(FOG.r / 255, FOG.g / 255, FOG.b / 255, 1);
+          wgl.clear(wgl.COLOR_BUFFER_BIT | wgl.DEPTH_BUFFER_BIT);
+          // Sky (tinted per arena, depth write off)
+          var tint = [0, 0, 0, 0];
+          if (curArena().skyTint) {
+            var m = /rgba?\((\d+),(\d+),(\d+)(?:,([\d.]+))?\)/.exec(curArena().skyTint);
+            if (m) tint = [+m[1] / 255, +m[2] / 255, +m[3] / 255, m[4] ? +m[4] : 1];
+          }
+          wgl.uniform4f(wglU.tint, tint[0], tint[1], tint[2], tint[3]);
+          wgl.depthMask(false);
+          wDrawBuf(wglSkyBuf, wglSkyBuf.count, wglTexSky, wTrans(cam.x, 0, cam.y), 0);
+          wgl.depthMask(true);
+          wgl.uniform4f(wglU.tint, 0, 0, 0, 0);
+          // Arena + floor
+          wDrawBuf(wglWallBuf, wglWallCount, wglTexAtlas, wIdent(), 0.62);
+          wDrawBuf(wglFloorBuf, wglFloorBuf.count, wglTexFloor, wIdent(), 0.62);
+          // ----- Dynamic batches -----
+          wglBatches = {};
+          var dynOp = [], dynTr = [];
+          var fx = tier.fx;
+          // Splat decals
+          var splatArr = [];
+          for (var d = 0; d < decals.length; d++) {
+            var dc = decals[d];
+            var pr = wglProject(dc.x, 0.5, dc.y);
+            if (!pr || pr.f > tier.dist + 4) continue;
+            var dsc = (dc.scale || 1) * (dc.born == null ? 1 : (0.55 + 0.45 * Math.min(1, (elapsed - dc.born) * 4)));
+            var dw = 1.15 * dsc;
+            if (dc.kind === "wall") {
+              var cxp = dc.x, czp = dc.y;
+              var rot = dc.seed * 0.6, cr = Math.cos(rot), sr = Math.sin(rot);
+              var hw = dw / 2, hh = dw * 0.28, cy = dc.z || 0.5;
+              var corners = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(function (o) {
+                var ox = o[0] * cr - o[1] * sr, oy = o[0] * sr + o[1] * cr;
+                return [cxp + R[0] * ox, cy + oy, czp + R[2] * ox];
+              });
+              wQuad(splatArr, corners[0], corners[1], corners[2], corners[3], [0, 0, 1, 1], [1, 1, 1, 0.96]);
+              // Drips weeping down the wall + the pool at its base
+              if (dc.drips && cy > 0.22) {
+                var dage = elapsed - (dc.born || 0), zTopD = cy + 0.10 * dsc, poolFrac = 0;
+                for (var di = 0; di < dc.drips.length; di++) {
+                  var dr0 = dc.drips[di], runD = (dage - dr0.delay) * dr0.speed;
+                  if (runD <= 0) continue;
+                  var hzD = Math.max(0, zTopD - runD);
+                  if (hzD <= 0) poolFrac = Math.max(poolFrac, Math.min(1, (dage - dr0.delay - zTopD / dr0.speed) / 1.8));
+                  var dxp = dr0.off * dw, lwD = Math.max(0.02, dr0.w);
+                  var bx3 = cxp + R[0] * dxp, bz3 = czp + R[2] * dxp;
+                  wQuadC(dynTr, [bx3 - R[0] * lwD / 2, hzD, bz3 - R[2] * lwD / 2], [bx3 + R[0] * lwD / 2, hzD, bz3 + R[2] * lwD / 2],
+                    [bx3 + R[0] * lwD / 2, zTopD, bz3 + R[2] * lwD / 2], [bx3 - R[0] * lwD / 2, zTopD, bz3 - R[2] * lwD / 2], [1, 0.99, 0.94, 0.85]);
+                }
+                if (poolFrac > 0) wFlat(splatArr, dc.x, 0.014, dc.y, 0.72 * dsc * poolFrac, 0.4 * dsc * poolFrac, dc.seed, [0, 0, 1, 1], [1, 1, 1, 0.55]);
+              }
+            } else {
+              wFlat(splatArr, dc.x, 0.010 + d * 0.0006, dc.y, dw, dw * 0.5, dc.seed, [0, 0, 1, 1], [1, 1, 1, 0.94]);
+            }
+          }
+          wBQ("splat", splatArr);
+          // Fighters as 3D models
+          for (var s2 = 0; s2 < fighters.length; s2++) {
+            var f2 = fighters[s2];
+            if (!f2.alive || f2.isPlayer) continue;
+            var pf = wglProject(f2.x, 0.5, f2.y);
+            if (!pf || pf.f > tier.dist + 4) continue;
+            buildFighterGL(dynOp, dynTr, f2);
+            if (f2.flashA > 0) {
+              var tipX = f2.x + Math.cos(f2.angle) * 0.62, tipY = f2.y + Math.sin(f2.angle) * 0.62;
+              var ga = [];
+              wBill(ga, tipX, (f2.z || 0) + 0.56, tipY, 0.55 * (f2.flashA / 0.16), 0.55 * (f2.flashA / 0.16), [0, 0, 1, 1], [1, 0.85, 0.45, 0.8 * (f2.flashA / 0.16)]);
+              wBQ("glow", ga);
+            }
+          }
+          // Power-ups: glow pool, spinning sprite, ground ring, sparkles
+          var ringArr = [], glowArr = [];
+          for (var pu = 0; pu < powerups.length; pu++) {
+            var pw3 = powerups[pu];
+            if (!pw3.active) continue;
+            var pp = wglProject(pw3.x, 0.5, pw3.y);
+            if (!pp || pp.f > tier.dist + 4) continue;
+            var bobZ = 0.44 + Math.sin(elapsed * 2.4 + pw3.phase) * 0.07;
+            var pulse = 1 + 0.07 * Math.sin(elapsed * 3.4 + pw3.phase);
+            wFlat(glowArr, pw3.x, 0.016, pw3.y, 1.15, 1.15, 0, [0, 0, 1, 1], [1, 0.94, 0.75, 0.30]);
+            var ringR = 0.66 * (0.55 + 0.10 * Math.sin(elapsed * 3.4 + pw3.phase));
+            var pcol = wCol(pw3.def.color);
+            wFlat(ringArr, pw3.x, 0.018, pw3.y, ringR * 2, ringR * 2, 0, [0, 0, 1, 1], [pcol[0], pcol[1], pcol[2], 0.55]);
+            var parr = [];
+            wBill(parr, pw3.x, bobZ, pw3.y, 0.66 * pulse, 0.66 * pulse, [0, 0, 1, 1], [1, 1, 1, 1]);
+            wBQ("pow_" + pw3.def.id, parr);
+            if (fx >= 0.5) for (var orb = 0; orb < 3; orb++) {
+              var oa = elapsed * 2.6 + pw3.phase + orb * 2.09;
+              wBill(glowArr, pw3.x + Math.cos(oa) * 0.32, bobZ + Math.sin(oa) * 0.2, pw3.y + Math.sin(oa) * 0.32, 0.07, 0.07, [0, 0, 1, 1], [1, 0.99, 0.9, 0.8]);
+            }
+          }
+          wBQ("ring", ringArr); wBQ("glow", glowArr);
+          // Tracers: camera-facing ribbons, team colour + white core
+          for (var t2 = 0; t2 < tracers.length; t2++) {
+            var tr = tracers[t2];
+            var dirx = tr.x2 - tr.x1, diry = tr.z2 - tr.z1, dirz = tr.y2 - tr.y1;
+            var dl = Math.sqrt(dirx * dirx + diry * diry + dirz * dirz) || 1;
+            dirx /= dl; diry /= dl; dirz /= dl;
+            var sxv = diry * F[2] - dirz * F[1], syv = dirz * F[0] - dirx * F[2], szv = dirx * F[1] - diry * F[0];
+            var sl = Math.sqrt(sxv * sxv + syv * syv + szv * szv);
+            if (sl < 0.01) continue;
+            sxv /= sl; syv /= sl; szv /= sl;
+            var fade = 1 - tr.life / tr.max, tcol = wCol(TEAM[tr.team].shot);
+            function rib(wd, col) {
+              wQuadC(dynTr, [tr.x1 - sxv * wd, tr.z1 - syv * wd, tr.y1 - szv * wd], [tr.x2 - sxv * wd, tr.z2 - syv * wd, tr.y2 - szv * wd],
+                [tr.x2 + sxv * wd, tr.z2 + syv * wd, tr.y2 + szv * wd], [tr.x1 + sxv * wd, tr.z1 + syv * wd, tr.y1 + szv * wd], col);
+            }
+            rib(0.030, [tcol[0], tcol[1], tcol[2], 0.5 * fade]);
+            rib(0.013, [1, 1, 0.97, fade]);
+          }
+          // Projectiles: glowing dollops with a comet trail
+          var glowArr2 = [];
+          for (var pj = 0; pj < projectiles.length; pj++) {
+            var prj = projectiles[pj];
+            var ppj = wglProject(prj.x, prj.z, prj.y);
+            if (!ppj || ppj.f > tier.dist + 4) continue;
+            var pjcol = wCol(TEAM[prj.team].shot);
+            var vl = Math.sqrt(prj.vx * prj.vx + prj.vy * prj.vy) || 1;
+            var pulse2 = 1 + 0.16 * Math.sin(elapsed * 24 + pj * 1.7);
+            wBill(glowArr2, prj.x - prj.vx / vl * 0.26, prj.z, prj.y - prj.vy / vl * 0.26, 0.20 * prj.size, 0.20 * prj.size, [0, 0, 1, 1], [pjcol[0], pjcol[1], pjcol[2], 0.28]);
+            wBill(glowArr2, prj.x - prj.vx / vl * 0.13, prj.z, prj.y - prj.vy / vl * 0.13, 0.28 * prj.size, 0.28 * prj.size, [0, 0, 1, 1], [pjcol[0], pjcol[1], pjcol[2], 0.5]);
+            wBill(glowArr2, prj.x, prj.z, prj.y, 0.44 * prj.size * pulse2, 0.44 * prj.size * pulse2, [0, 0, 1, 1], [pjcol[0], pjcol[1], pjcol[2], 0.9]);
+            wBill(glowArr2, prj.x, prj.z, prj.y, 0.11 * prj.size, 0.11 * prj.size, [0, 0, 1, 1], [1, 1, 0.98, 1]);
+          }
+          wBQ("glow", glowArr2);
+          // Impact rings
+          var ringArr2 = [];
+          for (var rg = 0; rg < rings.length; rg++) {
+            var rn = rings[rg];
+            var rp = wglProject(rn.x, rn.z, rn.y);
+            if (!rp || rp.f > tier.dist + 4) continue;
+            var rprog = rn.life / rn.max, rrad = 0.14 + rprog * (rn.big ? 1.15 : 0.62);
+            var rcol = wCol(rn.color);
+            var rcc = [rcol[0], rcol[1], rcol[2], 0.75 * (1 - rprog)];
+            if (rn.z > 0.2) wBill(ringArr2, rn.x, rn.z, rn.y, rrad * 2, rrad * 2, [0, 0, 1, 1], rcc);
+            else wFlat(ringArr2, rn.x, 0.02, rn.y, rrad * 2, rrad * 2, 0, [0, 0, 1, 1], rcc);
+          }
+          wBQ("ring", ringArr2);
+          // Splat particles (soft discs; density follows the ladder)
+          var partArr = [], pstep = fx > 0.8 ? 1 : fx > 0.5 ? 2 : 3;
+          for (var p2 = 0; p2 < parts.length; p2++) {
+            if (p2 % pstep) continue;
+            var pt = parts[p2];
+            var pp2 = wglProject(pt.x, pt.z, pt.y);
+            if (!pp2 || pp2.f > tier.dist) continue;
+            var al = 1 - pt.life / pt.max;
+            var pc2 = pt.cream ? [1, 0.99, 0.94, 0.95 * al] : (function () { var c3 = wCol(pt.color); return [c3[0], c3[1], c3[2], al]; })();
+            wBill(partArr, pt.x, pt.z, pt.y, pt.r / 70, pt.r / 70, [0, 0, 1, 1], pc2);
+          }
+          wBQ("part", partArr);
+          // Pollen motes + falling leaves in the light
+          var moteArr = [], moteN = Math.floor(motes.length * fx);
+          for (var m2 = 0; m2 < moteN; m2++) {
+            var mo = motes[m2];
+            var mp2 = wglProject(mo.x, mo.z, mo.y);
+            if (!mp2 || mp2.f < 0.3 || mp2.f > 7) continue;
+            wBill(moteArr, mo.x, mo.z, mo.y, 0.035, 0.035, [0, 0, 1, 1], [1, 0.91, 0.69, 0.34 * (1 - mp2.f / 7) * (0.6 + 0.4 * Math.sin(elapsed * 1.7 + mo.ph))]);
+          }
+          wBQ("glow", moteArr);
+          var leafN = Math.floor(leaves.length * fx);
+          for (var l3 = 0; l3 < leafN; l3++) {
+            var lf2 = leaves[l3];
+            var lp = wglProject(lf2.x, lf2.z, lf2.y);
+            if (!lp || lp.f < 0.3 || lp.f > 9) continue;
+            var la = elapsed * 2.2 + lf2.ph, lc2 = Math.cos(la), ls2 = Math.sin(la), lsz = 0.05;
+            var lc3 = wCol(lf2.col);
+            var e1 = [R[0] * lc2 + U[0] * ls2, R[1] * lc2 + U[1] * ls2, R[2] * lc2 + U[2] * ls2];
+            var e2 = [-R[0] * ls2 + U[0] * lc2, -R[1] * ls2 + U[1] * lc2, -R[2] * ls2 + U[2] * lc2];
+            wQuadC(dynTr,
+              [lf2.x - e1[0] * lsz - e2[0] * lsz * 0.55, lf2.z - e1[1] * lsz - e2[1] * lsz * 0.55, lf2.y - e1[2] * lsz - e2[2] * lsz * 0.55],
+              [lf2.x + e1[0] * lsz - e2[0] * lsz * 0.55, lf2.z + e1[1] * lsz - e2[1] * lsz * 0.55, lf2.y + e1[2] * lsz + e2[2] * lsz * 0.55],
+              [lf2.x + e1[0] * lsz + e2[0] * lsz * 0.55, lf2.z + e1[1] * lsz + e2[1] * lsz * 0.55, lf2.y + e1[2] * lsz + e2[2] * lsz * 0.55],
+              [lf2.x - e1[0] * lsz + e2[0] * lsz * 0.55, lf2.z - e1[1] * lsz + e2[1] * lsz * 0.55, lf2.y - e1[2] * lsz + e2[2] * lsz * 0.55],
+              [lc3[0], lc3[1], lc3[2], 0.85 * (1 - lp.f / 10)]);
+          }
+          // Flush: decals (no depth write), models, transparents, sprites
+          wgl.depthMask(false);
+          wDrawDyn(wglBatches.splat && wglBatches.splat[0], wglTexSplat, "normal");
+          wgl.depthMask(true);
+          wDrawDyn(dynOp, wglTexAtlas, null);
+          wgl.depthMask(false);
+          wDrawDyn(dynTr, wglTexAtlas, "normal");
+          wDrawDyn(wglBatches.ring ? [].concat.apply([], wglBatches.ring) : null, wglTexRing, "normal");
+          for (var pk in wglBatches) {
+            if (pk.indexOf("pow_") !== 0) continue;
+            wDrawDyn([].concat.apply([], wglBatches[pk]), wglTexPow[pk.slice(4)], "normal");
+          }
+          wDrawDyn(wglBatches.part && wglBatches.part[0], wglTexGlow, "normal");
+          wDrawDyn(wglBatches.glow ? [].concat.apply([], wglBatches.glow) : null, wglTexGlow, "add");
+          wgl.depthMask(true);
+          wglBatches = null;
+        }
+        // Name tags + power-up labels + the muzzle-flash wash, drawn
+        // on the 2D overlay in the same places the raycaster put them
+        // (projected with the GL camera, occluded by line of sight).
+        function drawOverlayGL(cam) {
+          if (flashT > 0) {
+            var fg = ctx.createRadialGradient(W / 2, H / 2, 8, W / 2, H / 2, W * 0.55);
+            fg.addColorStop(0, "rgba(255,214,120," + Math.min(0.32, flashT * 4.4).toFixed(3) + ")");
+            fg.addColorStop(1, "rgba(255,180,80,0)");
+            ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
+          }
+          ctx.textAlign = "center";
+          for (var i = 0; i < fighters.length; i++) {
+            var f = fighters[i];
+            if (!f.alive || f.isPlayer) continue;
+            var p = wglProject(f.x, (f.z || 0) + 1.04, f.y);
+            if (!p || p.f >= 8.5) continue;
+            if (!losClear(cam.x, cam.y, f.x, f.y)) continue;
+            ctx.font = "700 17px 'Public Sans', sans-serif";
+            var tw = ctx.measureText(f.name).width + 16;
+            ctx.fillStyle = "rgba(18,24,28,0.78)";
+            ctx.beginPath(); ctx.roundRect(p.x - tw / 2, p.y - 24, tw, 23, 11); ctx.fill();
+            ctx.fillStyle = TEAM[f.team].light;
+            ctx.fillText(f.name, p.x, p.y - 7.5);
+          }
+          for (var j = 0; j < powerups.length; j++) {
+            var pw = powerups[j];
+            if (!pw.active) continue;
+            var pp = wglProject(pw.x, 0.92, pw.y);
+            if (!pp || pp.f >= 7) continue;
+            if (!losClear(cam.x, cam.y, pw.x, pw.y)) continue;
+            ctx.font = "700 15px 'Public Sans', sans-serif";
+            var tw2 = ctx.measureText(pw.def.name).width + 14;
+            ctx.fillStyle = "rgba(18,24,28,0.78)";
+            ctx.beginPath(); ctx.roundRect(pp.x - tw2 / 2, pp.y - 21, tw2, 21, 10); ctx.fill();
+            ctx.fillStyle = pw.def.color;
+            ctx.fillText(pw.def.name, pp.x, pp.y - 6);
+          }
+          ctx.textAlign = "left";
+        }
+        // drawWorld dispatches: WebGL when it init'd, else the legacy
+        // raycaster below keeps the game playable anywhere.
+        function drawWorld(cam) {
+          if (!wglTried) { wglTried = true; try { wglOK = initWgl(); } catch (e) { wglOK = false; } }
+          if (wglOK) {
+            try { renderWorldGL(cam); return; }
+            catch (e) { wglOK = false; }
+          }
+          // WebGL unavailable (or a GL frame failed): honest
+          // unsupported-device note in the buffer — the retired
+          // raycaster is gone for good.
+          b.fillStyle = "#241a10"; b.fillRect(0, 0, RBW, RBH);
+          b.fillStyle = "#ffd9a0"; b.font = "700 15px 'Public Sans', sans-serif"; b.textAlign = "center";
+          b.fillText("Tate-lo 3D needs WebGL, which this device or browser", RBW / 2, RBH / 2 - 10);
+          b.fillText("hasn't made available — the rest of SpudMaps works as usual.", RBW / 2, RBH / 2 + 12);
+          b.textAlign = "left";
+        }
+
         // ----- Camera -----
         function camPose() {
           if (player.alive) return { x: player.x, y: player.y, a: player.angle, z: player.z || 0 };
@@ -19461,446 +20590,6 @@
           return { f: f2, r: r2 };
         }
 
-        // ----- Drawing the 3D world into the buffer -----
-        function drawWorld(cam) {
-          var fx = Math.cos(cam.a), fy = Math.sin(cam.a);
-          var plx = -fy * Math.tan(FOV / 2), ply = fx * Math.tan(FOV / 2);
-          var horizon = RBH / 2 + pitch + (player.alive ? Math.sin(walkT * 2) * 1.6 : 0);
-          var eyeH = 0.5 + (cam.z || 0); // the eye rises with a jump
-          // Sky: panoramic slice that pans as you turn.
-          var skySrc = skySource();
-          var skyW = skySrc.naturalWidth || skySrc.width;
-          var visW = skyW * FOV / (Math.PI * 2);
-          var startA = cam.a - FOV / 2;
-          var sx0 = ((startA / (Math.PI * 2)) % 1 + 1) % 1 * skyW;
-          b.fillStyle = "#e8975a"; b.fillRect(0, 0, RBW, Math.max(0, horizon + 1));
-          if (sx0 + visW <= skyW) {
-            b.drawImage(skySrc, sx0, 0, visW, skySrc.naturalHeight || skySrc.height, 0, 0, RBW, Math.max(1, horizon + 1));
-          } else {
-            var firstW = skyW - sx0, firstPx = RBW * firstW / visW;
-            b.drawImage(skySrc, sx0, 0, firstW, skySrc.naturalHeight || skySrc.height, 0, 0, firstPx, Math.max(1, horizon + 1));
-            b.drawImage(skySrc, 0, 0, visW - firstW, skySrc.naturalHeight || skySrc.height, firstPx, 0, RBW - firstPx, Math.max(1, horizon + 1));
-          }
-          if (curArena().skyTint) { b.fillStyle = curArena().skyTint; b.fillRect(0, 0, RBW, Math.max(1, horizon + 1)); }
-          // Living sky: soft cloud puffs drift across the panorama
-          // (slower at the horizon, parallax against your turn), and
-          // now and then a pair of birds crosses, wings flapping.
-          for (var cl = 0; cl < 5; cl++) {
-            var clx = (((elapsed * (3 + cl * 0.9) + cl * 173 - cam.a * 26) % (RBW + 150)) + RBW + 150) % (RBW + 150) - 75;
-            var cly = 8 + cl * 11 + Math.sin(elapsed * 0.4 + cl * 2.2) * 2.5;
-            if (cly > horizon - 8) continue;
-            var clg = b.createRadialGradient(clx, cly, 2, clx, cly, 30 + cl * 6);
-            clg.addColorStop(0, "rgba(255,240,214,0.20)"); clg.addColorStop(1, "rgba(255,240,214,0)");
-            b.fillStyle = clg;
-            b.beginPath(); b.arc(clx, cly, 30 + cl * 6, 0, 6.29); b.fill();
-          }
-          b.strokeStyle = "rgba(52,36,30,0.55)"; b.lineWidth = 1.4; b.lineCap = "round";
-          for (var bd = 0; bd < 3; bd++) {
-            var bdx = (((elapsed * 21 + bd * 340) % (RBW + 90)) + RBW + 90) % (RBW + 90) - 45;
-            var bdy = 20 + bd * 13 + Math.sin(elapsed * 1.1 + bd * 2.4) * 3;
-            if (bdy > horizon - 6) continue;
-            var flap = Math.sin(elapsed * 9 + bd * 1.8) * 2.6;
-            b.beginPath();
-            b.moveTo(bdx - 5, bdy + flap); b.quadraticCurveTo(bdx - 1.5, bdy - 2.4, bdx, bdy);
-            b.quadraticCurveTo(bdx + 1.5, bdy - 2.4, bdx + 5, bdy + flap);
-            b.stroke();
-          }
-          // Floor: textured scanline segments — grass from the lawn
-          // texture, brick on the cross paths and centre plaza.
-          var segW = 6, rowStep = 3;
-          for (var y = Math.floor(horizon) + 1; y < RBH; y += rowStep) {
-            var p = y - horizon;
-            if (p < 1) continue;
-            var rowDist = (PROJ * eyeH) / p;
-            var fogF = Math.min(1, rowDist / 13) * 0.62;
-            for (var x = 0; x < RBW; x += segW) {
-              var cxN = 2 * (x + segW / 2) / RBW - 1;
-              var rdx = fx + plx * cxN, rdy = fy + ply * cxN;
-              var wx = cam.x + rdx * rowDist, wy = cam.y + rdy * rowDist;
-              var onBrick = (wx > 8.25 && wx < 9.75) || (wy > 6.25 && wy < 7.75) ||
-                ((wx - 9) * (wx - 9) + (wy - 7) * (wy - 7) < 1.55);
-              var rgb;
-              if (wx < 0.1 || wy < 0.1 || wx > MW - 0.1 || wy > MH - 0.1) rgb = [122, 108, 88];
-              else if (onBrick) rgb = sampleFloor(brickData, wx, wy, 42) || [172, 92, 56];
-              else {
-                rgb = sampleFloor(grassData, wx, wy, 46) || [86, 148, 60];
-                var check = (Math.floor(wx * 2) + Math.floor(wy * 2)) % 2 === 0;
-                var shade = check ? 1 : 0.90;
-                // Dappled sunlight through the leaves, drifting slowly.
-                shade *= 1 + 0.06 * Math.sin(wx * 1.35 + elapsed * 0.6) + 0.05 * Math.sin(wy * 1.8 - elapsed * 0.45);
-                rgb = [rgb[0] * shade, rgb[1] * shade, rgb[2] * shade];
-              }
-              // Fake AO: darken the ground right against the walls.
-              var nearWall = solidAt(Math.floor(wx + 0.28), Math.floor(wy)) || solidAt(Math.floor(wx - 0.28), Math.floor(wy)) ||
-                solidAt(Math.floor(wx), Math.floor(wy + 0.28)) || solidAt(Math.floor(wx), Math.floor(wy - 0.28));
-              var ao = nearWall ? 0.78 : 1;
-              b.fillStyle = fogMix([rgb[0] * ao, rgb[1] * ao, rgb[2] * ao], fogF);
-              b.fillRect(x, y, segW, rowStep);
-            }
-          }
-          // Walls: one textured slice per buffer column + shading + fog + AO base.
-          for (var col = 0; col < RBW; col++) {
-            var cx2 = 2 * col / RBW - 1;
-            var rdx2 = fx + plx * cx2, rdy2 = fy + ply * cx2;
-            var rl = Math.sqrt(rdx2 * rdx2 + rdy2 * rdy2);
-            var hit = rayWall(cam.x, cam.y, rdx2 / rl, rdy2 / rl);
-            var perp = hit.dist * (fx * rdx2 / rl + fy * rdy2 / rl) * rl; // = dist * cos(angle to centre ray)
-            perp = hit.dist * Math.cos(Math.atan2(rdy2, rdx2) - cam.a);
-            if (perp < 0.02) perp = 0.02;
-            zbuf[col] = perp;
-            var wallH = PROJ / perp;
-            var top = horizon - wallH * (1 - eyeH), bot = horizon + wallH * eyeH;
-            var tex = texFor(hit.type, hit.mapX, hit.mapY);
-            var texW = tex.naturalWidth || tex.width;
-            var hitX = hit.side === 0 ? cam.y + rdy2 / rl * hit.dist : cam.x + rdx2 / rl * hit.dist;
-            hitX -= Math.floor(hitX);
-            // Per-cell phase shift: neighbouring walls sample a
-            // different slice of the texture, breaking up repeats.
-            hitX = (hitX + ((Math.abs(hit.mapX * 7 + hit.mapY * 13) % 4) * 0.25)) % 1;
-            var srcX = Math.floor(hitX * (texW - 1));
-            b.drawImage(tex, srcX, 0, 1, tex.naturalHeight || tex.height, col, top, 1, wallH);
-            var fogA = Math.min(1, perp / 13) * 0.62;
-            if (hit.side === 1) { b.fillStyle = "rgba(38,20,4,0.30)"; b.fillRect(col, top, 1, wallH); }
-            // Warm sunset raking light from the sun side + base AO.
-            b.fillStyle = "rgba(255,150,50," + (0.10 * (1 - fogA)).toFixed(3) + ")";
-            b.fillRect(col, top, 1, wallH);
-            var aoH = Math.min(wallH * 0.20, bot - top);
-            b.fillStyle = "rgba(26,16,4,0.34)"; b.fillRect(col, bot - aoH * 0.45, 1, aoH * 0.45);
-            b.fillStyle = "rgba(26,16,4,0.20)"; b.fillRect(col, bot - aoH, 1, aoH * 0.55);
-            if (fogA > 0.01) {
-              b.fillStyle = "rgba(" + FOG.r + "," + FOG.g + "," + FOG.b + "," + fogA.toFixed(3) + ")";
-              b.fillRect(col, top, 1, wallH);
-            }
-          }
-          // Golden light shafts: two warm diagonal bands breathing
-          // slowly across the walls, like sun through the archways.
-          b.save();
-          b.globalAlpha = 0.05 + 0.02 * Math.sin(elapsed * 0.35);
-          var shg = b.createLinearGradient(0, 0, RBW, RBH);
-          shg.addColorStop(0, "rgba(255,196,110,0)");
-          shg.addColorStop(0.36, "rgba(255,196,110,0.9)");
-          shg.addColorStop(0.5, "rgba(255,196,110,0)");
-          shg.addColorStop(0.72, "rgba(255,180,90,0.7)");
-          shg.addColorStop(0.86, "rgba(255,180,90,0)");
-          b.fillStyle = shg;
-          b.translate(Math.sin(elapsed * 0.13) * 24, 0);
-          b.fillRect(-30, 0, RBW + 60, RBH);
-          b.restore();
-          // Muzzle-flash light washes the centre of the world briefly.
-          if (flashT > 0) {
-            var fg = b.createRadialGradient(RBW / 2, horizon, 8, RBW / 2, horizon, RBW * 0.55);
-            fg.addColorStop(0, "rgba(255,214,120," + (flashT * 4.4).toFixed(3) + ")");
-            fg.addColorStop(1, "rgba(255,180,80,0)");
-            b.fillStyle = fg; b.fillRect(0, 0, RBW, RBH);
-          }
-          // Ground decals: persistent sour-cream splats.
-          var drawList = [];
-          for (var d = 0; d < decals.length; d++) {
-            var dc = decals[d];
-            var pr = project(cam, dc.x, dc.y, 0);
-            if (pr.f < 0.3) continue;
-            drawList.push({ kind: "decal", f: pr.f, r: pr.r, item: dc });
-          }
-          for (var pu = 0; pu < powerups.length; pu++) {
-            if (!powerups[pu].active) continue;
-            var prp = project(cam, powerups[pu].x, powerups[pu].y, 0);
-            if (prp.f < 0.3) continue;
-            drawList.push({ kind: "power", f: prp.f, r: prp.r, item: powerups[pu] });
-          }
-          for (var s2 = 0; s2 < fighters.length; s2++) {
-            var f2 = fighters[s2];
-            if (!f2.alive || f2.isPlayer) continue;
-            var pr2 = project(cam, f2.x, f2.y, 0);
-            if (pr2.f < 0.25) continue;
-            drawList.push({ kind: "fighter", f: pr2.f, r: pr2.r, item: f2 });
-          }
-          drawList.sort(function (a2, b2) { return b2.f - a2.f; });
-          for (var q = 0; q < drawList.length; q++) {
-            var ent = drawList[q];
-            var scrX = RBW / 2 + (ent.r / ent.f) * PROJ;
-            var groundY = horizon + (PROJ * eyeH) / ent.f;
-            if (ent.kind === "power") {
-              var pw3 = ent.item;
-              var bobZ = 0.44 + Math.sin(elapsed * 2.4 + pw3.phase) * 0.07;
-              var pwH = PROJ * 0.66 / ent.f * (1 + 0.07 * Math.sin(elapsed * 3.4 + pw3.phase));
-              var pwY = horizon + (eyeH - bobZ) * PROJ / ent.f;
-              var ccp = Math.max(0, Math.min(RBW - 1, Math.floor(scrX)));
-              if (ent.f <= zbuf[ccp] + 0.45) {
-                b.fillStyle = "rgba(255,240,190,0.30)";
-                b.beginPath(); b.ellipse(scrX, groundY - 1, pwH * 0.52, pwH * 0.14, 0, 0, 6.29); b.fill();
-                b.drawImage(pw3.sprite, scrX - pwH / 2, pwY - pwH / 2, pwH, pwH);
-                // A pulsing ground ring and three sparkles orbiting
-                // the pickup, so a live power-up shimmers from afar.
-                var ringR = pwH * (0.55 + 0.10 * Math.sin(elapsed * 3.4 + pw3.phase));
-                b.strokeStyle = pw3.def.color; b.globalAlpha = 0.55; b.lineWidth = 1.6;
-                b.beginPath(); b.ellipse(scrX, groundY - 1, ringR, ringR * 0.26, 0, 0, 6.29); b.stroke();
-                b.globalAlpha = 1;
-                b.fillStyle = "#fffbe8";
-                for (var orb = 0; orb < 3; orb++) {
-                  var oa = elapsed * 2.6 + pw3.phase + orb * 2.09;
-                  b.globalAlpha = 0.65 + 0.35 * Math.sin(oa * 2);
-                  b.beginPath(); b.arc(scrX + Math.cos(oa) * pwH * 0.46, pwY + Math.sin(oa) * pwH * 0.30, Math.max(1, pwH * 0.045), 0, 6.29); b.fill();
-                }
-                b.globalAlpha = 1;
-                if (ent.f < 7) {
-                  b.font = "700 9px 'Public Sans', sans-serif"; b.textAlign = "center";
-                  var plabel = pw3.def.name;
-                  var ptw = b.measureText(plabel).width + 8;
-                  b.fillStyle = "rgba(18,24,28,0.78)";
-                  b.beginPath(); b.roundRect(scrX - ptw / 2, pwY - pwH / 2 - 15, ptw, 12, 6); b.fill();
-                  b.fillStyle = pw3.def.color;
-                  b.fillText(plabel, scrX, pwY - pwH / 2 - 5.5);
-                  b.textAlign = "left";
-                }
-              }
-            } else if (ent.kind === "decal") {
-              var dsc = (ent.item.scale || 1) * (ent.item.born == null ? 1 : (0.55 + 0.45 * Math.min(1, (elapsed - ent.item.born) * 4)));
-              var dw = PROJ * 1.15 * dsc / ent.f;
-              var cc = Math.max(0, Math.min(RBW - 1, Math.floor(scrX)));
-              if (ent.f > zbuf[cc] + 0.55) continue;
-              // Wall-splat drips and pool: each seeded drip runs down
-              // from just inside the splat at its own pace; once one
-              // reaches the floor, a cream pool spreads at the base.
-              // All derived from the decal's age — nothing simulated.
-              // The blob itself is drawn below at the reduced size.
-              var dripHeads = null, poolFrac = 0;
-              if (ent.item.kind === "wall" && ent.item.drips) {
-                var dage = elapsed - (ent.item.born || 0);
-                var zTopD = (ent.item.z || 0.5) + 0.10 * dsc;
-                dripHeads = [];
-                for (var di = 0; di < ent.item.drips.length; di++) {
-                  var dr0 = ent.item.drips[di];
-                  var runD = (dage - dr0.delay) * dr0.speed;
-                  if (runD <= 0) { dripHeads.push(-1); continue; }
-                  var hzD = Math.max(0, zTopD - runD);
-                  dripHeads.push(hzD);
-                  if (hzD <= 0) poolFrac = Math.max(poolFrac, Math.min(1, (dage - dr0.delay - zTopD / dr0.speed) / 1.8));
-                }
-                if (poolFrac > 0) {
-                  var poolW = PROJ * 0.36 * dsc * poolFrac / ent.f;
-                  b.fillStyle = "rgba(255,253,240,0.5)";
-                  b.beginPath(); b.ellipse(scrX, groundY - 1, poolW, poolW * 0.27, 0, 0, 6.29); b.fill();
-                  b.fillStyle = "rgba(255,253,240,0.85)";
-                  b.beginPath(); b.ellipse(scrX, groundY - 1, poolW * 0.68, poolW * 0.19, 0, 0, 6.29); b.fill();
-                  b.fillStyle = "rgba(255,255,255,0.45)";
-                  b.beginPath(); b.ellipse(scrX - poolW * 0.2, groundY - 1 - poolW * 0.05, poolW * 0.3, poolW * 0.07, 0, 0, 6.29); b.fill();
-                }
-              }
-              b.save();
-              if (ent.item.kind === "wall") {
-                // Stuck at shot height where the shot landed: drawn
-                // upright, centred on the impact height.
-                var wallY = horizon + (eyeH - (ent.item.z || 0.5)) * PROJ / ent.f;
-                b.translate(scrX, wallY);
-                b.rotate(ent.item.seed * 0.6);
-                b.globalAlpha = 0.96;
-                b.drawImage(splatSprite, -dw / 2, -dw * 0.28, dw, dw * 0.56);
-              } else {
-                b.translate(scrX, groundY);
-                b.rotate(ent.item.seed);
-                b.globalAlpha = 0.94;
-                b.drawImage(splatSprite, -dw / 2, -dw * 0.25, dw, dw * 0.5);
-              }
-              b.restore();
-              b.globalAlpha = 1;
-              // Drip streaks: unrotated, so they always run straight
-              // down the wall from the splat to their current head,
-              // with a droplet bulb riding the leading edge.
-              if (dripHeads) {
-                var zTopS = (ent.item.z || 0.5) + 0.10 * dsc;
-                var yTopS = horizon + (eyeH - zTopS) * PROJ / ent.f;
-                b.strokeStyle = "rgba(255,253,240,0.88)";
-                b.lineCap = "round";
-                for (var dj = 0; dj < dripHeads.length; dj++) {
-                  if (dripHeads[dj] < 0) continue;
-                  var drp = ent.item.drips[dj];
-                  var dxp = scrX + drp.off * dw;
-                  var yHead = horizon + (eyeH - dripHeads[dj]) * PROJ / ent.f;
-                  var lwD = Math.max(1, drp.w * PROJ / ent.f);
-                  b.globalAlpha = 0.88; b.lineWidth = lwD;
-                  b.beginPath(); b.moveTo(dxp, yTopS); b.lineTo(dxp, yHead); b.stroke();
-                  b.globalAlpha = 0.92;
-                  b.fillStyle = "rgba(255,253,240,1)";
-                  b.beginPath(); b.ellipse(dxp, yHead, lwD * 0.85, lwD * 1.25, 0, 0, 6.29); b.fill();
-                }
-                b.globalAlpha = 1;
-              }
-            } else {
-              var ftr = ent.item;
-              var sprH = PROJ * 0.94 / ent.f, sprW = sprH * 0.8;
-              var feetY = horizon + (eyeH - (ftr.z || 0)) * PROJ / ent.f;
-              // Sprite life: a walk bob driven by ground covered, a
-              // gentle idle breath, and a slight lean into the stride.
-              var wPh = (ftr.x + ftr.y) * 9 + ftr.idx * 2.1;
-              var bobA = -Math.abs(Math.sin(wPh)) * sprH * 0.028 + Math.sin(elapsed * 2.3 + ftr.idx * 1.7) * sprH * 0.007;
-              var leanA = Math.sin(wPh) * sprW * 0.035;
-              var topY = feetY - sprH + bobA;
-              // Blob shadow: stays on the ground, shrinking and fading
-              // as its Spudtan leaves it behind mid-jump.
-              var shScale = 1 / (1 + (ftr.z || 0) * 0.55);
-              b.fillStyle = "rgba(24,32,8," + (0.40 * shScale).toFixed(3) + ")";
-              b.beginPath(); b.ellipse(scrX + sprW * 0.10, groundY - 1, sprW * 0.42 * shScale, (sprH * 0.075 + 1.5) * shScale, 0, 0, 6.29); b.fill();
-              // Billboard sprite in vertical strips, clipped by the z-buffer.
-              var strip = 2;
-              for (var sxp = -sprW / 2; sxp < sprW / 2; sxp += strip) {
-                var colX = Math.floor(scrX + sxp);
-                if (colX < 0 || colX >= RBW) continue;
-                if (zbuf[colX] < ent.f - 0.12) continue;
-                var srcXp = (sxp + sprW / 2) / sprW * 160;
-                b.drawImage(ftr.sprite, srcXp, 0, 160 * strip / sprW, 200, scrX + sxp + leanA, topY, strip + 0.6, sprH);
-              }
-              // Muzzle glow at the blaster tip just after a shot.
-              if (ftr.flashA > 0) {
-                var mgx = scrX + sprW * 0.46, mgy = topY + sprH * 0.56;
-                var mgg = b.createRadialGradient(mgx, mgy, 0.5, mgx, mgy, sprW * 0.34);
-                mgg.addColorStop(0, "rgba(255,252,238," + (0.85 * ftr.flashA / 0.16).toFixed(3) + ")");
-                mgg.addColorStop(0.4, "rgba(255,214,120," + (0.5 * ftr.flashA / 0.16).toFixed(3) + ")");
-                mgg.addColorStop(1, "rgba(255,190,90,0)");
-                b.fillStyle = mgg;
-                b.beginPath(); b.arc(mgx, mgy, sprW * 0.34, 0, 6.29); b.fill();
-              }
-              // Distance fog over the sprite + name tag when close.
-              var fogS = Math.min(1, ent.f / 13) * 0.55;
-              if (fogS > 0.03) {
-                b.fillStyle = "rgba(" + FOG.r + "," + FOG.g + "," + FOG.b + "," + fogS.toFixed(3) + ")";
-                b.fillRect(scrX - sprW / 2, topY, sprW, sprH);
-              }
-              if (ftr.shield) {
-                // Butter bubble: breathes gently, with a bright
-                // shimmer arc travelling around its rim.
-                var shP = 1 + 0.045 * Math.sin(elapsed * 3.1 + ftr.idx * 1.9);
-                b.strokeStyle = "rgba(255,210,62,0.85)"; b.lineWidth = 2;
-                b.beginPath(); b.ellipse(scrX, topY + sprH / 2, sprW * 0.64 * shP, sprH * 0.56 * shP, 0, 0, 6.29); b.stroke();
-                var shA = elapsed * 1.8 + ftr.idx * 2.0;
-                b.strokeStyle = "rgba(255,252,230,0.9)"; b.lineWidth = 2.6;
-                b.beginPath(); b.ellipse(scrX, topY + sprH / 2, sprW * 0.64 * shP, sprH * 0.56 * shP, 0, shA, shA + 0.9); b.stroke();
-              }
-              if (ent.f < 8.5) {
-                b.font = "700 9px 'Public Sans', sans-serif"; b.textAlign = "center";
-                var label = ftr.name;
-                var tw = b.measureText(label).width + 8;
-                b.fillStyle = "rgba(18,24,28,0.78)";
-                b.beginPath(); b.roundRect(scrX - tw / 2, topY - 15, tw, 12, 6); b.fill();
-                b.fillStyle = TEAM[ftr.team].light;
-                b.fillText(label, scrX, topY - 5.5);
-                b.textAlign = "left";
-              }
-            }
-          }
-          // Tracers: bright glowing shots.
-          for (var t2 = 0; t2 < tracers.length; t2++) {
-            var tr = tracers[t2];
-            var pa = project(cam, tr.x1, tr.y1, tr.z1), pb = project(cam, tr.x2, tr.y2, tr.z2);
-            if (pa.f < 0.1 || pb.f < 0.1) continue;
-            var ax = RBW / 2 + (pa.r / pa.f) * PROJ, ay = horizon + (eyeH - tr.z1) * PROJ / pa.f;
-            var bx2 = RBW / 2 + (pb.r / pb.f) * PROJ, by2 = horizon + (eyeH - tr.z2) * PROJ / pb.f;
-            var fade = 1 - tr.life / tr.max;
-            b.strokeStyle = TEAM[tr.team].shot; b.globalAlpha = 0.5 * fade; b.lineWidth = 3.4; b.lineCap = "round";
-            b.beginPath(); b.moveTo(ax, ay); b.lineTo(bx2, by2); b.stroke();
-            b.globalAlpha = fade; b.lineWidth = 1.4; b.strokeStyle = "#fffef6";
-            b.beginPath(); b.moveTo(ax, ay); b.lineTo(bx2, by2); b.stroke();
-            b.globalAlpha = 1;
-          }
-          // Projectiles in flight: a glowing sour-cream shot with a
-          // short comet tail, big enough to track across the arena.
-          for (var pj = 0; pj < projectiles.length; pj++) {
-            var prj = projectiles[pj];
-            var ppj = project(cam, prj.x, prj.y, prj.z);
-            if (ppj.f < 0.15) continue;
-            var txp = prj.x - prj.vx * 0.055, typ = prj.y - prj.vy * 0.055;
-            var ptl = project(cam, txp, typ, prj.z);
-            var hx = RBW / 2 + (ppj.r / ppj.f) * PROJ, hy = horizon + (eyeH - prj.z) * PROJ / ppj.f;
-            var ccj = Math.max(0, Math.min(RBW - 1, Math.floor(hx)));
-            if (zbuf[ccj] < ppj.f - 0.1) continue;
-            var rad = Math.max(1.9, PROJ * 0.085 * prj.size / ppj.f) * (1 + 0.16 * Math.sin(elapsed * 24 + pj * 1.7));
-            if (ptl.f > 0.15) {
-              var tx2 = RBW / 2 + (ptl.r / ptl.f) * PROJ, ty2 = horizon + (eyeH - prj.z) * PROJ / ptl.f;
-              b.strokeStyle = TEAM[prj.team].shot; b.globalAlpha = 0.55; b.lineWidth = Math.max(1.4, rad * 0.9); b.lineCap = "round";
-              b.beginPath(); b.moveTo(tx2, ty2); b.lineTo(hx, hy); b.stroke();
-              b.globalAlpha = 1;
-            }
-            var gg = b.createRadialGradient(hx, hy, 0.5, hx, hy, rad * 2.6);
-            gg.addColorStop(0, "rgba(255,254,246,0.95)");
-            gg.addColorStop(0.35, TEAM[prj.team].shot);
-            gg.addColorStop(1, "rgba(255,220,120,0)");
-            b.fillStyle = gg;
-            b.beginPath(); b.arc(hx, hy, rad * 2.6, 0, 6.29); b.fill();
-            b.fillStyle = "#fffef6";
-            b.beginPath(); b.arc(hx, hy, rad * 0.62, 0, 6.29); b.fill();
-          }
-          // Impact rings: expanding ellipses lying on the floor, or
-          // upright rings at shot height for wall and fighter hits.
-          for (var rg = 0; rg < rings.length; rg++) {
-            var rn = rings[rg];
-            var rp = project(cam, rn.x, rn.y, rn.z);
-            if (rp.f < 0.2) continue;
-            var rxp = RBW / 2 + (rp.r / rp.f) * PROJ;
-            var ryp = horizon + (eyeH - rn.z) * PROJ / rp.f;
-            var rc3 = Math.max(0, Math.min(RBW - 1, Math.floor(rxp)));
-            if (zbuf[rc3] < rp.f - 0.1) continue;
-            var rprog = rn.life / rn.max;
-            var rrad = PROJ * (0.14 + rprog * (rn.big ? 1.15 : 0.62)) / rp.f;
-            b.strokeStyle = rn.color;
-            b.globalAlpha = 0.75 * (1 - rprog);
-            b.lineWidth = Math.max(1, 2.6 * (1 - rprog));
-            b.beginPath();
-            if (rn.z > 0.2) b.arc(rxp, ryp, rrad, 0, 6.29);
-            else b.ellipse(rxp, horizon + (PROJ * eyeH) / rp.f, rrad, rrad * 0.3, 0, 0, 6.29);
-            b.stroke();
-            b.globalAlpha = 1;
-          }
-          // Splat particles in 3D.
-          for (var p2 = 0; p2 < parts.length; p2++) {
-            var pt = parts[p2];
-            var pp = project(cam, pt.x, pt.y, pt.z);
-            if (pp.f < 0.15) continue;
-            var px2 = RBW / 2 + (pp.r / pp.f) * PROJ;
-            var py2 = horizon + (eyeH - pt.z) * PROJ / pp.f;
-            var cc2 = Math.max(0, Math.min(RBW - 1, Math.floor(px2)));
-            if (zbuf[cc2] < pp.f - 0.1) continue;
-            var sz = Math.max(0.7, pt.r * (PROJ / pp.f) / 160);
-            var al = 1 - pt.life / pt.max;
-            b.fillStyle = pt.cream ? "rgba(255,253,240," + (0.95 * al) + ")" : pt.color;
-            b.globalAlpha = pt.cream ? 1 : al;
-            b.beginPath(); b.arc(px2, py2, sz, 0, 6.29); b.fill();
-            b.globalAlpha = 1;
-          }
-          // Dust & pollen motes floating in the light.
-          b.fillStyle = "#ffe9b0";
-          for (var m2 = 0; m2 < motes.length; m2++) {
-            var mo = motes[m2];
-            var mp = project(cam, mo.x, mo.y, mo.z);
-            if (mp.f < 0.3 || mp.f > 7) continue;
-            var mxp = RBW / 2 + (mp.r / mp.f) * PROJ;
-            var myp = horizon + (eyeH - mo.z) * PROJ / mp.f;
-            if (mxp < 0 || mxp >= RBW || myp < 0 || myp >= RBH) continue;
-            var mc = Math.floor(mxp);
-            if (zbuf[mc] < mp.f - 0.1) continue;
-            b.globalAlpha = 0.34 * (1 - mp.f / 7) * (0.6 + 0.4 * Math.sin(elapsed * 1.7 + mo.ph));
-            b.beginPath(); b.arc(mxp, myp, 1.05, 0, 6.29); b.fill();
-          }
-          b.globalAlpha = 1;
-          // Falling leaves, tumbling in the light.
-          for (var l3 = 0; l3 < leaves.length; l3++) {
-            var lf2 = leaves[l3];
-            var lp = project(cam, lf2.x, lf2.y, lf2.z);
-            if (lp.f < 0.3 || lp.f > 9) continue;
-            var lxp = RBW / 2 + (lp.r / lp.f) * PROJ;
-            var lyp = horizon + (eyeH - lf2.z) * PROJ / lp.f;
-            if (lxp < -6 || lxp >= RBW + 6 || lyp < 0 || lyp >= RBH) continue;
-            var lc = Math.max(0, Math.min(RBW - 1, Math.floor(lxp)));
-            if (zbuf[lc] < lp.f - 0.1) continue;
-            var lsz = Math.max(1.2, PROJ * 0.045 / lp.f);
-            b.save();
-            b.translate(lxp, lyp);
-            b.rotate(elapsed * 2.2 + lf2.ph);
-            b.globalAlpha = 0.85 * (1 - lp.f / 10);
-            b.fillStyle = lf2.col;
-            b.beginPath(); b.ellipse(0, 0, lsz, lsz * 0.55, 0, 0, 6.29); b.fill();
-            b.restore();
-          }
-          b.globalAlpha = 1;
-        }
 
         // ----- Weapon viewmodel, HUD overlays, banners (full-res layer) -----
         function drawWeapon(t) {
@@ -20048,7 +20737,8 @@
           var cam = camPose();
           drawWorld(cam);
           ctx.imageSmoothingEnabled = true;
-          ctx.drawImage(bCan, 0, 0, W, H);
+          ctx.drawImage(wglOK ? wglCan : bCan, 0, 0, W, H);
+          if (wglOK) drawOverlayGL(cam);
           // Timer pill while playing.
           if (mode === "play") {
             var left = Math.max(0, Math.ceil(roundSeconds() - roundT));
@@ -20169,15 +20859,10 @@
           }
           update(dt);
           draw(elapsed);
-          // Hold frame rate on phones: drop the render scale when the
-          // frames run long, restore it when there's headroom.
-          fpsFrames++; fpsTime += dt;
-          if (fpsFrames >= 90) {
-            var avg = fpsTime / fpsFrames;
-            if (avg > 0.027 && RBW > 320) setRenderScale(RBW - 80);
-            else if (avg < 0.0125 && RBW < 480) setRenderScale(RBW + 80);
-            fpsFrames = 0; fpsTime = 0;
-          }
+          // Hold frame rate on phones: the WebGL ladder steps the
+          // render resolution, fog/cull distance, and particle
+          // density (Escape-style) off a rolling fps average.
+          if (wglOK) adaptWgl(dt);
           if (mode === "count" || mode === "play" || mode === "roundover" || mode === "wait" || (mp.on && open)) raf = requestAnimationFrame(tick);
         }
 
@@ -20351,7 +21036,7 @@
             tapL.move(m);
             if (m > 1) { dx /= m; dy /= m; }
             moveStick.dx = dx; moveStick.dy = dy;
-            if (knobEl) knobEl.style.transform = "translate(" + (dx * 30) + "px," + (dy * 30) + "px)";
+            if (knobEl) knobEl.style.transform = "translate(" + (dx * 20) + "px," + (dy * 20) + "px)";
           });
           var stickOff = function (e) {
             if (moveStick && moveStick.id === e.pointerId && moveStick.fromStick) {
@@ -20385,7 +21070,7 @@
             tapR.move(m);
             if (m > 1) { dx /= m; dy /= m; }
             aimStick.dx = dx; aimStick.dy = dy;
-            if (knobREl) knobREl.style.transform = "translate(" + (dx * 30) + "px," + (dy * 30) + "px)";
+            if (knobREl) knobREl.style.transform = "translate(" + (dx * 20) + "px," + (dy * 20) + "px)";
           });
           var stickROff = function (e) {
             if (aimStick && aimStick.id === e.pointerId) {
@@ -20406,6 +21091,22 @@
         if (autoBtn) {
           autoBtn.addEventListener("click", function () { autoFire = !autoFire; syncAutoBtn(); });
           syncAutoBtn();
+        }
+        // Aim sensitivity slider: live-updates aimSens (used by the
+        // aim stick, the touch look-drag, and the pointer-locked
+        // mouse) and its % readout. Session-only — no storage.
+        var sensEl = document.getElementById("ball3dSens");
+        var sensValEl = document.getElementById("ball3dSensVal");
+        if (sensEl) {
+          var syncSens = function () {
+            var v = parseInt(sensEl.value, 10);
+            if (!isFinite(v)) v = 100;
+            aimSens = v / 100;
+            if (sensValEl) sensValEl.textContent = v + "%";
+          };
+          sensEl.addEventListener("input", syncSens);
+          sensEl.addEventListener("change", syncSens);
+          syncSens();
         }
         if (fireBtn) {
           fireBtn.addEventListener("pointerdown", function (e) { e.preventDefault(); btnFire = true; fireBtn.classList.add("held"); });
@@ -20447,8 +21148,8 @@
             moveStick.dx = dx; moveStick.dy = dy;
           } else if (lookTouch && lookTouch.id === e.pointerId) {
             if (player.alive) {
-              player.angle += (p.x - lookTouch.lx) * 0.00525;
-              pitch = Math.max(-26, Math.min(26, pitch - (p.y - lookTouch.ly) * 0.063));
+              player.angle += (p.x - lookTouch.lx) * 0.00525 * aimSens;
+              pitch = Math.max(-64, Math.min(64, pitch - (p.y - lookTouch.ly) * 0.063 * aimSens));
             }
             lookTouch.lx = p.x; lookTouch.ly = p.y;
           }
@@ -20464,8 +21165,8 @@
         document.addEventListener("mousemove", function (e) {
           if (!open || mode !== "play" || !player.alive) return;
           if (document.pointerLockElement !== canvas) return;
-          player.angle += (e.movementX || 0) * 0.00161;
-          pitch = Math.max(-26, Math.min(26, pitch - (e.movementY || 0) * 0.0385));
+          player.angle += (e.movementX || 0) * 0.00161 * aimSens;
+          pitch = Math.max(-64, Math.min(64, pitch - (e.movementY || 0) * 0.0385 * aimSens));
         });
         overlay.addEventListener("pointerdown", function (e) {
           if (e.target !== overlay) return;
