@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-03-sampled-score-and-effects · v106.1.93 -->
+<!-- build-2026-11-04-polish-pass · v108.1.94 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -481,11 +481,11 @@
 
       /* Reading the grounds */
       .grounds {
-        margin-top: var(--s-5); background: var(--panel); border: 1px solid var(--line);
-        border-radius: var(--radius); padding: 20px var(--s-5); box-shadow: var(--shadow);
+        margin-top: var(--s-4); background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius); padding: var(--s-4) var(--s-5); box-shadow: var(--shadow);
       }
-      .grounds h2 { font-family: var(--font-display); font-weight: 600; margin: 0 0 4px; font-size: 1.35rem; }
-      .grounds .gsub { margin: 0 0 14px; color: var(--ink-soft); font-size: 0.92rem; }
+      .grounds h2 { font-family: var(--font-display); font-weight: 600; margin: 0 0 4px; font-size: 1.3rem; line-height: 1.2; }
+      .grounds .gsub { margin: 0 0 var(--s-3); color: var(--ink-soft); font-size: 0.92rem; }
       .gdiagram { display: grid; grid-template-columns: 1fr 92px; gap: 12px; align-items: stretch; }
       html[data-ts="1"] .gdiagram { grid-template-columns: 1fr 110px; }
       html[data-ts="2"] .gdiagram { grid-template-columns: 1fr 128px; }
@@ -647,10 +647,19 @@
       #detail .dlink:hover { text-decoration: underline; }
 
       .know {
-        margin-top: var(--s-5); background: var(--panel); border: 1px solid var(--line);
-        border-radius: var(--radius); padding: 20px var(--s-5); box-shadow: var(--shadow);
+        margin-top: var(--s-4); background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius); padding: var(--s-4) var(--s-5); box-shadow: var(--shadow);
       }
-      .know h2 { font-family: var(--font-display); font-weight: 600; margin: 0 0 8px; font-size: 1.35rem; }
+      .know h2 { font-family: var(--font-display); font-weight: 600; margin: 0 0 4px; font-size: 1.3rem; line-height: 1.2; }
+      /* Notes & credits fold: subheads + the small-print credits text */
+      .notesfold h3 {
+        font-family: var(--font-display); font-weight: 600; font-size: 1.08rem;
+        color: var(--spud); margin: var(--s-4) 0 6px;
+      }
+      .notesfold h3:first-child { margin-top: 2px; }
+      .notesfold .credits { color: var(--ink-soft); font-size: 0.85rem; }
+      .notesfold .credits p { margin: 4px 0; }
+      .notesfold .credits a { color: var(--accent); }
       @media (max-width: 560px) { .know { padding: var(--s-4); } }
       .know ul { margin: 0; padding-left: 18px; }
       .know li { margin: 5px 0; }
@@ -838,7 +847,7 @@
         .installhint { display: none; }
       }
 
-      footer.src { margin-top: var(--s-5); color: var(--ink-soft); font-size: 0.85rem; }
+      footer.src { margin-top: var(--s-4); color: var(--ink-soft); font-size: 0.85rem; }
       footer.src a { color: var(--accent); }
       footer.src p { margin: 4px 0; }
       footer.src .version-stamp { margin-top: 6px; font-size: 0.72rem; letter-spacing: 0.04em; color: var(--ink-soft); opacity: 0.65; }
@@ -864,7 +873,7 @@
         padding: var(--s-3) var(--s-4) var(--s-4);
       }
       .grouptools-title {
-        font-family: var(--font-display); font-weight: 700; font-size: 1.08rem;
+        font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; line-height: 1.2;
         color: var(--spud); margin: 0 0 var(--s-2);
       }
       .grouptools-row { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: stretch; }
@@ -3175,7 +3184,8 @@
         </div>
       </div>
       <section class="grounds" aria-labelledby="beachReadsTitle">
-        <h2 id="beachReadsTitle">Beach reads</h2>
+        <h2 id="beachReadsTitle"><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="beachReadsBody"><span>Beach reads</span><span class="chev" aria-hidden="true"></span></button></h2>
+        <div class="foldbody" id="beachReadsBody" hidden>
         <p class="gsub">Free classics from Project Gutenberg — public-domain books, no account and no cost. Tap a title to read it right in the browser, or grab the EPUB/Kindle version from its page while you still have signal: once a book is on your phone, it reads fine offline.</p>
         <div class="shelf-grid">
           <div class="book-card">
@@ -3227,10 +3237,12 @@
             <a class="book-link" href="https://www.gutenberg.org/ebooks/1184" target="_blank" rel="noopener">Read free on Project Gutenberg →</a>
           </div>
         </div>
+        </div>
       </section>
 
       <section class="grounds" aria-labelledby="phrasebookTitle">
-        <h2 id="phrasebookTitle">Spanish phrasebook</h2>
+        <h2 id="phrasebookTitle"><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="phrasebookBody"><span>Spanish phrasebook</span><span class="chev" aria-hidden="true"></span></button></h2>
+        <div class="foldbody" id="phrasebookBody" hidden>
         <p class="gsub">Tap any phrase to see the Spanish, then tap the speaker to hear it out loud — handy at the front desk, in a taxi, or down in town. Every phrase lives inside this page, so the whole phrasebook works with no signal at all; the speaker uses your phone's own voice.</p>
         <h3 class="phrase-cat">Greetings &amp; basics</h3>
         <ul class="phrase-list" data-phrases="greetings"></ul>
@@ -3245,6 +3257,7 @@
         <h3 class="phrase-cat">Wedding</h3>
         <ul class="phrase-list" data-phrases="wedding"></ul>
         <a class="translate-link" href="https://translate.google.com/?sl=en&amp;tl=es&amp;op=translate" target="_blank" rel="noopener">Anything else? Open Google Translate (English → Spanish)</a>
+        </div>
       </section>
       <script>
         /* Spanish phrasebook (v54): every phrase is baked into this page, so
@@ -3398,9 +3411,10 @@
       </script>
     </main>
 
-      <section class="know">
-        <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="knowBody"><span>Good to know</span><span class="chev" aria-hidden="true"></span></button></h2>
-        <div class="foldbody" id="knowBody" hidden>
+      <section class="know notesfold" aria-label="Notes and credits">
+        <h2><button type="button" class="foldtoggle" aria-expanded="false" aria-controls="notesBody"><span>Notes &amp; credits</span><span class="chev" aria-hidden="true"></span></button></h2>
+        <div class="foldbody" id="notesBody" hidden>
+        <h3>Good to know</h3>
         <ul>
           <li><strong>Room service runs 24 hours</strong> and is included — with your Excellence Club stay you get the upgraded Club menu. The resort only publishes the room service menu inside the Excellence Collection app, so browse it there; there's no public copy to put on this page.</li>
           <li><strong>The bars pour a full premium list</strong> but publish no itemized drink menus — the Martini Bar's "tini" list, Revive's smoothies, and every other bar's list live at the bar itself. Hours are on each bar's pin.</li>
@@ -3410,6 +3424,18 @@
           <li><strong>Two temporary moves:</strong> Chez Isabelle's menu is currently served at Flavor Market, and Agave's at Oregano, while those rooms are refreshed. Barcelona and Toscana have closed for good.</li>
           <li><strong>Fresh catch on the beach:</strong> the closest thing to fishermen cooking their catch near the resort is down in Puerto Morelos town (pins 38–44) — El Pesquero and Pelícanos by the pier serve the local boats' fish; ask what's fresh that day. There's no catch-of-the-day stand on the resort's own beach.</li>
         </ul>
+        <h3>About this map &amp; credits</h3>
+        <div class="credits">
+        <p>Full menus mirror the resort's current Excellence Collection app menus (via Myalia Travels' menu mirror), checked Oct 21, 2026; menu key: GF gluten-free, H healthy, PB plant-based, SP spicy, LI local ingredients. Wine and sake lists are the sommelier's paid bottles — everything else is included. Two exceptions, flagged on their pins: Agave and Flavor Market have no Riviera Cancun menu published right now, so their pins show the chain's current official menus from sister resorts. The Grill's steakhouse menu isn't running while The Lobster House uses its room. Layout, walking paths, pools, and landscaping follow the resort's official map (June 2026), redrawn here as a flat overview in that map's own tilted orientation. Off-property pins (38–44) and the hidden-gem picks were rechecked Nov 2, 2026 against the restaurants' own listings, TripAdvisor, Wikivoyage, and traveler and local guides; small-town hours can shift, so confirm before you walk down.</p>
+        <p>
+          <a href="https://www.excellenceresorts.com/riviera-maya-cancun/excellence-riviera-cancun/flavors-and-spirits/" target="_blank" rel="noopener">All restaurants &amp; menus</a> ·
+          <a href="https://1f4ce3cae3f3395d5ce0-69065588188907c78332bfb3d08ee9ab.ssl.cf1.rackcdn.com/u/Excellence_Riviera_Cancun_Resort_MAP_June_2026_H.pdf" target="_blank" rel="noopener">Official resort map (PDF)</a> ·
+          <a href="https://www.google.com/maps/search/?api=1&amp;query=Excellence+Riviera+Cancun+Puerto+Morelos" target="_blank" rel="noopener">Directions to the resort</a>
+        </p>
+        <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
+        <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
+        <p>Spud Escape 3D audio credits — the score and effects are real recordings, sliced and re-pitched in the game's sampler: electric guitar power chord by Mcrfobrockr (CC BY 3.0); bowed violin by Alex Dee (CC BY 2.5); piano note by pinkyfinger via Freesound (CC BY 2.5); timpani by spt3125 via Freesound (CC0); engine recording of a BMW M5 by Fi Exhaust (CC BY 3.0); spring-hammer clang by Work With Sounds / Technical Museum of Slovenia (CC BY 4.0); breaking glass by Gravity Sound (CC BY 4.0). Public-domain recordings: Gregorian chant voice by Membeth, drum cadence by the U.S. Navy Band, jazz ride cymbal by Kakofonous, and PDSounds recordings (compressed air by stilgar, gunshots by aradlaw, dull thud by gregoryweir, supermarket scanner by stephan), plus the BBC time pips. The original recordings, on Wikimedia Commons: "D5 Power Chord.ogg", "Violin sounds and techniques.ogg", "68448 pinkyfinger Piano G.ogg", "Timpani 64-c-p5.wav", "Johannes.Hymnus.ogg", "Drum - Cadence A.ogg", "Jazz ride pattern.ogg", "BMW M5 Competition with Fi Exhaust - engine and exhaust sound (YouTube KrTDWpk8WDc).opus", "WWS MechanicalspringhammerATLAS4large.ogg", "Glass breaking (Gravity Sound).wav", "Can of compressed air.ogg", "Gunshots 8.ogg", "Dull thud.ogg", "Prize scan supermarket.ogg", and "Gts (bbc) pips.ogg". The chant line the voice sings is original to this game.</p>
+        </div>
         </div>
       </section>
 
@@ -3433,16 +3459,7 @@
       </section>
 
       <footer class="src">
-        <p>Full menus mirror the resort's current Excellence Collection app menus (via Myalia Travels' menu mirror), checked Oct 21, 2026; menu key: GF gluten-free, H healthy, PB plant-based, SP spicy, LI local ingredients. Wine and sake lists are the sommelier's paid bottles — everything else is included. Two exceptions, flagged on their pins: Agave and Flavor Market have no Riviera Cancun menu published right now, so their pins show the chain's current official menus from sister resorts. The Grill's steakhouse menu isn't running while The Lobster House uses its room. Layout, walking paths, pools, and landscaping follow the resort's official map (June 2026), redrawn here as a flat overview in that map's own tilted orientation. Off-property pins (38–44) and the hidden-gem picks were rechecked Nov 2, 2026 against the restaurants' own listings, TripAdvisor, Wikivoyage, and traveler and local guides; small-town hours can shift, so confirm before you walk down.</p>
-        <p>
-          <a href="https://www.excellenceresorts.com/riviera-maya-cancun/excellence-riviera-cancun/flavors-and-spirits/" target="_blank" rel="noopener">All restaurants &amp; menus</a> ·
-          <a href="https://1f4ce3cae3f3395d5ce0-69065588188907c78332bfb3d08ee9ab.ssl.cf1.rackcdn.com/u/Excellence_Riviera_Cancun_Resort_MAP_June_2026_H.pdf" target="_blank" rel="noopener">Official resort map (PDF)</a> ·
-          <a href="https://www.google.com/maps/search/?api=1&amp;query=Excellence+Riviera+Cancun+Puerto+Morelos" target="_blank" rel="noopener">Directions to the resort</a>
-        </p>
-        <p>Carretera Federal 307 Chetumal–Puerto Juárez, Mz 7 Lote 1, Puerto Morelos, Q. Roo · +52 998 872 8500</p>
-        <p>SpudMaps runs on equal parts research and potato. No spuds were harmed in the making of this map; several were eaten.</p>
-        <p>Spud Escape 3D audio credits — the score and effects are real recordings, sliced and re-pitched in the game's sampler: electric guitar power chord by Mcrfobrockr (CC BY 3.0); bowed violin by Alex Dee (CC BY 2.5); piano note by pinkyfinger via Freesound (CC BY 2.5); timpani by spt3125 via Freesound (CC0); engine recording of a BMW M5 by Fi Exhaust (CC BY 3.0); spring-hammer clang by Work With Sounds / Technical Museum of Slovenia (CC BY 4.0); breaking glass by Gravity Sound (CC BY 4.0). Public-domain recordings: Gregorian chant voice by Membeth, drum cadence by the U.S. Navy Band, jazz ride cymbal by Kakofonous, and PDSounds recordings (compressed air by stilgar, gunshots by aradlaw, dull thud by gregoryweir, supermarket scanner by stephan), plus the BBC time pips. The original recordings, on Wikimedia Commons: "D5 Power Chord.ogg", "Violin sounds and techniques.ogg", "68448 pinkyfinger Piano G.ogg", "Timpani 64-c-p5.wav", "Johannes.Hymnus.ogg", "Drum - Cadence A.ogg", "Jazz ride pattern.ogg", "BMW M5 Competition with Fi Exhaust - engine and exhaust sound (YouTube KrTDWpk8WDc).opus", "WWS MechanicalspringhammerATLAS4large.ogg", "Glass breaking (Gravity Sound).wav", "Can of compressed air.ogg", "Gunshots 8.ogg", "Dull thud.ogg", "Prize scan supermarket.ogg", and "Gts (bbc) pips.ogg". The chant line the voice sings is original to this game.</p>
-        <p class="version-stamp">v107.1.93</p>
+        <p class="version-stamp">v108.1.94</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
