@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-04-polish-pass · v108.1.94 -->
+<!-- build-2026-11-04-carrot-limbs · v109.1.96 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -3459,7 +3459,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v108.1.94</p>
+        <p class="version-stamp">v109.1.96</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -27248,10 +27248,10 @@
         }
         // One carrot infantryman drawn into Geo g at ground
         // position p: a tapered orange root body standing on two
-        // little feet — wide shoulders up top, point down at the
-        // ground — darker ridge stripes, eyes on the face that
-        // watches the road, green fronds on top, and a fork held
-        // out toward the buggy. Original design.
+        // legs and little feet — wide shoulders up top, point down
+        // at the ground — darker ridge stripes, eyes on the face
+        // that watches the road, green fronds on top, and a fork
+        // held out toward the buggy in both hands. Original design.
         function drawInfantry(g, p) {
           // Visibility pass (v90): the infantryman is built about
           // 45% larger in every dimension — a tall, unmistakable
@@ -27260,8 +27260,23 @@
           // as a SHOOTER from the higher camera long before his
           // fork is in the air, not just a speck the shots come
           // out of. Same boxes, same draw — just bigger.
+          // Limbs pass: two-segment legs (orange thigh, darker
+          // shin, knee bent forward) join the root tip to the
+          // feet he already had, and a second two-segment arm
+          // reaches across from the far shoulder so BOTH hands
+          // grip the fork — at speed he now reads as a character
+          // with arms and legs, not roadside scenery. Art only:
+          // every body box, foot, eye, frond, and the fork keep
+          // their exact v90 positions and sizes, and nothing
+          // about hit radii, damage, counts, spawns, or behaviour
+          // changes — the limbs are extra boxes inside the same
+          // silhouette, drawn by the same draw call.
           g.box(p.x - 0.29, p.y + 0.10, p.z, 0.35, 0.20, 0.60, COL.chassis, 0, MAT.metal); // feet
           g.box(p.x + 0.29, p.y + 0.10, p.z, 0.35, 0.20, 0.60, COL.chassis, 0, MAT.metal);
+          aimBox(g, p.x - 0.22, p.y + 0.70, p.z, -0.12, -0.28, -0.16, 0.36, 0.21, COL.carrot, 0);     // legs: thighs
+          aimBox(g, p.x + 0.22, p.y + 0.70, p.z, 0.12, -0.28, -0.16, 0.36, 0.21, COL.carrot, 0);
+          aimBox(g, p.x - 0.34, p.y + 0.42, p.z - 0.16, 0.05, -0.28, 0.16, 0.34, 0.17, COL.carrotDark, 0); // shins, knee to foot
+          aimBox(g, p.x + 0.34, p.y + 0.42, p.z - 0.16, -0.05, -0.28, 0.16, 0.34, 0.17, COL.carrotDark, 0);
           g.box(p.x, p.y + 0.60, p.z, 0.52, 0.90, 0.52, COL.carrotDark, 0);               // root tip
           g.box(p.x, p.y + 1.42, p.z, 0.92, 0.84, 0.92, COL.carrot, 0);                   // mid body
           g.box(p.x, p.y + 2.08, p.z, 1.16, 0.60, 1.16, COL.carrot, 0);                   // shoulders
@@ -27271,6 +27286,8 @@
           g.box(p.x + 0.24, p.y + 2.16, p.z - 0.59, 0.15, 0.19, 0.05, COL.chassis, 0);
           drawFronds(g, p.x, p.y + 2.36, p.z, 1.45);
           aimBox(g, p.x + 0.60, p.y + 1.80, p.z, 0.3, -0.25, -0.5, 0.80, 0.16, COL.carrotDark, 0); // arm
+          aimBox(g, p.x - 0.56, p.y + 2.02, p.z - 0.30, 0.61, -0.36, -0.32, 0.78, 0.17, COL.carrotDark, 0); // far arm: upper, across the chest
+          aimBox(g, p.x + 0.05, p.y + 1.66, p.z - 0.62, 0.67, 0.20, 0.52, 0.88, 0.15, COL.carrotDark, 0);   // far arm: forearm, hand to the fork
           drawFork(g, p.x + 0.84, p.y + 1.88, p.z, px - p.x, (py + 0.8) - (p.y + 1.88), pz - p.z, 1.2);
         }
         // One flying carrot drone drawn into Geo g at position p:
