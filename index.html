@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-04-spudkart-driving-routes · v115.1.98 -->
+<!-- build-2026-11-04-whos-here-viewing · v116.1.99 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -914,8 +914,9 @@
       .chip.liveedit[hidden] { display: none; }
       .livelegend { margin: -4px 0 10px; font-size: 0.88rem; color: var(--ink-soft); }
       .livenote { margin: -4px 0 10px; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
-      /* Active users: compact row of name pills inside the Group tools panel,
-         shown only while Live group is on. Tap a name to center that dot. */
+      /* Active users: compact row of name pills inside the Who's here card
+         (Group tools panel), shown while viewing the group — which starts
+         on its own at sign-in. Tap a name to center that dot. */
       .liveusers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s-3); }
       .liveusers[hidden] { display: none; }
       .liveuser {
@@ -937,6 +938,36 @@
       .liveuser .uicon svg { width: 14px; height: 14px; display: block; }
       .liveuser:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
       .liveusers-empty { font-size: 0.88rem; color: var(--ink-soft); align-self: center; }
+      /* Who's here: the member list as its own prominent card, visible to
+         everyone (viewing is separate from sharing). Live members sort
+         first; the header dot pulses while anyone is live. */
+      .livehere {
+        margin-top: var(--s-3);
+        border: 2px solid var(--accent); border-radius: 14px;
+        background: var(--panel); box-shadow: var(--shadow);
+        padding: 12px 14px 13px;
+      }
+      .livehere[hidden] { display: none; }
+      .livehere-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; }
+      .livehere-title {
+        margin: 0; font-size: 1.08rem; font-weight: 800;
+        display: inline-flex; align-items: center; gap: 8px;
+      }
+      .livehere-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-soft); flex: none; }
+      .livehere-dot.on { background: #22c55e; animation: liveheredot 2.4s ease-out infinite; }
+      @keyframes liveheredot {
+        0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+        70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .livehere-dot.on { animation: none; }
+      }
+      .livehere-status { font-size: 0.88rem; font-weight: 600; color: var(--ink-soft); }
+      .livehere .liveusers { margin-top: 10px; }
+      .livehere .liveuser { min-height: 40px; padding: 7px 13px; font-size: 0.92rem; }
+      .livehere-note { margin: 9px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+      .livehere-note[hidden] { display: none; }
       /* Stale (last-seen) members: faded pill, desaturated icon, with the
          last-seen time shown next to the name. Still tappable to center. */
       .liveuser.stale { opacity: 0.68; }
@@ -3565,7 +3596,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v115.1.99</p>
+        <p class="version-stamp">v116.1.100</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -6783,11 +6814,16 @@
       });
 
       // ---------- Live group: opt-in shared location dots (Firebase) ----------
-      // Off by default: nothing is written or shared until the visitor taps
-      // the "Live group" chip, picks a name + dot color, and their phone's
+      // Sharing is opt-in: nothing is written until the visitor taps the
+      // "Live group" chip, picks a name + dot color, and their phone's
       // GPS starts reporting. Each fix is converted to map coordinates on
       // the device (liveXY); only name, color and map x/y are ever written
       // to the shared presence list — never raw lat/lng.
+      // Viewing is NOT opt-in: at sign-in the page starts watching the
+      // shared list read-only (liveStartViewing), so everyone's dots,
+      // faded last-seen entries and the Who's here list are visible
+      // without the visitor sharing anything themselves. Stopping
+      // sharing stops only the writing — viewing keeps running.
       // App mode: true only inside the SpudMaps Live Android app, whose
       // WebView appends "SpudMapsLive" to its user-agent string. Every
       // app-mode branch is gated on this marker alone; on the web it is
@@ -6913,6 +6949,7 @@
       }
       var liveState = {
         sharing: false,
+        viewing: false,   // read-only watch: listeners attached, dots + list shown, nothing written
         entries: {},      // uid -> latest presence snapshot entry
         proximity: {},    // observerUid -> { observedUid -> Bluetooth proximity record }
         dotEls: {},       // uid (or "__me") -> { el, label, x, y }
@@ -6947,7 +6984,18 @@
       function liveLastSeenText(updatedAt) {
         if (typeof updatedAt !== "number" || !isFinite(updatedAt)) return "";
         var d = new Date(updatedAt);
-        return "last seen " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        var time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        var now = new Date();
+        // Time alone reads as "today" even for days-old entries, so
+        // anything not from today carries its date.
+        if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()) {
+          return "last seen " + time;
+        }
+        var yest = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        if (d.getFullYear() === yest.getFullYear() && d.getMonth() === yest.getMonth() && d.getDate() === yest.getDate()) {
+          return "last seen yesterday " + time;
+        }
+        return "last seen " + d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + " " + time;
       }
       function liveValidIcon(id) {
         return (typeof id === "string" && LIVE_ICON_MAP[id]) ? id : LIVE_DEFAULT_ICON;
@@ -7088,16 +7136,44 @@
       liveEditBtn.hidden = true;
       groupToolsRow.appendChild(liveEditBtn);
 
-      // Active users row: lives inside the Group tools panel, under the
-      // action row. Filled by liveRenderUsers() from the same presence data
+      // Who's here card: lives inside the Group tools panel, under the
+      // action row, as its own headed card so the member list is easy to
+      // find. Filled by liveRenderUsers() from the same presence data
       // that draws the dots; tapping a name centers the map on that dot.
+      // Shown whenever the group is being viewed — which starts on its
+      // own at sign-in — not only while the visitor is sharing.
+      var liveHereEl = document.createElement("div");
+      liveHereEl.className = "livehere";
+      liveHereEl.id = "liveHere";
+      liveHereEl.hidden = true;
+      var liveHereHead = document.createElement("div");
+      liveHereHead.className = "livehere-head";
+      var liveHereTitle = document.createElement("h3");
+      liveHereTitle.className = "livehere-title";
+      var liveHereDot = document.createElement("span");
+      liveHereDot.className = "livehere-dot";
+      liveHereDot.setAttribute("aria-hidden", "true");
+      liveHereTitle.appendChild(liveHereDot);
+      liveHereTitle.appendChild(document.createTextNode("Who's here"));
+      var liveHereStatus = document.createElement("span");
+      liveHereStatus.className = "livehere-status";
+      liveHereStatus.id = "liveHereStatus";
+      liveHereHead.appendChild(liveHereTitle);
+      liveHereHead.appendChild(liveHereStatus);
+      liveHereEl.appendChild(liveHereHead);
       var liveUsersEl = document.createElement("div");
       liveUsersEl.className = "liveusers";
       liveUsersEl.id = "liveUsers";
       liveUsersEl.setAttribute("role", "group");
       liveUsersEl.setAttribute("aria-label", "Group members on the map — tap a name to center the map on them");
       liveUsersEl.hidden = true;
-      groupToolsEl.appendChild(liveUsersEl);
+      liveHereEl.appendChild(liveUsersEl);
+      var liveHereNote = document.createElement("p");
+      liveHereNote.className = "livehere-note";
+      liveHereNote.textContent = "You're watching the group — tap Live group above to put your own dot on the map.";
+      liveHereNote.hidden = true;
+      liveHereEl.appendChild(liveHereNote);
+      groupToolsEl.appendChild(liveHereEl);
       var liveUsersSig = "";
 
       function liveCenterOn(x, y) {
@@ -7179,8 +7255,8 @@
         return Object.keys(out);
       }
       function liveRenderUsers(want) {
-        if (!liveState.sharing) {
-          if (!liveUsersEl.hidden) liveUsersEl.hidden = true;
+        if (!liveState.viewing && !liveState.sharing) {
+          if (!liveHereEl.hidden) liveHereEl.hidden = true;
           liveUsersSig = "";
           return;
         }
@@ -7188,6 +7264,9 @@
         var keys = Object.keys(want).sort(function (a, b) {
           if (a === "__me") return -1;
           if (b === "__me") return 1;
+          // Live members first, then last-seen — who's actually here
+          // reads at a glance, the faded names follow.
+          if (!!want[a].stale !== !!want[b].stale) return want[a].stale ? 1 : -1;
           return want[a].name < want[b].name ? -1 : 1;
         });
         // Proximity badges: a member with NO live dot (a faded
@@ -7215,15 +7294,28 @@
         proxRows.sort(function (a, b) { return a.name < b.name ? -1 : 1; });
         var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon + "|" + (want[k].stale ? "stale:" + want[k].updatedAt : "live") + "|" + (badges[k] || ""); }).join(";") +
           "|prox" + proxRows.map(function (r) { return r.uid + "|" + r.name + "|" + r.badge; }).join(";") +
-          "|potato" + potatoStage();
-        if (sig === liveUsersSig && !liveUsersEl.hidden) return;
+          "|potato" + potatoStage() +
+          "|share" + (liveState.sharing ? "1" : "0");
+        if (sig === liveUsersSig && !liveHereEl.hidden) return;
         liveUsersSig = sig;
+        liveHereEl.hidden = false;
         liveUsersEl.innerHTML = "";
         liveUsersEl.hidden = false;
+        // Card header: the at-a-glance split — live now vs last seen —
+        // and the watching note only while the visitor isn't sharing.
+        var liveN = 0, staleN = 0;
+        keys.forEach(function (k) { if (want[k].stale) staleN++; else liveN++; });
+        liveHereDot.classList.toggle("on", liveN > 0);
+        var statusParts = [];
+        if (liveN) statusParts.push(liveN + " on the map now");
+        if (staleN) statusParts.push(staleN + " last seen");
+        if (proxRows.length) statusParts.push(proxRows.length + " spotted nearby");
+        liveHereStatus.textContent = statusParts.length ? statusParts.join(" · ") : "No one yet";
+        liveHereNote.hidden = !!liveState.sharing;
         if (!keys.length && !proxRows.length) {
           var em = document.createElement("span");
           em.className = "liveusers-empty";
-          em.textContent = "No one's on the map yet.";
+          em.textContent = liveState.sharing ? "No one's on the map yet." : "No one's on the map yet — tap Live group above to add your dot.";
           liveUsersEl.appendChild(em);
           return;
         }
@@ -7455,7 +7547,7 @@
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
-      liveLegendEl.textContent = "Icon dots are your group, live — each person's icon in their color. People together share one “N here” bubble — tap it to see who. A faded dot is where someone was last seen, with the time — their phone may be asleep or the page closed. Turn off Live group to disappear.";
+      liveLegendEl.textContent = "Icon dots are your group, live — each person's icon in their color. People together share one “N here” bubble — tap it to see who. A faded dot is where someone was last seen, with the time — their phone may be asleep or the page closed. Tap Live group to add your own dot; turn it off to disappear.";
       liveLegendEl.hidden = true;
       groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
@@ -7827,6 +7919,11 @@
               // Photo ownership keys off this uid — once it lands, the
               // album re-renders so your own photos get Delete controls.
               if (typeof albumRenderGrid === "function") albumRenderGrid();
+              // Viewing is separate from sharing: once signed in, start
+              // watching the group (read-only) so the dots, the faded
+              // last-seen entries and the Who's here list show without
+              // the visitor having to share their own location first.
+              liveStartViewing();
             }
           });
           liveAuth.signInAnonymously().catch(function () { liveAuthFailed = true; });
@@ -7911,6 +8008,34 @@
         liveRender();
       }
 
+      // ----- Viewing: read-only watch, separate from sharing -----
+      // Attaches the presence + proximity listeners exactly once. Used
+      // by both viewing (auto-started at sign-in) and sharing; stopping
+      // sharing never detaches them, so the group stays visible.
+      var liveListening = false;
+      function liveAttachListeners() {
+        if (liveListening || !liveDb) return;
+        try {
+          livePresenceRef = liveDb.ref("presence");
+          liveProximityRef = liveDb.ref("proximity");
+          livePresenceRef.on("value", liveOnSnapshot, function () { /* a failed read keeps the last snapshot */ });
+          liveProximityRef.on("value", liveOnProximity, function () { /* a failed read keeps the last snapshot */ });
+          liveListening = true;
+        } catch (e) { /* listener attach failed — dots simply won't update */ }
+      }
+      function liveStartViewing() {
+        if (!liveReady || liveState.viewing) return;
+        liveEnsureAuth(function (ok) {
+          if (!ok || liveState.viewing) return;
+          liveAttachListeners();
+          if (!liveListening) return;
+          liveState.viewing = true;
+          liveLegendEl.hidden = false;
+          if (!liveState.staleTimer) liveState.staleTimer = setInterval(liveRender, 15000);
+          liveRender();
+        });
+      }
+
       // ----- Toggle on / off -----
       function liveStartSharing() {
         if (IS_SPUDMAPS_APP) {
@@ -7931,22 +8056,20 @@
             return;
           }
           liveState.sharing = true;
-          liveState.entries = {};
-          liveState.proximity = {};
+          liveState.viewing = true;
           liveState.mePos = null;
           liveState.lastFix = null;
           liveState.lastWrite = null;
           liveState.lastWriteTime = 0;
+          // Sharing rides on the same read listeners viewing uses —
+          // entries/proximity are NOT reset here; they're already live.
+          liveAttachListeners();
           try {
-            livePresenceRef = liveDb.ref("presence");
-            liveMyRef = livePresenceRef.child(liveUid);
+            liveMyRef = livePresenceRef ? livePresenceRef.child(liveUid) : null;
             // No onDisconnect().remove(): if this phone sleeps or the
             // page closes, the entry must persist so the group sees a
             // faded last-seen dot. Only an explicit stop (liveStopSharing)
             // deletes the entry.
-            livePresenceRef.on("value", liveOnSnapshot, function () { /* a failed read keeps the last snapshot */ });
-            liveProximityRef = liveDb.ref("proximity");
-            liveProximityRef.on("value", liveOnProximity, function () { /* a failed read keeps the last snapshot */ });
           } catch (e) { /* listener attach failed — dots simply won't update */ }
           liveChip.setAttribute("aria-pressed", "true");
           liveLegendEl.hidden = false;
@@ -7966,7 +8089,7 @@
             liveNote("Location isn't available, so Live group turned off.");
             return;
           }
-          liveState.staleTimer = setInterval(liveRender, 15000);
+          if (!liveState.staleTimer) liveState.staleTimer = setInterval(liveRender, 15000);
           liveRender();
         });
       }
@@ -7975,39 +8098,23 @@
           try { navigator.geolocation.clearWatch(liveState.watchId); } catch (e) {}
         }
         liveState.watchId = null;
-        if (liveState.staleTimer) { clearInterval(liveState.staleTimer); liveState.staleTimer = null; }
         try {
           if (liveMyRef) { liveMyRef.onDisconnect().cancel(); liveMyRef.remove(); }
         } catch (e) {}
-        try {
-          if (livePresenceRef) livePresenceRef.off("value", liveOnSnapshot);
-        } catch (e) {}
-        try {
-          if (liveProximityRef) liveProximityRef.off("value", liveOnProximity);
-        } catch (e) {}
         liveMyRef = null;
-        livePresenceRef = null;
-        liveProximityRef = null;
         liveState.sharing = false;
-        liveState.entries = {};
-        liveState.proximity = {};
         liveState.mePos = null;
         liveState.lastFix = null;
         liveState.lastWrite = null;
-        for (var key in liveState.dotEls) {
-          if (!Object.prototype.hasOwnProperty.call(liveState.dotEls, key)) continue;
-          var rec = liveState.dotEls[key];
-          if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
-        }
-        liveState.dotEls = {};
-        liveLayoutBubbles([]);
+        // Viewing stays on: stopping sharing removes only your own dot
+        // and entry (liveRender drops "__me" once sharing is off, and
+        // the removed entry leaves on the next snapshot). The group's
+        // dots, the faded last-seen entries, the Who's here list, the
+        // legend and the read listeners all stay exactly as they were.
         liveCloseGroup();
         liveChip.setAttribute("aria-pressed", "false");
-        liveCountEl.textContent = "";
-        liveLegendEl.hidden = true;
         liveEditBtn.hidden = true;
-        liveUsersEl.hidden = true;
-        liveUsersSig = "";
+        liveRender();
       }
       liveChip.addEventListener("click", function () {
         if (IS_SPUDMAPS_APP) {
@@ -8101,7 +8208,7 @@
           rec.label.style.borderLeftColor = w.color;
         }
         layoutDots();
-        liveCountEl.textContent = liveState.sharing && count > 0 ? "· " + count : "";
+        liveCountEl.textContent = (liveState.viewing || liveState.sharing) && count > 0 ? "· " + count : "";
         liveRenderUsers(want);
       }
 
