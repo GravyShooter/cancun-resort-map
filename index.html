@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-04-mapgestures · v120.1.101 -->
+<!-- build-2026-11-04-idiotproof · v122.1.102 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -262,7 +262,7 @@
       .chips {
         display: flex; gap: var(--s-2); flex-wrap: nowrap;
         overflow-x: auto; overflow-y: hidden;
-        padding: var(--s-3) 0 var(--s-4);
+        padding: 8px 0 var(--s-3);
         scrollbar-width: none; -ms-overflow-style: none;
         -webkit-overflow-scrolling: touch;
       }
@@ -271,7 +271,7 @@
         appearance: none; cursor: pointer; flex: none; white-space: nowrap;
         border: 1px solid var(--line); background: var(--panel);
         color: var(--ink); border-radius: 999px;
-        padding: 8px 14px; min-height: 44px; font: inherit; font-size: 0.9rem; font-weight: 500;
+        padding: 10px 16px; min-height: 48px; font: inherit; font-size: 0.95rem; font-weight: 500;
         display: inline-flex; align-items: center; gap: 7px;
       }
       .chip .cdot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
@@ -279,6 +279,16 @@
       .chip .cicon svg { width: 15px; height: 15px; display: block; }
       .chip .n { color: var(--ink-soft); font-size: 0.8rem; }
       .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+      /* Idiot-proofing pass (v122): a plain heading over the filter row so
+         the buttons explain themselves, a visible "what am I seeing" line
+         under them (was screen-reader-only, so an empty filter read as a
+         dead end), and a one-line how-to under the map. */
+      .chipshead { padding-top: var(--s-3); }
+      .chipshead-title { margin: 0; font-size: 1.12rem; font-weight: 800; line-height: 1.25; }
+      .chipshead-hint { margin: 2px 0 0; font-size: 0.92rem; color: var(--ink-soft); }
+      .filterstatus { margin: 0 0 var(--s-3); font-size: 0.95rem; font-weight: 600; line-height: 1.4; }
+      .maphelp { margin: 0; padding: 10px 16px 12px; font-size: 0.95rem; line-height: 1.45; color: var(--ink); border-top: 1px solid var(--line); }
+      .maphelp strong { font-weight: 700; }
       .chip[aria-pressed="true"] .n { color: inherit; opacity: 0.75; }
       /* On wide screens every filter gets a visible home instead of the
          rail running off the right edge; phones keep the compact swipe rail. */
@@ -296,13 +306,17 @@
       }
       .scene {
         position: relative; background: #79a85b; overflow: hidden;
-        /* Cooperative gestures: the browser keeps one-finger vertical drags
-           for page scroll (pan-y); the pointer code below claims the gesture
-           (touch-action: none) only once a second touch lands, so two-finger
-           pan and pinch-zoom move the map. Mouse input is unaffected. */
+        /* Tap-to-activate: the map is locked by default — touch-action:
+           pan-y hands one-finger drags to page scroll, and the pointer
+           code ignores touch drags, so the map never captures a scroll.
+           Tapping "Tap to move map" adds .map-active (and inline
+           touch-action: none): one-finger drags then pan and pinches
+           zoom until "Done" locks it again. Mouse input is unaffected:
+           drag pans and the wheel zooms whether locked or not. */
         height: clamp(430px, 74vh, 820px); touch-action: pan-y; cursor: grab;
         scroll-margin-top: 12px;
       }
+      .scene.map-active { box-shadow: inset 0 0 0 3px var(--accent), inset 0 0 0 5px rgba(255, 253, 248, 0.55); }
       .scene:active { cursor: grabbing; }
       .scene:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
       .world { position: absolute; left: 0; top: 0; width: 100%; transform-origin: 0 0; will-change: transform; }
@@ -323,24 +337,33 @@
       .mbtn svg { width: 20px; height: 20px; display: block; }
       .jbtn { min-height: 44px; border-radius: 999px; padding: 8px 14px; font-size: 0.9rem; }
       .mbtn:focus-visible, .jbtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-      /* Two-finger hint: a small pill on the map so touch guests learn the
-         cooperative gesture before they get stuck scrolling the map. It
-         never takes taps (pointer-events: none) and pulses when a solo
-         one-finger drag is attempted on the map. */
-      .gesturehint {
-        position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
-        z-index: 8; pointer-events: none; white-space: nowrap;
-        max-width: calc(100% - 116px); overflow: hidden; text-overflow: ellipsis;
+      /* Tap-to-activate gate: one prominent pill button at the bottom of
+         the map. Locked, it reads "Tap to move map"; active, it is
+         replaced by a "Drag to move · pinch to zoom" note and a Done
+         button that hands scrolling back to the page. It sits clear of
+         the zoom buttons at the lower right. */
+      .mapgate {
+        position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+        z-index: 9; display: flex; flex-direction: column; align-items: center; gap: 6px;
+        max-width: calc(100% - 130px);
+      }
+      .mapgate-btn {
+        appearance: none; cursor: pointer; border: 0; border-radius: 999px;
+        background: var(--accent); color: var(--accent-ink);
+        font: inherit; font-weight: 800; font-size: 1rem; line-height: 1.2;
+        min-height: 50px; padding: 12px 24px; white-space: nowrap;
+        display: inline-flex; align-items: center; gap: 9px;
+        box-shadow: 0 4px 14px rgba(30, 40, 20, 0.45), 0 0 0 2px rgba(255, 253, 248, 0.65);
+      }
+      .mapgate-btn svg { width: 20px; height: 20px; display: block; flex: none; }
+      .mapgate-btn[hidden], .mapgate-note[hidden] { display: none; }
+      .mapgate-btn:focus-visible { outline: 3px solid var(--gold, #d9a441); outline-offset: 2px; }
+      .mapgate-note {
         background: rgba(14, 22, 18, 0.86); color: #fffdf8;
         border: 1px solid rgba(255, 253, 248, 0.35); border-radius: 999px;
-        padding: 7px 13px; font-size: 0.8rem; font-weight: 600; line-height: 1.25;
-        box-shadow: 0 3px 10px rgba(30, 40, 20, 0.4); text-align: center;
-        transition: background 0.2s ease, transform 0.2s ease;
+        padding: 6px 12px; font-size: 0.8rem; font-weight: 600; line-height: 1.25;
+        white-space: nowrap; box-shadow: 0 3px 10px rgba(30, 40, 20, 0.4);
       }
-      .gesturehint.nudge {
-        background: var(--accent); transform: translateX(-50%) scale(1.05);
-      }
-      @media (prefers-reduced-motion: reduce) { .gesturehint { transition: none; } }
       @media (max-width: 560px) { .scene { height: clamp(400px, 68vh, 640px); } }
       .scene .lbl {
         font-family: "Public Sans", system-ui, sans-serif;
@@ -838,9 +861,9 @@
       #detail .dhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
       #detail .dclose {
         appearance: none; cursor: pointer; flex: none;
-        min-width: 44px; min-height: 44px; margin: -8px -8px 0 0;
+        min-width: 44px; min-height: 48px; margin: -8px -8px 0 0; padding: 0 16px;
         border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
-        border-radius: 999px; font-size: 1.3rem; line-height: 1; font-weight: 600;
+        border-radius: 999px; font-size: 1rem; line-height: 1; font-weight: 700;
       }
       #detail .dclose:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
       .ihhead { display: flex; align-items: center; gap: var(--s-2); }
@@ -987,7 +1010,7 @@
       }
       .livehere-status { font-size: 0.88rem; font-weight: 600; color: var(--ink-soft); }
       .livehere .liveusers { margin-top: 10px; }
-      .livehere .liveuser { min-height: 40px; padding: 7px 13px; font-size: 0.92rem; }
+      .livehere .liveuser { min-height: 44px; padding: 8px 14px; font-size: 0.95rem; }
       .livehere-note { margin: 9px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
       .livehere-note[hidden] { display: none; }
       /* Blip: the one-time ping button inside the Who's here card. Teal
@@ -996,10 +1019,10 @@
       .liveblip {
         appearance: none; cursor: pointer; width: 100%;
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        margin-top: 10px; min-height: 48px; padding: 11px 16px;
+        margin-top: 10px; min-height: 54px; padding: 13px 18px;
         border: 0; border-radius: 999px;
         background: #0e6e6e; color: #ffffff;
-        font: inherit; font-size: 0.98rem; font-weight: 700; line-height: 1.2;
+        font: inherit; font-size: 1.05rem; font-weight: 700; line-height: 1.2;
         box-shadow: 0 3px 10px rgba(30, 40, 20, 0.3);
       }
       .liveblip[hidden] { display: none; }
@@ -1181,7 +1204,7 @@
         border: 2px solid #ffffff; box-shadow: 0 1px 3px rgba(25, 35, 20, 0.45);
       }
       .boardbtn2 {
-        appearance: none; cursor: pointer; min-height: 40px; padding: 7px 14px;
+        appearance: none; cursor: pointer; min-height: 44px; padding: 8px 15px;
         border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2);
         color: var(--ink); font: inherit; font-size: 0.88rem; font-weight: 600;
       }
@@ -1225,7 +1248,7 @@
       }
       .boardbadge[hidden] { display: none; }
       .boardacts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 7px; }
-      .boardbtn-sm { min-height: 34px; padding: 4px 13px; font-size: 0.82rem; }
+      .boardbtn-sm { min-height: 44px; padding: 7px 15px; font-size: 0.9rem; }
       .boardbtn-danger { color: var(--c-dining); border-color: var(--c-dining); }
       .boardconfirm { font-size: 0.88rem; font-weight: 600; color: var(--c-dining); }
       .boardedit { margin-top: 4px; }
@@ -2916,9 +2939,9 @@
       .liveprompt-btn:focus-visible, .liveprompt-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
       .liveprompt-x {
         appearance: none; cursor: pointer; flex: none;
-        width: 44px; height: 44px; border: 0; border-radius: 999px;
-        background: none; color: var(--ink-soft);
-        font-size: 1.45rem; line-height: 1; font-weight: 600;
+        min-height: 48px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 999px;
+        background: var(--panel); color: var(--ink);
+        font: inherit; font-size: 0.95rem; line-height: 1.2; font-weight: 700;
         display: inline-flex; align-items: center; justify-content: center;
       }
       @media (max-width: 560px) {
@@ -3102,7 +3125,7 @@
         .toolbar { padding-top: 2px; }
         .toolbar .thint { display: none; }
         .chips { padding: 4px 0 6px; gap: 4px; }
-        .chip { min-height: 44px; padding: 6px 11px; font-size: 0.85rem; gap: 6px; }
+        .chip { min-height: 48px; padding: 8px 13px; font-size: 0.92rem; gap: 6px; }
         /* Group tools: title inline with its action row */
         .grouptools {
           display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--s-3);
@@ -3184,11 +3207,11 @@
             </div>
           </div>
           <div class="brand-rule" aria-hidden="true"></div>
-          <p class="sub">Tap a pin or a place name for hours, menus, and what's there.</p>
+          <p class="sub">Tap a pin on the map — or a place name in the list — for hours, menus, and what's there. Tap anything to have a look: a wrong tap can't break anything.</p>
           <p class="wedding-line" id="weddingChip" hidden><span class="dot" aria-hidden="true"></span><span id="weddingChipText"></span></p>
-          <button type="button" class="wallshortcut" id="wallShortcut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.38 8.38 0 0 1 3 11.5a8.5 8.5 0 0 1 8.5-8.5 8.38 8.38 0 0 1 8.5 8.5z"/><path d="M12 7v6m0 0-2.2-2.2M12 13l2.2-2.2"/></svg>Go to The Wedding Wall</button>
+          <button type="button" class="wallshortcut" id="wallShortcut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.38 8.38 0 0 1 3 11.5a8.5 8.5 0 0 1 8.5-8.5 8.38 8.38 0 0 1 8.5 8.5z"/><path d="M12 7v6m0 0-2.2-2.2M12 13l2.2-2.2"/></svg>Go to The Wedding Wall — group notes ↓</button>
         </div>
-        <button type="button" class="installcta" id="installCta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5m0 0L8 10.5m4 4 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 16.5v1.7A1.8 1.8 0 0 0 6.3 20h11.4a1.8 1.8 0 0 0 1.8-1.8v-1.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg> Install as App</button>
+        <button type="button" class="installcta" id="installCta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5m0 0L8 10.5m4 4 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 16.5v1.7A1.8 1.8 0 0 0 6.3 20h11.4a1.8 1.8 0 0 0 1.8-1.8v-1.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg> Save to Home Screen</button>
       </header>
 
       <aside class="rebanner" id="rebrandBanner" hidden aria-label="SpudMaps new look notice">
@@ -3215,18 +3238,22 @@
     <main>
       <!-- Category filters sit directly above the map card so they are
            visible on arrival, with no scrolling past the map to find them. -->
+      <div class="chipshead">
+        <h2 class="chipshead-title">What are you looking for?</h2>
+        <p class="chipshead-hint">Tap one button to show just that kind of place. The row slides sideways — swipe it for more buttons.</p>
+      </div>
       <nav class="chips" id="chips" aria-label="Filter places by category"></nav>
-      <p class="visually-hidden" id="filterStatus" role="status" aria-live="polite"></p>
+      <p class="filterstatus" id="filterStatus" role="status" aria-live="polite">Showing everything — every place is on the map. Tap a pin or a name to see a place.</p>
 
       <div class="mapbox">
         <div class="liveprompt" id="livePrompt" role="region" aria-label="Appear on the map">
-          <p class="liveprompt-text"><span class="liveprompt-dot" aria-hidden="true"></span><span><strong>You're not on the map yet.</strong> <span id="livePromptBody">Set a name and turn Live on to appear here — the group can only see people who've done both.</span></span></p>
+          <p class="liveprompt-text"><span class="liveprompt-dot" aria-hidden="true"></span><span><strong>You're not on the map yet.</strong> <span id="livePromptBody">Tap the green button to put your dot on the map so friends can find you. Just looking? You don't need to do anything — sharing is your choice.</span></span></p>
           <div class="liveprompt-actions">
             <button type="button" class="liveprompt-btn" id="livePromptBtn">Set a name &amp; turn Live on</button>
-            <button type="button" class="liveprompt-x" id="livePromptDismiss" aria-label="Dismiss this prompt">&times;</button>
+            <button type="button" class="liveprompt-x" id="livePromptDismiss" aria-label="Not now — hide this message">Not now</button>
           </div>
         </div>
-        <div class="scene" id="scene" tabindex="0" role="group" aria-label="Drawn overview of the resort grounds: flat building footprints, pools, gardens, beach and sea, with numbered place pins. On a touch screen use two fingers to pan and pinch to zoom — one finger scrolls the page; with a mouse, drag to pan and scroll to zoom. The Puerto Morelos town strip is drawn at the south end of the map.">
+        <div class="scene" id="scene" tabindex="0" role="group" aria-label="Drawn overview of the resort grounds: flat building footprints, pools, gardens, beach and sea, with numbered place pins. On a touch screen the map starts locked so one finger scrolls the page — tap the 'Tap to move map' button on the map to drag and pinch it, then tap Done to go back to scrolling; tapping a pin shows its details either way. With a mouse, drag to pan and scroll to zoom. The Puerto Morelos town strip is drawn at the south end of the map.">
           <div class="maptools jumps" role="group" aria-label="Jump to an area of the map">
             <button type="button" class="jbtn" id="jumpResort">Resort</button>
             <button type="button" class="jbtn" id="jumpTown">Town strip ↓</button>
@@ -3236,7 +3263,11 @@
             <button type="button" class="mbtn" id="zoomOut" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></button>
             <button type="button" class="mbtn" id="zoomReset" aria-label="Reset view" title="Reset view"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 10a5.9 5.9 0 1 1-1.72-4.18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M16.6 2.4v3.7h-3.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
           </div>
-          <div class="gesturehint" id="gestureHint" aria-hidden="true">Use two fingers to move the map &middot; one finger scrolls the page</div>
+          <div class="mapgate" id="mapGate">
+            <span class="mapgate-note" id="mapGateNote" hidden>Drag with one finger to move &middot; pinch to zoom &middot; tap Done when finished</span>
+            <button type="button" class="mapgate-btn" id="mapActivate" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19M2.5 12h19M12 2.5 8.8 5.7M12 2.5l3.2 3.2M12 21.5l-3.2-3.2M12 21.5l3.2-3.2M2.5 12l3.2-3.2M2.5 12l3.2 3.2M21.5 12l-3.2-3.2M21.5 12l-3.2 3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Tap to move map</button>
+            <button type="button" class="mapgate-btn" id="mapDone" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5 10 18 19.5 6.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Done</button>
+          </div>
           <div class="wxoverlay">
             <button type="button" class="wxchip" id="wxChip" aria-expanded="false" aria-controls="wxPop" aria-label="Resort weather — tap for the full forecast"><span class="wxicon" id="wxIcon" aria-hidden="true">🌤️</span><span id="wxTemp">…</span></button>
           </div>
@@ -3248,6 +3279,7 @@
             <p class="wxsrc">Forecast from Open-Meteo, fetched fresh each time the page opens · times and days are resort-local.</p>
           </div>
         </div>
+        <p class="maphelp">Tap a pin to see that place — its hours and menu open right under the map. Scrolling works right over the map; tap <strong>Tap to move map</strong> only when you want to move the map itself.</p>
         <div class="townstrip">
           <button type="button" class="foldtoggle towntoggle" aria-expanded="false" aria-controls="townBody"><span><strong>Puerto Morelos town spots</strong> · pins 38–44</span><span class="chev" aria-hidden="true"></span></button>
           <div class="foldbody" id="townBody" hidden>
@@ -3274,7 +3306,7 @@
           <span class="lkey"><span class="sw sand"></span> Beach</span>
           <span class="lkey"><span class="sw bldg"></span> Buildings</span>
           <span class="lkey"><span class="sw sea"></span> Sea, shallows to reef</span>
-          <p class="capnote"><strong>Traced from the resort's official map.</strong> The grounds are drawn from the official June 2026 resort map, in that map's own tilted orientation: entrance and lobby at the top, Buildings 1–3 down the west side, the spa island and lazy river at the center, Buildings 4–5 along the bottom, Building 6 stepping diagonally, Building 7 down the oceanfront, Building 8 at the bottom-right, and the beach and sea down the right side. Building footprints, pool shapes, and spacing follow the official map's proportions — it is a stylized drawing, not a survey: lobby to beach is ≈350 m, about a 5-minute stroll, and an ≈100 m scale bar sits at the lower-left of the grounds. Buildings are drawn as flat footprints in the official map's own tan-and-brown style, pools sit on pale stone decks, and the sea bands from pale shallows out to the dashed reef line. Every pin is also in the numbered list below, in the same order. <strong>Zoom in</strong> on the restaurant row, the lobby plaza, the pools, the beach or the spa island and the drawing fills in with detail — named restaurant buildings with their terraces, loungers and swim-up bars on the pool decks, palapa rows on the sand, and the spa island's gardens; zoom back out and it clears away. <strong>October 2026 detail pass:</strong> every building footprint, pool, path, river branch and planting was re-measured against the official map and corrected where the zoomed drawing had drifted — no building sits in a pool or the river, no path runs through a building, no tree stands on a roof or on the sand, Building 7 and Building 8 stand back from the beach with the walkway and gardens between them and the sand, and the sand now runs unbroken into the wet sand and the sea with no grass strip in between. <strong>Flagged, not guessed:</strong> where the official map's own lines are ambiguous at this scale — the exact centerline of a path where it weaves between the Garibaldi Square venue blocks, and the precise tips of the lazy-river branches — the drawing follows the closest readable route on the official map rather than inventing one; the Las Olas palapa sits on the sand, stopping just short of the waterline, as it does on the official map. <strong>Moving around the map:</strong> on a touch screen, use two fingers to pan and pinch to zoom (one finger scrolls the page, so you can always scroll past the map); with a mouse, drag to pan and scroll to zoom — or use the + / − and reset buttons on the map — the <strong>Town strip</strong> button jumps straight to Puerto Morelos at the south end, where pins 38–44 sit on a schematic strip of the town (compressed, not to scale, past a break in the beach).</p>
+          <p class="capnote"><strong>Traced from the resort's official map.</strong> The grounds are drawn from the official June 2026 resort map, in that map's own tilted orientation: entrance and lobby at the top, Buildings 1–3 down the west side, the spa island and lazy river at the center, Buildings 4–5 along the bottom, Building 6 stepping diagonally, Building 7 down the oceanfront, Building 8 at the bottom-right, and the beach and sea down the right side. Building footprints, pool shapes, and spacing follow the official map's proportions — it is a stylized drawing, not a survey: lobby to beach is ≈350 m, about a 5-minute stroll, and an ≈100 m scale bar sits at the lower-left of the grounds. Buildings are drawn as flat footprints in the official map's own tan-and-brown style, pools sit on pale stone decks, and the sea bands from pale shallows out to the dashed reef line. Every pin is also in the numbered list below, in the same order. <strong>Zoom in</strong> on the restaurant row, the lobby plaza, the pools, the beach or the spa island and the drawing fills in with detail — named restaurant buildings with their terraces, loungers and swim-up bars on the pool decks, palapa rows on the sand, and the spa island's gardens; zoom back out and it clears away. <strong>October 2026 detail pass:</strong> every building footprint, pool, path, river branch and planting was re-measured against the official map and corrected where the zoomed drawing had drifted — no building sits in a pool or the river, no path runs through a building, no tree stands on a roof or on the sand, Building 7 and Building 8 stand back from the beach with the walkway and gardens between them and the sand, and the sand now runs unbroken into the wet sand and the sea with no grass strip in between. <strong>Flagged, not guessed:</strong> where the official map's own lines are ambiguous at this scale — the exact centerline of a path where it weaves between the Garibaldi Square venue blocks, and the precise tips of the lazy-river branches — the drawing follows the closest readable route on the official map rather than inventing one; the Las Olas palapa sits on the sand, stopping just short of the waterline, as it does on the official map. <strong>Moving around the map:</strong> on a touch screen the map starts locked, so one finger always scrolls the page past it — tap <strong>Tap to move map</strong> on the map and one finger drags it and two fingers pinch to zoom, then tap <strong>Done</strong> to go back to scrolling (tapping a pin shows its details either way); with a mouse, drag to pan and scroll to zoom — or use the + / − and reset buttons on the map — the <strong>Town strip</strong> button jumps straight to Puerto Morelos at the south end, where pins 38–44 sit on a schematic strip of the town (compressed, not to scale, past a break in the beach).</p>
           </div>
         </div>
       </div>
@@ -3284,7 +3316,7 @@
       <section class="gpscard" aria-label="Your live location">
         <div class="gpsmain">
           <h2><span class="gpsdot" aria-hidden="true"></span>You are here</h2>
-          <p class="gpsread" id="gpsRead" aria-live="polite">Location hasn't been requested yet.</p>
+          <p class="gpsread" id="gpsRead" aria-live="polite">Tap “Find me” and your phone will show where you are, and how far you are from the lobby.</p>
         </div>
         <div class="gpsbtns">
           <button type="button" class="gpsbtn" id="gpsBtn">Find me</button>
@@ -3294,11 +3326,11 @@
 
     <aside class="installhint" id="installHint">
       <div class="ihhead">
-        <button type="button" class="foldtoggle" aria-expanded="false" aria-controls="installBody"><span><strong>Use it like an app</strong> — install tip</span><span class="chev" aria-hidden="true"></span></button>
+        <button type="button" class="foldtoggle" aria-expanded="false" aria-controls="installBody"><span><strong>Save this map to your home screen</strong> — it opens like an app</span><span class="chev" aria-hidden="true"></span></button>
         <button type="button" class="ihclose" id="installClose" aria-label="Dismiss install tip">×</button>
       </div>
       <div class="foldbody" id="installBody" hidden>
-        <p>Install this map on your phone and it opens fullscreen from your home screen and loads fast — offline use may be limited. <strong>iPhone:</strong> open this page in Safari, tap Share, then “Add to Home Screen.” <strong>Android:</strong> in Chrome, tap the ⋮ menu, then “Install app” / “Add to Home screen.”</p>
+        <p>Save this map to your home screen and it opens full-screen from an icon, like an app, and loads fast — some parts still need internet. <strong>iPhone:</strong> open this page in Safari, tap Share, then “Add to Home Screen.” <strong>Android:</strong> in Chrome, tap the ⋮ menu, then “Install app” / “Add to Home screen.”</p>
         <p><strong>Android:</strong> After installing, find the app in your app drawer, long-press its icon, then tap “Add to Home Screen.”</p>
         <button type="button" class="ihbtn" id="installBtn" hidden>Install the map</button>
       </div>
@@ -3316,7 +3348,7 @@
 
 
       <section class="grouptools" id="groupTools" aria-labelledby="groupToolsTitle">
-        <h2 class="grouptools-title" id="groupToolsTitle">Group tools</h2>
+        <h2 class="grouptools-title" id="groupToolsTitle">Find each other</h2>
         <div class="grouptools-row" id="groupToolsRow"></div>
       </section>
 
@@ -3367,7 +3399,7 @@
       <section class="grounds" id="weddingWall" aria-label="The Wedding Wall">
         <h2><button type="button" class="foldtoggle" aria-expanded="true" aria-controls="boardBody"><span>The Wedding Wall<span class="boardbadge" id="boardBadge" hidden>0</span></span><span class="chev" aria-hidden="true"></span></button></h2>
         <div class="foldbody" id="boardBody">
-        <p class="gsub">Short notes for the whole group on The Wedding Wall — meetups, plans, lost &amp; found. Newest first, and every note shows who wrote it. Tap Reply under any note to answer it — your reply nests right underneath that note. You can add a photo, too: tap Photo, pick one, write a caption if you like, and post — the photo shows right in your note. Tap the heart under any note or photo to love it — hearts and their counts are shared with the whole group, not just this phone.</p>
+        <p class="gsub">Leave a short note for the whole group — plans, meetups, lost &amp; found. Write in the box below, then tap <strong>Post Note</strong>. Everyone with this link can read it, newest first. Tap <strong>Reply</strong> under a note to answer it, <strong>Photo</strong> to add a picture, or the heart to love a note.</p>
         <form id="boardForm">
           <div class="boardwho" id="boardWho"></div>
           <label class="boardlabel" for="boardText">Your Note</label>
@@ -3392,7 +3424,7 @@
             </div>
           </div>
           <div class="albumprogress boardprogress" id="boardPhotoProgress" hidden><div class="albumprogressbar boardprogressbar" id="boardPhotoProgressBar"></div></div>
-          <p class="boardphotohint">Photos upload to Cloudinary and show right here on The Wedding Wall. Keep your originals on your phone, too.</p>
+          <p class="boardphotohint">Your photo shows right in your note, for the whole group to see. Keep the original photo on your phone, too.</p>
         </form>
         <div class="gifpanel" id="gifPanel" hidden>
           <div class="gifbar">
@@ -3404,14 +3436,14 @@
           <p class="gifcredit">Powered by GIPHY</p>
         </div>
         <ul class="boardlist" id="boardList"></ul>
-        <p class="boardempty" id="boardEmpty">No notes yet — be the first to post one. Right now this wall is a plain potato: full of potential, waiting for toppings.</p>
+        <p class="boardempty" id="boardEmpty">No notes yet — write in the box above and tap Post Note to add the first one. Right now this wall is a plain potato: full of potential, waiting for toppings.</p>
         </div>
       </section>
 
       <section class="grounds" id="dinnerMeetups" aria-label="Dinner meetups">
         <h2><button type="button" class="foldtoggle" aria-expanded="true" aria-controls="meetupBody"><span>Dinner meetups<span class="boardbadge" id="meetupBadge" hidden>0</span></span><span class="chev" aria-hidden="true"></span></button></h2>
         <div class="foldbody" id="meetupBody">
-        <p class="gsub">Getting the group together for dinner? Post a meetup: pick a restaurant from the map pins, a day and a time, and add a note if you like. Meetups are shared with everyone who has this link, just like The Wedding Wall — and anyone can tap Join on a meetup to add their name to the list of who's coming.</p>
+        <p class="gsub">Plan a group dinner in three taps: <strong>1.</strong> Pick a restaurant. <strong>2.</strong> Pick a day and a time. <strong>3.</strong> Tap <strong>Post Meetup</strong>. Everyone with this link sees it — friends tap <strong>I'm coming</strong> on it to say they'll be there.</p>
         <form id="meetupForm">
           <div class="boardwho" id="meetupWho"></div>
           <div class="meetupgrid">
@@ -3438,7 +3470,7 @@
           <p class="boardnote" id="meetupNote" role="status" hidden></p>
         </form>
         <ul class="meetuplist" id="meetupList"></ul>
-        <p class="boardempty" id="meetupEmpty">No meetups yet — post the first one above and the group can join in.</p>
+        <p class="boardempty" id="meetupEmpty">No meetups yet — use the form above to post the first one, and friends can tap “I'm coming” on it.</p>
         </div>
       </section>
 
@@ -3480,7 +3512,7 @@
           <button type="button" class="foldtoggle listtoggle" id="listToggle" aria-expanded="false" aria-controls="listBody"><span>All places<span class="listcount" id="listCount">Tap to browse the full list — pick a name to see its details &amp; menu</span></span><span class="chev" aria-hidden="true"></span></button>
           <div class="foldbody" id="listBody" hidden>
             <div id="rows"></div>
-            <p class="empty-note" id="emptyNote">Nothing in this category — try another filter.</p>
+            <p class="empty-note" id="emptyNote">Nothing here — tap Everything above to see all the places.</p>
           </div>
         </div>
       </div>
@@ -3760,7 +3792,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v120.1.101</p>
+        <p class="version-stamp">v122.1.102</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -4630,7 +4662,7 @@
         wellness: { label: "Spa & fitness",      color: "var(--c-wellness)" },
         club:     { label: "Excellence Club",    color: "var(--c-club)" },
         lodging:  { label: "Lodging",            color: "var(--c-lodging)" },
-        offsite:  { label: "Off-property · Puerto Morelos", color: "var(--c-offsite)" }
+        offsite:  { label: "In town · Puerto Morelos", color: "var(--c-offsite)" }
       };
       var PAGE = "https://www.excellenceresorts.com/riviera-maya-cancun/excellence-riviera-cancun/";
       var PLACES = [
@@ -6575,46 +6607,66 @@
         zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 1 / 1.15, false);
       }, { passive: false });
 
-      // Drag to pan + pinch to zoom, with cooperative touch gestures.
+      // Drag to pan + pinch to zoom, tap-to-activate on touch.
       // Move/up listeners live on the window so pointer capture never
       // retargets pin clicks; a drag suppresses the click that follows it.
-      // Touch: a single finger belongs to the page — the scene's CSS
-      // touch-action is pan-y, so a one-finger vertical drag scrolls the
-      // page past the map instead of panning it, and a solo touch never
-      // pans here. When a second touch lands the scene claims the gesture
-      // (inline touch-action: none) and two fingers pan / pinch-zoom the
-      // map; the on-map hint pill pulses when a solo drag is attempted.
-      // Mouse and pen keep the original one-pointer drag-to-pan.
+      // Touch: the map starts LOCKED — the scene's CSS touch-action is
+      // pan-y, so a one-finger drag scrolls the page past the map, and
+      // touch drags are ignored here, so the map never pans or zooms.
+      // Pin taps still land (a tap is not a drag). Tapping the on-map
+      // "Tap to move map" button activates the map: touch-action becomes
+      // none, one finger drags to pan, two fingers pinch to zoom (and
+      // drag to pan by their midpoint). "Done" locks it again. Mouse and
+      // pen are unchanged: one-pointer drag pans whether locked or not.
       var pointers = new Map();
-      var dragDist = 0, pinchD = 0, suppressUntil = 0, soloTouchDist = 0;
-      var gestureHintEl = document.getElementById("gestureHint");
-      var hintTimer = 0;
-      function flashGestureHint() {
-        if (!gestureHintEl) return;
-        gestureHintEl.classList.add("nudge");
-        if (hintTimer) clearTimeout(hintTimer);
-        hintTimer = setTimeout(function () { gestureHintEl.classList.remove("nudge"); }, 1600);
+      var dragDist = 0, pinchD = 0, suppressUntil = 0, pinchMid = null;
+      var mapActive = false;
+      var mapActivateBtn = document.getElementById("mapActivate");
+      var mapDoneBtn = document.getElementById("mapDone");
+      var mapGateNote = document.getElementById("mapGateNote");
+      function setMapActive(on) {
+        mapActive = !!on;
+        sceneEl.classList.toggle("map-active", mapActive);
+        // Claiming every touch gesture is what lets one finger pan
+        // instead of scrolling; releasing hands pan-y back to the page.
+        sceneEl.style.touchAction = mapActive ? "none" : "";
+        if (mapActivateBtn) {
+          mapActivateBtn.hidden = mapActive;
+          mapActivateBtn.setAttribute("aria-pressed", mapActive ? "true" : "false");
+        }
+        if (mapDoneBtn) mapDoneBtn.hidden = !mapActive;
+        if (mapGateNote) mapGateNote.hidden = !mapActive;
+        if (!mapActive) { pointers.clear(); pinchD = 0; pinchMid = null; dragDist = 0; }
       }
+      if (mapActivateBtn) mapActivateBtn.addEventListener("click", function () { setMapActive(true); });
+      if (mapDoneBtn) mapDoneBtn.addEventListener("click", function () { setMapActive(false); });
+      sceneEl.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && mapActive) setMapActive(false);
+      });
       function touchPoints() {
         var out = [];
         pointers.forEach(function (pt) { if (pt.type === "touch") out.push(pt); });
         return out;
       }
       sceneEl.addEventListener("pointerdown", function (e) {
-        if (e.target.closest && e.target.closest(".maptools, .wxoverlay, .wxpop, .liveprompt, .gesturehint")) return;
+        if (e.target.closest && e.target.closest(".maptools, .wxoverlay, .wxpop, .liveprompt, .mapgate")) return;
         var type = e.pointerType || "mouse";
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: type });
         var touches = touchPoints();
-        if (type === "touch" && touches.length < 2) soloTouchDist = 0;
-        if (type !== "touch" || touches.length >= 2) {
+        if (type !== "touch") {
           dragDist = 0;
           sceneEl.classList.remove("anim");
-        }
-        if (touches.length === 2) {
-          // Second finger down: claim the gesture for the map and seed
-          // the pinch distance from the two live touch points.
-          sceneEl.style.touchAction = "none";
-          pinchD = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
+        } else if (mapActive) {
+          if (touches.length === 1) {
+            dragDist = 0;
+            sceneEl.classList.remove("anim");
+          } else if (touches.length === 2) {
+            // Second finger down: seed the pinch from the two live
+            // touch points — distance for zoom, midpoint for pan.
+            var r0 = sceneEl.getBoundingClientRect();
+            pinchD = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
+            pinchMid = { x: (touches[0].x + touches[1].x) / 2 - r0.left, y: (touches[0].y + touches[1].y) / 2 - r0.top };
+          }
         }
       });
       window.addEventListener("pointermove", function (e) {
@@ -6622,23 +6674,26 @@
         var prev = pointers.get(e.pointerId);
         var dx = e.clientX - prev.x, dy = e.clientY - prev.y;
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: prev.type });
-        var touches = touchPoints();
-        if (prev.type === "touch" && touches.length < 2) {
-          // Solo touch: the page owns this drag (page scroll). Never pan;
-          // once it reads as a real drag, remind them about two fingers.
-          soloTouchDist += Math.abs(dx) + Math.abs(dy);
-          if (soloTouchDist > 24) flashGestureHint();
+        if (prev.type === "touch" && !mapActive) {
+          // Locked: the page owns every touch drag (page scroll). Never
+          // pan or zoom; a plain tap still clicks through to the pins.
           return;
         }
+        var touches = touchPoints();
         dragDist += Math.abs(dx) + Math.abs(dy);
-        if (touches.length >= 2) {
+        if (prev.type === "touch" && touches.length >= 2) {
           var d = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
           var r = sceneEl.getBoundingClientRect();
           var mx = (touches[0].x + touches[1].x) / 2 - r.left, my = (touches[0].y + touches[1].y) / 2 - r.top;
-          // zoomAt anchors on the midpoint, so a constant-distance move
-          // pans with the fingers and a spread/pinch zooms around them.
-          if (pinchD > 0 && d > 0) zoomAt(mx, my, d / pinchD, false);
+          // Pan by the midpoint's own movement first (zoomAt alone
+          // anchors the world point under the midpoint, so a
+          // constant-distance drag would zoom by 1 and not pan at all),
+          // then zoom around the new midpoint by the distance change.
+          if (pinchMid) { view.tx += mx - pinchMid.x; view.ty += my - pinchMid.y; }
+          if (pinchD > 0 && d > 0 && d !== pinchD) zoomAt(mx, my, d / pinchD, false);
+          else { clampView(); applyView(false); }
           pinchD = d;
+          pinchMid = { x: mx, y: my };
         } else if (pointers.size === 1) {
           view.tx += dx; view.ty += dy;
           clampView(); applyView(false);
@@ -6649,11 +6704,7 @@
         var wasTouch = pointers.get(e.pointerId).type === "touch";
         pointers.delete(e.pointerId);
         if (dragDist > 8) suppressUntil = Date.now() + 300;
-        if (wasTouch && touchPoints().length < 2) {
-          // Back to zero/one touch: hand the gesture back to the page.
-          sceneEl.style.touchAction = "";
-          pinchD = 0;
-        }
+        if (wasTouch && touchPoints().length < 2) { pinchD = 0; pinchMid = null; }
         if (!pointers.size) dragDist = 0;
       }
       window.addEventListener("pointerup", endPointer);
@@ -6858,7 +6909,7 @@
         var html = "";
         html += '<div class="dhead"><p class="dcat"><span class="cdot" style="background:' + CATS[p.cat].color + '"></span>' +
           CATS[p.cat].label + " · " + (p.bnum ? "Building " + p.bnum : "Pin " + (i + 1)) + (p.club ? ' · <span style="color:var(--c-club)">Excellence Club</span>' : "") + '</p>' +
-          '<button type="button" class="dclose" id="detailClose" aria-label="Close details for ' + p.name + '">×</button></div>';
+          '<button type="button" class="dclose" id="detailClose" aria-label="Close details for ' + p.name + '">Close ×</button></div>';
         html += "<h2>" + p.name + "</h2>";
         html += '<p class="dmeta"><strong>' + p.meta + "</strong></p>";
         if (Spud.isOpenNow(i) === true) html += '<p class="opennow"><span class="odot" aria-hidden="true"></span>Open now</p>';
@@ -6867,18 +6918,20 @@
         html += '<div class="dactions">' +
           '<button type="button" class="favbtn" id="favBtn" aria-pressed="' + (Spud.isFav(i) ? "true" : "false") + '">' +
           '<svg viewBox="0 0 24 24" fill="' + (Spud.isFav(i) ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 3.8 2.4 5 5.5.7-4 3.8 1 5.5-4.9-2.7-4.9 2.7 1-5.5-4-3.8 5.5-.7z"/></svg>' +
-          '<span>' + (Spud.isFav(i) ? "Starred" : "Star") + "</span></button>" +
+          '<span>' + (Spud.isFav(i) ? "Saved to Favorites" : "Add to Favorites") + "</span></button>" +
           '<a class="sharelink" id="shareLink" href="#place=' + Spud.slug(p.name) + '">Link to this place</a>' +
-          '<span class="sharehint" id="shareHint" hidden>Link set in the address bar — copy it to text this place to someone.</span>' +
+          '<span class="sharehint" id="shareHint" hidden>Done — the address at the top of your browser now points to this place. Copy it to send this place to someone.</span>' +
           "</div>";
         if (p.menu) {
           html += "<h3>" + (p.menuLabel || "Full menu") + "</h3>";
+          html += '<p class="menunote">Tap a part of the menu to open it — tap it again to close it.</p>';
           if (p.menuNote) html += '<p class="menunote">' + p.menuNote + "</p>";
           // Every menu group starts collapsed — tap a group to open its dishes.
           p.menu.forEach(function (g) {
             html += '<details class="mfold"><summary>' + g.h + ' <span class="foldn">(' + g.items.length + " items)</span></summary>" + dishList(g.items) + "</details>";
           });
         } else if (p.dishes) {
+          html += '<p class="menunote">Tap below to open the menu — tap it again to close it.</p>';
           html += '<details class="mfold"><summary>' + (p.dishesLabel || "On the menu") + ' <span class="foldn">(' + p.dishes.length + " items)</span></summary>" + dishList(p.dishes) + "</details>";
         }
         if (p.note) html += '<p class="dnote">' + p.note + "</p>";
@@ -6897,7 +6950,7 @@
           var starPath = favBtn.querySelector("svg");
           if (starPath) starPath.setAttribute("fill", now ? "currentColor" : "none");
           var starLabel = favBtn.querySelector("span");
-          if (starLabel) starLabel.textContent = now ? "Starred" : "Star";
+          if (starLabel) starLabel.textContent = now ? "Saved to Favorites" : "Add to Favorites";
           var mark = rowEls[i] ? rowEls[i].querySelector("[data-favmark]") : null;
           if (mark) mark.hidden = !now;
           var favChip = chipsEl.querySelector('[data-filter="favs"] .n');
@@ -7029,20 +7082,24 @@
         var emptyEl = document.getElementById("emptyNote");
         emptyEl.style.display = anyVisible ? "none" : "block";
         if (f === "favs" && !anyVisible) {
-          emptyEl.textContent = "No starred places yet — open any place and tap Star, and your shortlist will wait for you here.";
+          emptyEl.textContent = "No Favorites yet. Open any place and tap “Add to Favorites” — your saved places will wait for you here.";
         } else if (f === "opennow" && !anyVisible) {
-          emptyEl.textContent = "Nothing with published hours is open right now (resort time) — places with no published hours aren't counted either way; browse Everything to see them all.";
+          emptyEl.textContent = "Nothing is open right now (resort time). Tap Everything above to see all the places.";
         } else if (MEALS[f] && !anyVisible) {
-          emptyEl.textContent = "No place's published hours or description covers " + MEALS[f].toLowerCase() + " — try another filter.";
+          emptyEl.textContent = "No places serve " + MEALS[f] + " — tap another button above.";
         } else {
-          emptyEl.textContent = "Nothing in this category — try another filter.";
+          emptyEl.textContent = "Nothing here — tap Everything above to see all the places.";
         }
         layoutClusters();
         var filterStatus = document.getElementById("filterStatus");
         if (filterStatus) {
           var visibleCount = PLACES.filter(function (p) { return matches(p, f); }).length;
           var filterLabel = f === "all" ? "Everything" : f === "opennow" ? "Open now" : f === "favs" ? "Favorites" : MEALS[f] ? MEALS[f] : CATS[f].label;
-          filterStatus.textContent = filterLabel + ": showing " + visibleCount + (visibleCount === 1 ? " place." : " places.");
+          if (visibleCount === 0) {
+            filterStatus.textContent = f === "favs" ? "No Favorites yet — open any place and tap “Add to Favorites” to save it here." : f === "opennow" ? "Nothing is open right now (resort time) — tap Everything to see all places." : "Nothing matches — tap Everything above to see all places.";
+          } else {
+            filterStatus.textContent = "Showing: " + filterLabel + " — " + visibleCount + (visibleCount === 1 ? " place" : " places") + " on the map. Tap a pin or a name to see one.";
+          }
         }
       }
 
@@ -7396,7 +7453,7 @@
       liveEditBtn.type = "button";
       liveEditBtn.className = "chip liveedit";
       liveEditBtn.id = "liveEdit";
-      liveEditBtn.textContent = "✎";
+      liveEditBtn.textContent = "✎ Edit name";
       liveEditBtn.setAttribute("aria-label", "Edit your live name, dot color and icon");
       liveEditBtn.title = "Edit name / color / icon";
       liveEditBtn.hidden = true;
@@ -7436,7 +7493,7 @@
       liveHereEl.appendChild(liveUsersEl);
       var liveHereNote = document.createElement("p");
       liveHereNote.className = "livehere-note";
-      liveHereNote.textContent = "You're watching the group — tap Live group above to put your own dot on the map.";
+      liveHereNote.textContent = "You can see everyone here without sharing anything yourself. To add your own dot, tap Live group above.";
       liveHereNote.hidden = true;
       liveHereEl.appendChild(liveHereNote);
       // Blip button: one tap sends a single location ping (see
@@ -7449,7 +7506,7 @@
       liveBlipBtn.type = "button";
       liveBlipBtn.className = "liveblip";
       liveBlipBtn.id = "liveBlip";
-      liveBlipBtn.setAttribute("aria-label", "Blip my location: send one location ping now");
+      liveBlipBtn.setAttribute("aria-label", "Blip my location — show where I am, just this once");
       var liveBlipIcon = document.createElement("span");
       liveBlipIcon.setAttribute("aria-hidden", "true");
       liveBlipIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21.2S5.8 15.6 5.8 10.6a6.2 6.2 0 1 1 12.4 0c0 5-6.2 10.6-6.2 10.6z"/><circle cx="12" cy="10.5" r="2.3" fill="currentColor" stroke="none"/></svg>';
@@ -7459,7 +7516,7 @@
       liveBlipBtn.appendChild(liveBlipTxt);
       var liveBlipHint = document.createElement("p");
       liveBlipHint.className = "livehere-note liveblip-hint";
-      liveBlipHint.textContent = "One tap, one ping — updates your dot and last-seen time without turning Live on.";
+      liveBlipHint.textContent = "Tap once to show where you are right now — just this once. It does not keep watching you, and it doesn't turn Live on.";
       if (IS_SPUDMAPS_APP) { liveBlipBtn.hidden = true; liveBlipHint.hidden = true; }
       liveHereEl.insertBefore(liveBlipBtn, liveHereNote);
       liveHereEl.insertBefore(liveBlipHint, liveHereNote);
@@ -7491,10 +7548,10 @@
         if (show && IS_SPUDMAPS_APP && liveProfile) show = false;
         if (!show) { livePromptEl.hidden = true; return; }
         if (liveProfile && liveProfile.name) {
-          if (livePromptBodyEl) livePromptBodyEl.textContent = "You're saved as " + liveProfile.name + " — turn Live on to appear here so the group can see you.";
+          if (livePromptBodyEl) livePromptBodyEl.textContent = "You're saved as " + liveProfile.name + ". Tap below to put your dot on the map so friends can find you.";
           if (livePromptBtn) livePromptBtn.textContent = "Turn Live on";
         } else {
-          if (livePromptBodyEl) livePromptBodyEl.textContent = "Set a name and turn Live on to appear here — the group can only see people who've done both.";
+          if (livePromptBodyEl) livePromptBodyEl.textContent = "Tap the green button to put your dot on the map so friends can find you. Just looking? You don't need to do anything — sharing is your choice.";
           if (livePromptBtn) livePromptBtn.textContent = "Set a name & turn Live on";
         }
         livePromptEl.hidden = false;
@@ -7655,8 +7712,8 @@
         liveHereDot.classList.toggle("on", liveN > 0);
         var statusParts = [];
         if (liveN) statusParts.push(liveN + " on the map now");
-        if (staleN) statusParts.push(staleN + " last seen");
-        if (proxRows.length) statusParts.push(proxRows.length + " spotted nearby");
+        if (staleN) statusParts.push(staleN + " seen earlier");
+        if (proxRows.length) statusParts.push(proxRows.length + " nearby");
         liveHereStatus.textContent = statusParts.length ? statusParts.join(" · ") : "No one yet";
         liveHereNote.hidden = !!liveState.sharing;
         if (!keys.length && !proxRows.length) {
@@ -7894,7 +7951,7 @@
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
-      liveLegendEl.textContent = "Icon dots are your group, live — each person's icon in their color. People together share one “N here” bubble — tap it to see who. A faded dot is where someone was last seen, with the time — their phone may be asleep or the page closed. Tap Live group to add your own dot; turn it off to disappear. Or tap Blip in Who's here for a single ping — one location update, no Live, nothing keeps reporting.";
+      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once.";
       liveLegendEl.hidden = true;
       groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
@@ -8172,19 +8229,19 @@
           // save sends the one-time ping (see the save handler) — it
           // never starts continuous sharing.
           liveDlgTitle.textContent = "Blip your location";
-          liveDlgIntro.textContent = "First, the name, dot color and icon your group will see — then saving sends a single location ping.";
-          liveDlgNote.textContent = "The ping updates your dot and last-seen time once. It doesn't turn Live on, and nothing keeps reporting after it.";
+          liveDlgIntro.textContent = "First pick your name and a color — that's what friends will see. Then tap Save and your spot shows on the map, just this once.";
+          liveDlgNote.textContent = "This shows you once. It does not keep following you, and it doesn't turn Live on.";
         } else if (mode === "app") {
           // App mode (SpudMaps Live app only): the same dialog as the
           // single profile editor, but save-only — saving never starts
           // the page's own sharing; the app's service does the sharing.
           liveDlgTitle.textContent = "Your live dot";
-          liveDlgIntro.textContent = "Pick the name, dot color and icon your group will see on the map.";
+          liveDlgIntro.textContent = "Pick your name, a color and a picture — that's what friends will see on the map.";
           liveDlgNote.textContent = "Saved on this device — the app uses this name, color and icon for your dot. Sharing is controlled by the app, not this page.";
         } else {
           liveDlgTitle.textContent = mode === "edit" ? "Your live dot" : "Join the live group";
-          liveDlgIntro.textContent = "Pick the name, dot color and icon your group will see on the map.";
-          liveDlgNote.textContent = "Your icon shows in your color on everyone's map while this is on. Turn it off anytime to disappear.";
+          liveDlgIntro.textContent = "Type your name, then pick a color and a picture. That's how friends will spot your dot on the map.";
+          liveDlgNote.textContent = "While this is on, your dot shows on everyone's map. Tap Live group again anytime to turn it off and disappear.";
         }
         liveNameInput.value = liveProfile ? liveProfile.name : "";
         liveDlgErr.hidden = true;
@@ -8350,7 +8407,7 @@
         }
         if (!liveProfile) { liveOpenDlg("blip"); return; }
         if (!("geolocation" in navigator)) {
-          liveNote("This browser doesn't offer location, so a blip can't be sent.");
+          liveNote("This browser can't share location, so Blip can't work here.");
           return;
         }
         liveState.blipping = true;
@@ -8387,7 +8444,7 @@
             navigator.geolocation.getCurrentPosition(function (pos) {
               if (settled) return; settled = true; finish();
               if (!pos || !pos.coords) {
-                liveNote("Your phone couldn't get a location fix, so no blip was sent. Step outside with a clear view of the sky and try again.");
+                liveNote("Your phone couldn't find where you are, so nothing was sent. Step outside where you can see the sky, then try again.");
                 return;
               }
               var lat = pos.coords.latitude, lng = pos.coords.longitude;
@@ -8399,16 +8456,16 @@
               liveWriteNow(); // the tap's one and only presence write
               liveRender();
               if (xy.near <= 800) {
-                liveNote("Blip sent — your dot and last-seen time just updated. That's the whole ping: nothing keeps reporting.");
+                liveNote("Done — your spot on the map just updated. That's all: nothing keeps watching you.");
               } else {
-                liveNote("Blip sent, but you're beyond the mapped resort area, so there's no dot to show here.");
+                liveNote("Done, but you're outside the area this map covers, so there's no dot to show.");
               }
             }, function (err) {
               if (settled) return; settled = true; finish();
               if (err && err.code === 1) {
-                liveNote("Location permission was denied, so no blip was sent. Allow location access for this page, then tap Blip again.");
+                liveNote("Your phone said no to sharing location, so nothing was sent. Allow location for this page, then tap Blip again.");
               } else {
-                liveNote("Your phone couldn't get a location fix, so no blip was sent. Step outside with a clear view of the sky and try again.");
+                liveNote("Your phone couldn't find where you are, so nothing was sent. Step outside where you can see the sky, then try again.");
               }
             }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
           } catch (e) {
@@ -8432,10 +8489,10 @@
         if (!liveState.sharing) return;
         if (err && err.code === 1) {
           liveStopSharing();
-          liveNote("Location permission was denied, so Live group turned off. Allow location access for this page, then tap Live group again.");
+          liveNote("Your phone said no to sharing location, so Live group turned off. Allow location for this page, then tap Live group again.");
         } else if (!liveState.mePos) {
           liveStopSharing();
-          liveNote("Your phone couldn't get a location fix, so Live group turned off. Step outside with a clear view of the sky and try again.");
+          liveNote("Your phone couldn't find where you are, so Live group turned off. Step outside where you can see the sky and try again.");
         }
         // With a fix already on the map, a transient error is ignored —
         // the watch keeps running and the next fix lands on its own.
@@ -8556,7 +8613,7 @@
           liveHideNote();
           if (!("geolocation" in navigator)) {
             liveStopSharing();
-            liveNote("This browser doesn't offer location, so Live group can't run here.");
+            liveNote("This browser can't share location, so Live group can't run here.");
             return;
           }
           try {
@@ -8774,7 +8831,7 @@
           boardWhoEl.appendChild(chg);
         } else {
           var msg = document.createElement("span");
-          msg.textContent = "A name is required to post — every note shows who wrote it.";
+          msg.textContent = "First, tap Set Your Name — your notes show your name, so friends know it's you.";
           var setBtn = document.createElement("button");
           setBtn.type = "button";
           setBtn.className = "boardbtn2";
@@ -9179,7 +9236,7 @@
         if (boardConfirmKey && !boardItems[boardConfirmKey]) boardConfirmKey = null;
         if (boardEmptyEl) {
           boardEmptyEl.hidden = items.length > 0;
-          if (!items.length) boardEmptyEl.textContent = "No notes yet — be the first to post one. Right now this wall is a plain potato: full of potential, waiting for toppings.";
+          if (!items.length) boardEmptyEl.textContent = "No notes yet — write in the box above and tap Post Note to add the first one. Right now this wall is a plain potato: full of potential, waiting for toppings.";
         }
         if (boardBadgeEl) {
           boardBadgeEl.textContent = String(items.length);
@@ -9995,7 +10052,7 @@
           meetupWhoEl.appendChild(chg);
         } else {
           var msg = document.createElement("span");
-          msg.textContent = "A name is required to post or join — meetups show who posted them and who's coming.";
+          msg.textContent = "First, tap Set Your Name — meetups show names, so friends know who posted and who's coming.";
           var setBtn = document.createElement("button");
           setBtn.type = "button";
           setBtn.className = "boardbtn2";
@@ -10158,7 +10215,7 @@
           attLabel.textContent = "Going (" + names.length + "): ";
           att.appendChild(attLabel);
           var attNames = document.createElement("span");
-          attNames.textContent = names.length ? names.join(", ") : "No one yet — be the first to join.";
+          attNames.textContent = names.length ? names.join(", ") : "No one yet — tap “I'm coming” to be the first.";
           att.appendChild(attNames);
           card.appendChild(att);
           var acts = document.createElement("div");
@@ -10167,8 +10224,8 @@
           var joinBtn = document.createElement("button");
           joinBtn.type = "button";
           joinBtn.className = joined ? "boardbtn2 boardbtn-sm" : "boardbtn2 boardbtn-sm meetupjoin";
-          joinBtn.textContent = joined ? "Leave" : "Join";
-          joinBtn.setAttribute("aria-label", (joined ? "Leave the meetup at " : "Join the meetup at ") + e.place);
+          joinBtn.textContent = joined ? "Can't come" : "I'm coming";
+          joinBtn.setAttribute("aria-label", (joined ? "Say you can't come to the meetup at " : "Say you're coming to the meetup at ") + e.place);
           joinBtn.addEventListener("click", function () { meetupToggleJoin(key); });
           acts.appendChild(joinBtn);
           if (meetupIsMine(e)) {
@@ -10275,7 +10332,7 @@
             });
             var done = function () {
               if (meetupTextEl) meetupTextEl.value = "";
-              meetupNote("Meetup posted — it's live for the whole group now.");
+              meetupNote("Meetup posted — everyone in the group can see it now.");
             };
             var fail = function () { meetupNote("Couldn't post — check your connection and try again."); };
             if (req && typeof req.then === "function") req.then(done, fail);
@@ -10998,7 +11055,7 @@
       routeChip.className = "chip routechip";
       routeChip.id = "routeChip";
       routeChip.setAttribute("aria-pressed", "false");
-      routeChip.innerHTML = '<span class="gticon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="19" r="2.6" fill="currentColor"/><circle cx="18" cy="5" r="2.6" fill="currentColor"/><path d="M8.6 19H15a3 3 0 0 0 0-6h-6a3 3 0 0 1 0-6h.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span>Route</span>';
+      routeChip.innerHTML = '<span class="gticon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="19" r="2.6" fill="currentColor"/><circle cx="18" cy="5" r="2.6" fill="currentColor"/><path d="M8.6 19H15a3 3 0 0 0 0-6h-6a3 3 0 0 1 0-6h.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span>Directions</span>';
       chipsEl.appendChild(routeChip);
 
       var routeBar = document.createElement("div");
@@ -11391,7 +11448,7 @@
           }
           var when = new Date(pos.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
           read.innerHTML = "<strong>" + verdict + "</strong> The lobby is " + fmtDist(dLobby) + " " + dir +
-            " of you · GPS accuracy ±" + Math.round(acc) + " m · updated " + when + ".";
+            " of you · accurate to about ±" + Math.round(acc) + " m · updated " + when + ".";
           btn.disabled = true;
           btn.textContent = "Live location on";
           stopBtn.hidden = false;
@@ -11402,16 +11459,16 @@
           btn.textContent = "Try again";
           stopBtn.hidden = true;
           if (err.code === 1) {
-            read.textContent = "Location permission was denied, so there's no fix to show. Allow location access for this page in your browser settings, then tap Try again.";
+            read.textContent = "Your phone said no to sharing location, so there's nothing to show. Allow location for this page in your browser settings, then tap Try again.";
           } else if (err.code === 2) {
-            read.textContent = "Your phone couldn't get a location fix. Step outside with a clear view of the sky, then tap Try again.";
+            read.textContent = "Your phone couldn't find where you are. Step outside where you can see the sky, then tap Try again.";
           } else {
             read.textContent = "Getting your location took too long. Tap Try again — it usually lands on the second attempt.";
           }
         }
         btn.addEventListener("click", function () {
           if (!("geolocation" in navigator)) {
-            read.textContent = "This browser doesn't offer location, so the live readout can't run here.";
+            read.textContent = "This browser can't share location, so this can't work here.";
             btn.disabled = true;
             return;
           }
@@ -11431,7 +11488,7 @@
         });
         if (!("geolocation" in navigator)) {
           btn.disabled = true;
-          read.textContent = "This browser doesn't offer location, so the live readout can't run here.";
+          read.textContent = "This browser can't share location, so this can't work here.";
         }
       })();
     </script>
@@ -12052,7 +12109,7 @@
         function updateOnNote() {
           if (typeof activeFilter === "undefined" || activeFilter !== "opennow") { onNote.hidden = true; return; }
           var c = openCounts();
-          onNote.innerHTML = "<strong>Open now</strong> uses the hours published on each place, in resort time: <strong>" + c.open + " open</strong> · " + c.closed + " closed. <strong>" + c.none + (c.none === 1 ? " place has" : " places have") + " no published hours</strong> — those are hidden here because there is nothing to check them against; they still show under Everything, and their details say no hours are published.";
+          onNote.innerHTML = "<strong>Open now</strong> — going by the hours each place lists, in resort time: <strong>" + c.open + " open</strong> · " + c.closed + " closed. " + c.none + (c.none === 1 ? " place doesn't" : " places don't") + " list hours, so they can't be checked here — they still show under Everything.";
           onNote.hidden = false;
         }
         onChip.addEventListener("click", function () {
@@ -12252,7 +12309,7 @@
         planSec.className = "grounds";
         planSec.id = "dayPlan";
         planSec.setAttribute("aria-label", "My day plan");
-        planSec.innerHTML = '<h2>My day plan</h2><p class="gsub">Your starred places as a plan for the day: put them in your order, give each a time, and the plan stays saved on this device. Star or unstar a place from its details to add or remove it here.</p><ul class="planlist" id="planList"></ul><p class="planempty" id="planEmpty">Nothing starred yet — open any place and tap Star, and it will wait for you here as the start of a plan. Every great day starts with a single spud.</p>';
+        planSec.innerHTML = '<h2>My day plan</h2><p class="gsub">Your saved Favorites as a plan for the day: put them in your order, give each a time, and the plan stays saved on this device. Open any place and tap Add to Favorites in its details to add it here, or tap it again there to remove it.</p><ul class="planlist" id="planList"></ul><p class="planempty" id="planEmpty">Nothing saved yet — open any place and tap Add to Favorites, and it will wait for you here as the start of a plan. Every great day starts with a single spud.</p>';
         var layoutEl2 = document.getElementById("layout");
         if (layoutEl2) layoutEl2.insertAdjacentElement("afterend", planSec);
         var planListEl = document.getElementById("planList");
