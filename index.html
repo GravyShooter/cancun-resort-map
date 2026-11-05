@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-05-gps-snap-fix · v125.1.105 -->
+<!-- build-2026-11-05-indoor-manual-placement · v126.2.106 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -892,7 +892,7 @@
         .installhint { display: none; }
       }
 
-      footer.src { margin-top: var(--s-4); color: var(--ink-soft); font-size: 0.85rem; }
+      footer.src { margin-top: var(--s-4); color: var(--ink-soft); font-size: 0.85rem; display: flex; flex-direction: column; align-items: center; text-align: center; }
       footer.src a { color: var(--accent); }
       footer.src p { margin: 4px 0; }
       footer.src .version-stamp { margin-top: 6px; font-size: 0.72rem; letter-spacing: 0.04em; color: var(--ink-soft); opacity: 0.65; }
@@ -1030,6 +1030,44 @@
       .liveblip:disabled { opacity: 0.55; cursor: default; }
       .liveblip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
       .liveblip-hint { margin-top: 7px; }
+      /* Set my spot by hand: manual placement for when GPS can't work
+         indoors. Lives in the Who's here card under Blip. A hand-set
+         dot is the guest's stated position, not a GPS fix — the dashed
+         ring and the "set by hand" labels keep that honest everywhere
+         the dot appears. */
+      .livemanual { margin-top: 12px; border-top: 1px dashed var(--ink-soft); padding-top: 11px; }
+      .livemanual[hidden] { display: none; }
+      .livemanual-title { margin: 0 0 4px; font-size: 0.98rem; font-weight: 800; }
+      .livemanual-why { margin: 0 0 9px; font-size: 0.85rem; color: var(--ink-soft); }
+      .livemanual-warn { margin: 0 0 9px; font-size: 0.88rem; font-weight: 700; color: var(--c-dining); }
+      .livemanual-warn[hidden] { display: none; }
+      .livemanual-row { display: flex; gap: 8px; align-items: stretch; }
+      .livemanual-row input.ocontrol { flex: 1 1 auto; min-width: 0; min-height: 48px; }
+      .livemanual-btn {
+        appearance: none; cursor: pointer; flex: none;
+        min-height: 48px; padding: 10px 16px;
+        border: 0; border-radius: 999px;
+        background: #0e6e6e; color: #ffffff;
+        font: inherit; font-size: 0.95rem; font-weight: 700; line-height: 1.2;
+        box-shadow: 0 3px 10px rgba(30, 40, 20, 0.3);
+      }
+      .livemanual-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .livemanual-selwrap { display: block; margin-top: 9px; font-size: 0.85rem; color: var(--ink-soft); }
+      .livemanual-selwrap select.ocontrol { display: block; width: 100%; margin-top: 5px; min-height: 48px; }
+      .livemanual-status { margin: 10px 0 0; font-size: 0.88rem; font-weight: 600; color: var(--ink); }
+      .livemanual-status[hidden] { display: none; }
+      .livemanual-gps {
+        appearance: none; cursor: pointer; margin-top: 9px;
+        min-height: 44px; padding: 9px 16px;
+        border: 2px solid var(--accent); border-radius: 999px;
+        background: var(--panel); color: var(--ink);
+        font: inherit; font-size: 0.92rem; font-weight: 700;
+      }
+      .livemanual-gps[hidden] { display: none; }
+      .livemanual-gps:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      /* Hand-set dot: dashed ring instead of the solid GPS ring. */
+      .livedot.manual { border-style: dashed; }
+      .livedot.manual .lname { max-width: 230px; }
       /* Stale (last-seen) members: faded pill, desaturated icon, with the
          last-seen time shown next to the name. Still tappable to center. */
       .liveuser.stale { opacity: 0.68; }
@@ -1662,18 +1700,30 @@
         .spudfx-halo { transition: none; }
       }
       @media print { .spudfx { display: none; } }
-      /* ---------- Hidden arcade: opened only from the potato door ---------- */
+      /* ---------- Arcade: opened from the potato door in the footer ---------- */
       .potato-door {
         appearance: none; -webkit-appearance: none; cursor: pointer;
-        background: none; border: 0; padding: 6px; margin: 2px 0 0 -6px;
-        line-height: 0; border-radius: 999px; opacity: 0.72;
+        background: radial-gradient(circle at 50% 42%, rgba(255, 214, 110, 0.38) 0%, rgba(255, 190, 60, 0.14) 58%, transparent 72%);
+        border: 0; padding: 14px 18px; margin: 10px auto 4px;
+        line-height: 0; border-radius: 999px; opacity: 1;
         touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-        min-width: 44px; min-height: 44px;
-        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 96px; min-height: 80px;
+        display: flex; align-items: center; justify-content: center;
+        align-self: center;
+        box-shadow: 0 0 18px 4px rgba(217, 171, 60, 0.55), 0 0 42px 10px rgba(217, 171, 60, 0.28), 0 6px 18px rgba(60, 45, 20, 0.22);
+        filter: drop-shadow(0 0 10px rgba(255, 196, 64, 0.65));
+        animation: potatoGlow 2.6s ease-in-out infinite;
       }
-      .potato-door:hover, .potato-door:focus-visible { opacity: 1; }
-      .potato-door:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
-      .potato-door svg { width: 26px; height: 20px; display: block; }
+      @keyframes potatoGlow {
+        0%, 100% { box-shadow: 0 0 16px 3px rgba(217, 171, 60, 0.5), 0 0 38px 8px rgba(217, 171, 60, 0.24), 0 6px 18px rgba(60, 45, 20, 0.22); filter: drop-shadow(0 0 8px rgba(255, 196, 64, 0.55)); }
+        50% { box-shadow: 0 0 26px 7px rgba(217, 171, 60, 0.78), 0 0 58px 16px rgba(217, 171, 60, 0.38), 0 6px 18px rgba(60, 45, 20, 0.22); filter: drop-shadow(0 0 16px rgba(255, 196, 64, 0.85)); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .potato-door { animation: none; }
+      }
+      .potato-door:hover { filter: drop-shadow(0 0 18px rgba(255, 196, 64, 0.9)); }
+      .potato-door:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+      .potato-door svg { width: 72px; height: 54px; display: block; }
       .arcadedlg {
         position: fixed; inset: 0; z-index: 350;
         background: rgba(16, 22, 26, 0.62);
@@ -3824,7 +3874,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v125.1.105</p>
+        <p class="version-stamp">v126.2.106</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -7323,6 +7373,9 @@
         proximity: {},    // observerUid -> { observedUid -> Bluetooth proximity record }
         dotEls: {},       // uid (or "__me") -> { el, label, x, y }
         mePos: null,      // { x, y, near } from the latest local GPS fix
+        manualPos: null,  // { x, y, near: 0, acc: null, manual: true, place } — the guest's hand-set spot, or null
+        manualPlace: "",  // name of the building a hand-set spot sits on
+        gpsWeak: false,   // the latest GPS fix looked stale or inaccurate (the indoor failure)
         blipPos: null,    // { x, y, near } from the latest one-time Blip ping (not the watch)
         blipAt: 0,        // local time of that ping — its last-seen stamp while this page is open
         blipping: false,  // a Blip tap is mid-flight (read or write pending)
@@ -7610,6 +7663,237 @@
       liveHereEl.insertBefore(liveBlipBtn, liveHereNote);
       liveHereEl.insertBefore(liveBlipHint, liveHereNote);
       liveBlipBtn.addEventListener("click", liveBlip);
+
+      // ----- Set my spot by hand (the indoor fix) -----
+      // GPS satellite signals cannot penetrate the resort buildings:
+      // indoors a phone falls back to Wi-Fi positioning or reuses its
+      // last outdoor fix, so the Live dot can sit a long way from where
+      // the guest actually is — no code change makes satellite GPS work
+      // inside concrete. The fix is manual placement: the guest states
+      // where they are — a room number resolved to its building via the
+      // same room ranges the room finder uses (room 6131 -> Building 6),
+      // or a building picked from the list — and their dot sits on that
+      // building's pin instead of following the bad phone fix.
+      // A hand-set position is written to presence with manual: true
+      // and the building's name, and every surface keeps it honest: the
+      // dot gets a dashed ring, its label and its Who's here row say
+      // "set by hand", and nothing about it claims to be a GPS fix.
+      // While a hand-set spot is active the GPS watch (when sharing)
+      // keeps running — it still notices when the phone gets a good
+      // fix again — but its fixes no longer move or overwrite the dot;
+      // the shared entry is just re-written on a slow timer so it
+      // doesn't fade to last-seen while the guest sits in their room.
+      var liveManualEl = document.createElement("div");
+      liveManualEl.className = "livemanual";
+      liveManualEl.id = "liveManual";
+      var liveManualTitle = document.createElement("p");
+      liveManualTitle.className = "livemanual-title";
+      liveManualTitle.textContent = "Indoors? Set your spot by hand";
+      var liveManualWhy = document.createElement("p");
+      liveManualWhy.className = "livemanual-why";
+      liveManualWhy.textContent = "GPS can't get through the buildings — inside, your phone guesses from Wi-Fi or reuses an old fix, so your dot can land in completely the wrong place. Tell the map where you are instead:";
+      var liveManualWarn = document.createElement("p");
+      liveManualWarn.className = "livemanual-warn";
+      liveManualWarn.id = "liveManualWarn";
+      liveManualWarn.setAttribute("role", "status");
+      liveManualWarn.hidden = true;
+      var liveManualRow = document.createElement("div");
+      liveManualRow.className = "livemanual-row";
+      var liveManualRoom = document.createElement("input");
+      liveManualRoom.type = "text";
+      liveManualRoom.className = "ocontrol";
+      liveManualRoom.id = "liveManualRoom";
+      try { liveManualRoom.inputMode = "numeric"; } catch (e) { /* older browsers */ }
+      liveManualRoom.setAttribute("autocomplete", "off");
+      liveManualRoom.setAttribute("placeholder", "Room # — e.g. 6131");
+      liveManualRoom.setAttribute("aria-label", "Your room number");
+      var liveManualPlaceBtn = document.createElement("button");
+      liveManualPlaceBtn.type = "button";
+      liveManualPlaceBtn.className = "livemanual-btn";
+      liveManualPlaceBtn.textContent = "Place my dot";
+      liveManualRow.appendChild(liveManualRoom);
+      liveManualRow.appendChild(liveManualPlaceBtn);
+      var liveManualSelWrap = document.createElement("label");
+      liveManualSelWrap.className = "livemanual-selwrap";
+      var liveManualSelTxt = document.createElement("span");
+      liveManualSelTxt.textContent = "No room number handy? Pick your building:";
+      var liveManualSel = document.createElement("select");
+      liveManualSel.className = "ocontrol";
+      liveManualSel.id = "liveManualBldg";
+      liveManualSel.setAttribute("aria-label", "Pick your building");
+      var liveManualOpt0 = document.createElement("option");
+      liveManualOpt0.value = "";
+      liveManualOpt0.textContent = "Choose a building…";
+      liveManualSel.appendChild(liveManualOpt0);
+      PLACES.forEach(function (p, i) {
+        if (!p || !p.rooms) return;
+        var o = document.createElement("option");
+        o.value = String(i);
+        o.textContent = p.name + " (rooms " + p.rooms + ")";
+        liveManualSel.appendChild(o);
+      });
+      liveManualSelWrap.appendChild(liveManualSelTxt);
+      liveManualSelWrap.appendChild(liveManualSel);
+      var liveManualStatus = document.createElement("p");
+      liveManualStatus.className = "livemanual-status";
+      liveManualStatus.id = "liveManualStatus";
+      liveManualStatus.hidden = true;
+      var liveManualGpsBtn = document.createElement("button");
+      liveManualGpsBtn.type = "button";
+      liveManualGpsBtn.className = "livemanual-gps";
+      liveManualGpsBtn.id = "liveManualGps";
+      liveManualGpsBtn.textContent = "Use my phone's GPS instead";
+      liveManualGpsBtn.hidden = true;
+      liveManualEl.appendChild(liveManualTitle);
+      liveManualEl.appendChild(liveManualWhy);
+      liveManualEl.appendChild(liveManualWarn);
+      liveManualEl.appendChild(liveManualRow);
+      liveManualEl.appendChild(liveManualSelWrap);
+      liveManualEl.appendChild(liveManualStatus);
+      liveManualEl.appendChild(liveManualGpsBtn);
+      // App mode: the app's native service is the only location writer,
+      // so the page offers no placement of its own there (same rule as
+      // Blip). The panel simply never joins the card.
+      if (!IS_SPUDMAPS_APP) liveHereEl.insertBefore(liveManualEl, liveHereNote);
+
+      function liveBuildingIdxForRoom(n) {
+        for (var i = 0; i < PLACES.length; i++) {
+          var p = PLACES[i];
+          if (!p || !p.rooms) continue;
+          var m = /(\d+)\s*[–-]\s*(\d+)/.exec(p.rooms);
+          if (m && n >= parseInt(m[1], 10) && n <= parseInt(m[2], 10)) return i;
+        }
+        return -1;
+      }
+      function liveRoomRangesText() {
+        var out = [];
+        PLACES.forEach(function (p) { if (p && p.rooms) out.push(p.rooms); });
+        return out.join(", ");
+      }
+      function liveManualSync() {
+        var on = !!liveState.manualPos;
+        liveManualStatus.hidden = !on;
+        liveManualGpsBtn.hidden = !on;
+        if (on) {
+          liveManualStatus.textContent = "Your dot is set by hand at " + liveState.manualPlace + " — that's where you said you are, not a GPS fix. It stays there until you switch back to GPS.";
+        }
+      }
+      function liveManualWarnShow(msg) {
+        liveManualWarn.textContent = msg;
+        liveManualWarn.hidden = false;
+      }
+      function liveManualWarnHide() { liveManualWarn.hidden = true; }
+      // A placement held while the name dialog collects a profile —
+      // the same held-action pattern the board and meetups use: the
+      // building index waits here and the dialog's save applies it.
+      var livePendingPlace = -1;
+      function livePlaceManual(idx) {
+        if (IS_SPUDMAPS_APP) return; // app mode: the page never writes presence
+        var p = PLACES[idx];
+        var xy = (typeof PINXY !== "undefined") ? PINXY[idx] : null;
+        if (!p || !xy || (xy[0] === 0 && xy[1] === 0)) {
+          liveNote("Couldn't place your dot there — try another building.");
+          return;
+        }
+        if (!liveReady) {
+          liveNote("Live group couldn't load just now — the rest of the map works as usual.", true);
+          return;
+        }
+        if (!liveProfile) { livePendingPlace = idx; liveOpenDlg("place"); return; }
+        var pos = { x: xy[0], y: xy[1], near: 0, acc: null, manual: true, place: p.name };
+        liveState.manualPos = pos;
+        liveState.manualPlace = p.name;
+        liveManualWarnHide();
+        liveManualSync();
+        if (liveState.sharing) {
+          // Sharing: the hand-set spot replaces the GPS position at
+          // once and the watch stops moving it (see liveOnPos).
+          liveState.mePos = pos;
+          liveWriteNow();
+          liveRender();
+          liveNote("Your dot is now at " + p.name + ", set by hand — it stays there until you switch back to GPS.");
+          return;
+        }
+        // Not sharing: place it the way a Blip does — exactly one
+        // presence write on the same read listeners viewing uses, and
+        // nothing keeps reporting afterwards.
+        liveEnsureAuth(function (ok) {
+          if (!ok) {
+            liveNote("Couldn't connect — check your connection, then try placing your dot again.");
+            return;
+          }
+          liveAttachListeners();
+          if (!liveListening || !livePresenceRef) {
+            liveNote("Couldn't connect — check your connection, then try placing your dot again.");
+            return;
+          }
+          liveState.viewing = true;
+          liveLegendEl.hidden = false;
+          if (!liveState.staleTimer) liveState.staleTimer = setInterval(liveRender, 15000);
+          try { liveMyRef = livePresenceRef.child(liveUid); } catch (e) { liveMyRef = null; }
+          if (!liveMyRef) {
+            liveNote("Couldn't connect — check your connection, then try placing your dot again.");
+            return;
+          }
+          liveState.blipPos = pos;
+          liveState.blipAt = Date.now();
+          liveState.mePos = pos;
+          liveWriteNow(); // the placement's one and only presence write
+          liveRender();
+          liveNote("Your dot is now at " + p.name + ", set by hand — shown once, like a Blip. It isn't a GPS fix, and nothing keeps watching you.");
+        });
+      }
+      function liveClearManual() {
+        liveState.manualPos = null;
+        liveState.manualPlace = "";
+        liveState.gpsWeak = false;
+        liveManualWarnHide();
+        liveManualSync();
+        if (liveState.sharing) {
+          // GPS takes over again: drop the held spot and clear the
+          // last-write record so the watch's next fix moves the dot
+          // and writes, even if it lands near the previous GPS write.
+          liveState.mePos = null;
+          liveState.lastWrite = null;
+          liveState.lastWriteTime = 0;
+          liveRender();
+          liveNote("Back to your phone's GPS — your dot moves with its next fix. Indoors, that fix may wander again; you can set your spot by hand anytime.");
+        } else {
+          liveState.blipPos = null;
+          liveState.blipAt = 0;
+          if (liveState.mePos && liveState.mePos.manual) liveState.mePos = null;
+          liveRender();
+          // Replace the hand-set entry with one fresh GPS ping; if the
+          // phone can't fix (the usual indoor story), Blip's own note
+          // explains and the hand-set entry stays as last-seen.
+          liveBlip();
+        }
+      }
+      function liveManualGo() {
+        var raw = liveManualRoom.value.replace(/\D/g, "");
+        if (raw) {
+          var idx = liveBuildingIdxForRoom(parseInt(raw, 10));
+          if (idx < 0) {
+            liveNote("That room number doesn't match a building here — resort rooms run " + liveRoomRangesText() + ". Or pick your building from the list.");
+            try { liveManualRoom.focus(); liveManualRoom.select(); } catch (e) { /* focus is a nicety */ }
+            return;
+          }
+          livePlaceManual(idx);
+          return;
+        }
+        var sv = liveManualSel.value;
+        if (sv === "" || sv === null) {
+          liveNote("Type your room number, or pick your building from the list, then tap Place my dot.");
+          return;
+        }
+        livePlaceManual(parseInt(sv, 10));
+      }
+      liveManualPlaceBtn.addEventListener("click", liveManualGo);
+      liveManualRoom.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); liveManualGo(); }
+      });
+      liveManualGpsBtn.addEventListener("click", liveClearManual);
+
       groupToolsEl.appendChild(liveHereEl);
       var liveUsersSig = "";
 
@@ -7785,7 +8069,7 @@
           proxRows.push({ uid: uid, name: nm, badge: bg.text });
         });
         proxRows.sort(function (a, b) { return a.name < b.name ? -1 : 1; });
-        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon + "|" + (want[k].stale ? "stale:" + want[k].updatedAt : "live") + "|" + (badges[k] || ""); }).join(";") +
+        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon + "|" + (want[k].stale ? "stale:" + want[k].updatedAt : "live") + "|" + (want[k].manual ? "man:" + want[k].place : "") + "|" + (badges[k] || ""); }).join(";") +
           "|prox" + proxRows.map(function (r) { return r.uid + "|" + r.name + "|" + r.badge; }).join(";") +
           "|potato" + potatoStage() +
           "|share" + (liveState.sharing ? "1" : "0");
@@ -7818,7 +8102,8 @@
           b.type = "button";
           b.className = "liveuser" + (w.stale ? " stale" : "");
           var seenTxt = w.stale ? liveLastSeenText(w.updatedAt) : "";
-          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name) + (seenTxt ? " (" + seenTxt + ")" : "") + (badges[k] ? " (" + badges[k] + ")" : ""));
+          var manTxt = w.manual ? ((w.place ? "at " + w.place + " — " : "") + "set by hand, not GPS") : "";
+          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name) + (seenTxt ? " (" + seenTxt + ")" : "") + (manTxt ? " (" + manTxt + ")" : "") + (badges[k] ? " (" + badges[k] + ")" : ""));
           var d = document.createElement("span");
           d.className = "uicon";
           d.style.borderColor = w.color;
@@ -7834,6 +8119,12 @@
             s.className = "useen";
             s.textContent = "· " + seenTxt;
             b.appendChild(s);
+          }
+          if (manTxt) {
+            var mn = document.createElement("span");
+            mn.className = "useen uman";
+            mn.textContent = "· " + manTxt;
+            b.appendChild(mn);
           }
           if (badges[k]) {
             var px = document.createElement("span");
@@ -8040,7 +8331,7 @@
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
-      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once.";
+      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once. GPS can't get through the buildings, so indoors a dot can sit in the wrong place — a dot with a dashed ring was placed by hand at the building its owner picked: it's where they say they are, not a GPS fix. Set your own by hand in Who's here.";
       liveLegendEl.hidden = true;
       groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
@@ -8320,6 +8611,13 @@
           liveDlgTitle.textContent = "Blip your location";
           liveDlgIntro.textContent = "First pick your name and a color — that's what friends will see. Then tap Save and your spot shows on the map, just this once.";
           liveDlgNote.textContent = "This shows you once. It does not keep following you, and it doesn't turn Live on.";
+        } else if (mode === "place") {
+          // Hand placement with no saved name: the profile comes
+          // first, and the save applies the held building pick (see
+          // the save handler) — it never starts continuous sharing.
+          liveDlgTitle.textContent = "Set your spot by hand";
+          liveDlgIntro.textContent = "First pick your name and a color — that's what friends will see. Then tap Save and your dot goes to the building you picked.";
+          liveDlgNote.textContent = "A hand-set dot is where you say you are — it isn't a GPS fix, and the map labels it that way.";
         } else if (mode === "app") {
           // App mode (SpudMaps Live app only): the same dialog as the
           // single profile editor, but save-only — saving never starts
@@ -8377,6 +8675,7 @@
           try { window.SpudMapsLive?.onProfileSaved?.(); } catch (e) {}
         } else if (mode === "join") liveStartSharing();
         else if (mode === "blip") liveBlip();
+        else if (mode === "place" && livePendingPlace >= 0) { var ppi = livePendingPlace; livePendingPlace = -1; livePlaceManual(ppi); }
         else if (liveState.sharing) liveWriteNow();
         // The Wedding Wall keys off the same saved profile: refresh its
         // "posting as" line, and release a note that was held for a name.
@@ -8468,6 +8767,12 @@
             y: Math.round(liveState.mePos.y * 10) / 10,
             near: Math.round(liveState.mePos.near),
             acc: (typeof liveState.mePos.acc === "number" && isFinite(liveState.mePos.acc)) ? Math.round(liveState.mePos.acc) : null,
+            // Hand-set positions carry their honesty with them: manual
+            // + the building's name, so every viewer renders the dot
+            // as placed-by-hand. GPS writes send null, which clears
+            // both fields from the entry.
+            manual: liveState.mePos.manual ? true : null,
+            place: liveState.mePos.manual ? (liveState.mePos.place || null) : null,
             updatedAt: firebase.database.ServerValue.TIMESTAMP
           });
           if (liveState.lastFix) {
@@ -8546,7 +8851,17 @@
               liveWriteNow(); // the tap's one and only presence write
               liveRender();
               if (xy.near <= 800) {
-                liveNote("Done — your spot on the map just updated. That's all: nothing keeps watching you.");
+                if (typeof pos.coords.accuracy === "number" && pos.coords.accuracy > 50) {
+                  // A rough fix is the indoor story: GPS can't get
+                  // through the building, so the phone guessed. Say so,
+                  // and point at hand placement instead of pretending
+                  // the dot is where the guest is.
+                  liveState.gpsWeak = true;
+                  liveManualWarnShow("That Blip only promises ±" + Math.round(pos.coords.accuracy) + " m — indoors, GPS can't get through the buildings, so your phone is guessing and the dot may have landed in the wrong place. Set your spot by hand below and it will sit on your building instead.");
+                  liveNote("Blip sent, but that fix was rough (±" + Math.round(pos.coords.accuracy) + " m). If the dot landed wrong, set your spot by hand in Who's here.");
+                } else {
+                  liveNote("Done — your spot on the map just updated. That's all: nothing keeps watching you.");
+                }
               } else {
                 liveNote("Done, but you're outside the area this map covers, so there's no dot to show.");
               }
@@ -8555,7 +8870,8 @@
               if (err && err.code === 1) {
                 liveNote("Your phone said no to sharing location, so nothing was sent. Allow location for this page, then tap Blip again.");
               } else {
-                liveNote("Your phone couldn't find where you are, so nothing was sent. Step outside where you can see the sky, then try again.");
+                liveManualWarnShow("Your phone couldn't get a fix at all — indoors, GPS can't get through the buildings. You don't need a fix: set your spot by hand below, with your room number or building.");
+                liveNote("Your phone couldn't find where you are, so nothing was sent. Indoors that usually means GPS can't get through the building — set your spot by hand in Who's here instead: type your room number and tap Place my dot.");
               }
             }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
           } catch (e) {
@@ -8568,6 +8884,35 @@
         if (!liveState.sharing || !pos || !pos.coords) return;
         var lat = pos.coords.latitude, lng = pos.coords.longitude;
         liveState.lastFix = { lat: lat, lng: lng };
+        // Indoor check: a fix that admits to ±50 m or worse, has no
+        // accuracy reading at all, or whose own timestamp is over a
+        // minute old is the phone guessing (Wi-Fi positioning) or
+        // reusing a stale outdoor fix — the classic indoor failure,
+        // because satellite GPS can't get through the buildings. When
+        // that happens, offer hand placement (the panel in Who's here)
+        // instead of silently letting the dot follow the guess.
+        var accNow = (typeof pos.coords.accuracy === "number" && isFinite(pos.coords.accuracy) && pos.coords.accuracy > 0) ? pos.coords.accuracy : null;
+        var fixAge = (typeof pos.timestamp === "number" && isFinite(pos.timestamp)) ? (Date.now() - pos.timestamp) : 0;
+        var weak = (accNow === null || accNow > 50 || fixAge > 60000);
+        if (liveState.manualPos) {
+          // A hand-set spot wins: GPS fixes no longer move the dot or
+          // overwrite the shared entry. The entry is re-written on a
+          // slow timer so it doesn't fade to last-seen while the guest
+          // sits in their room, and the weak-fix warning stays hidden —
+          // the guest already answered it by placing the dot.
+          liveState.gpsWeak = weak;
+          if (Date.now() - liveState.lastWriteTime >= 60000) liveWriteNow();
+          return;
+        }
+        if (weak && !liveState.gpsWeak) {
+          liveManualWarnShow("Your phone's location looks unreliable right now" +
+            (accNow !== null && accNow > 50 ? " — it only promises ±" + Math.round(accNow) + " m" : "") +
+            (fixAge > 60000 ? " — its last real fix is over a minute old" : "") +
+            ". That's the indoor GPS problem: the signal can't get through the building, so the phone is guessing. Set your spot by hand below and your dot will stay where you put it.");
+        } else if (!weak && liveState.gpsWeak) {
+          liveManualWarnHide();
+        }
+        liveState.gpsWeak = weak;
         liveState.mePos = liveXY(lat, lng, pos.coords.accuracy);
         liveRender();
         var now = Date.now();
@@ -8582,7 +8927,7 @@
           liveNote("Your phone said no to sharing location, so Live group turned off. Allow location for this page, then tap Live group again.");
         } else if (!liveState.mePos) {
           liveStopSharing();
-          liveNote("Your phone couldn't find where you are, so Live group turned off. Step outside where you can see the sky and try again.");
+          liveNote("Your phone couldn't find where you are, so Live group turned off. Indoors, GPS can't get through the buildings — you can still put your dot on the map by hand: open Who's here, type your room number, and tap Place my dot.");
         }
         // With a fix already on the map, a transient error is ignored —
         // the watch keeps running and the next fix lands on its own.
@@ -8684,6 +9029,15 @@
           liveSyncPrompt();
           liveState.viewing = true;
           liveState.mePos = null;
+          // Turning Live on means GPS sharing: any hand-set spot from
+          // a one-time placement is cleared, and the watch takes over.
+          // (If the phone's fix is the indoor guess, liveOnPos offers
+          // hand placement again while sharing.)
+          liveState.manualPos = null;
+          liveState.manualPlace = "";
+          liveState.gpsWeak = false;
+          liveManualWarnHide();
+          liveManualSync();
           liveState.lastFix = null;
           liveState.lastWrite = null;
           liveState.lastWriteTime = 0;
@@ -8734,6 +9088,13 @@
         liveMyRef = null;
         liveState.sharing = false;
         liveState.mePos = null;
+        // Stopping sharing clears any hand-set spot too — the entry it
+        // was holding up is gone with the rest of the local dot state.
+        liveState.manualPos = null;
+        liveState.manualPlace = "";
+        liveState.gpsWeak = false;
+        liveManualWarnHide();
+        liveManualSync();
         // The entry just removed was also the Blip's — its dot and
         // last-seen go with it, so the local blip state clears too.
         liveState.blipPos = null;
@@ -8816,6 +9177,8 @@
             icon: liveValidIcon(e.icon),
             stale: liveIsStale(e.updatedAt, now),
             acc: (typeof e.acc === "number" && e.acc > 0 && e.acc <= 300) ? e.acc : null,
+            manual: e.manual === true,
+            place: (typeof e.place === "string" && e.place) ? e.place : "",
             updatedAt: typeof e.updatedAt === "number" ? e.updatedAt : null
           };
         }
@@ -8824,6 +9187,8 @@
             x: liveState.mePos.x, y: liveState.mePos.y, me: true,
             name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
             acc: (typeof liveState.mePos.acc === "number") ? liveState.mePos.acc : null,
+            manual: !!liveState.mePos.manual,
+            place: liveState.mePos.manual ? (liveState.mePos.place || "") : "",
             stale: false, updatedAt: null
           };
         }
@@ -8835,6 +9200,8 @@
             x: liveState.blipPos.x, y: liveState.blipPos.y, me: true,
             name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
             acc: (typeof liveState.blipPos.acc === "number") ? liveState.blipPos.acc : null,
+            manual: !!liveState.blipPos.manual,
+            place: liveState.blipPos.manual ? (liveState.blipPos.place || "") : "",
             stale: liveIsStale(liveState.blipAt, now),
             updatedAt: liveState.blipAt || null
           };
@@ -8858,12 +9225,19 @@
           rec.name = w.name; rec.color = w.color; rec.icon = w.icon; rec.me = w.me;
           rec.stale = !!w.stale; rec.updatedAt = w.updatedAt;
           rec.acc = (typeof w.acc === "number") ? w.acc : null;
+          rec.manual = !!w.manual; rec.place = w.place || "";
           rec.el.classList.toggle("stale", !!w.stale);
+          rec.el.classList.toggle("manual", !!w.manual);
           rec.el.style.background = "#fffdf8";
           rec.el.style.borderColor = w.color;
           rec.el.style.color = w.color;
           if (rec.iconEl) rec.iconEl.innerHTML = liveIconSvg(w.icon);
-          rec.label.textContent = w.stale ? (w.name + " · " + liveLastSeenText(w.updatedAt)) : w.name;
+          // A hand-set dot says so on its label: name, building, and
+          // "set by hand" — never dressed up as a GPS position.
+          var lbl = w.name;
+          if (w.manual) lbl += " · " + (w.place ? w.place + " · " : "") + "set by hand";
+          if (w.stale) lbl += " · " + liveLastSeenText(w.updatedAt);
+          rec.label.textContent = lbl;
           rec.label.style.borderLeftColor = w.color;
         }
         layoutDots();
@@ -11547,6 +11921,13 @@
           var when = new Date(pos.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
           read.innerHTML = "<strong>" + verdict + "</strong> The lobby is " + fmtDist(dLobby) + " " + dir +
             " of you · accurate to about ±" + Math.round(acc) + " m · updated " + when + ".";
+          if (acc > 50) {
+            // That wide an error bar indoors means the phone is
+            // guessing: satellite GPS can't get through the buildings,
+            // so it falls back to Wi-Fi or an old fix. Say so plainly
+            // and point at the honest alternative — hand placement.
+            read.innerHTML += " That ±" + Math.round(acc) + " m is too rough to trust: indoors, GPS can't get through the buildings, so your phone is guessing from Wi-Fi or an old fix. To put your dot where you actually are, use “Set your spot by hand” in Who's here (under Live group) — type your room number and your dot sits on your building.";
+          }
           btn.disabled = true;
           btn.textContent = "Live location on";
           stopBtn.hidden = false;
