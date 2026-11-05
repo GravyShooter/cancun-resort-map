@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-05-gps-calibration · v124.1.104 -->
+<!-- build-2026-11-05-gps-snap-fix · v125.1.105 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -1047,6 +1047,18 @@
         pointer-events: none;
         box-shadow: 0 2px 6px rgba(25, 35, 20, 0.5);
         display: flex; align-items: center; justify-content: center;
+      }
+      /* Accuracy halo: a soft disc behind the dot sized by the fix's
+         own GPS accuracy (metres, converted in layoutDots), so an
+         unsnapped indoor fix reads as "somewhere in here" instead of
+         a certain point. Hidden when the accuracy is tighter than
+         the dot itself or unknown (e.g. app-written entries). */
+      .livedot .halo {
+        position: absolute; left: 50%; top: 50%; z-index: -1;
+        transform: translate(-50%, -50%);
+        border-radius: 50%; pointer-events: none; display: none;
+        background: currentColor; opacity: 0.15;
+        box-shadow: inset 0 0 0 1.5px currentColor;
       }
       .livedot .licon { display: flex; align-items: center; justify-content: center; pointer-events: none; }
       .livedot .licon svg { width: 17px; height: 17px; display: block; }
@@ -3812,7 +3824,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v124.1.104</p>
+        <p class="version-stamp">v125.1.105</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -4695,6 +4707,13 @@
       // its pin sits at official #55 (beach-ward cell of the NE row,
       // against the Kitchen Table block's north edge), not on the
       // Lobby roof where it used to be drawn. Town anchors unchanged.
+      // Second fix (Nov 5, 15:43 ET): the EC Lounge Bar anchor is now
+      // Chris's measured phone fix inside the bar itself
+      // (20.875672, -86.865826). The old anchor sat ~160 m north of
+      // where a phone in the bar actually reads, so a bar fix blended
+      // toward the Flavor Market / Gift Shop anchors and landed on the
+      // Gift Shop pin. See liveXY for the snap discipline that goes
+      // with this: a fix only snaps onto a venue it is genuinely at.
       var PLACES = [
         // Sights & landmarks
         { name: "Lobby & Concierge", cat: "sights", lat: 20.87702, lng: -86.86758,
@@ -5559,7 +5578,7 @@
         { name: "Las Olas Bar", cat: "bars", lat: 20.87353, lng: -86.86424,
           meta: "On the beach · south of Las Olas",
           desc: "The beach bar immediately south of the Las Olas grill, right on the sand — drinks without leaving the beach." },
-        { name: "EC Lounge Bar", cat: "bars", club: true, lat: 20.87708, lng: -86.86535,
+        { name: "EC Lounge Bar", cat: "bars", club: true, lat: 20.87567, lng: -86.86583,
           meta: "Excellence Club · NE corner cluster",
           desc: "The Club lounge's own bar, in the northeast-corner stack between Magna above and the Excellence Club Lounge below." },
         { name: "Games Area", cat: "sights", lat: 20.87460, lng: -86.86587,
@@ -7373,32 +7392,50 @@
       // Inverse-distance-squared weighting over the 4 nearest anchors:
       // exact when standing at a known place, smooth in between. `near`
       // is the distance to the closest anchor, so fixes far off the
-      // mapped area can stay off the drawing.
-      function liveXY(lat, lng) {
+      // mapped area can stay off the drawing. The distance floor is
+      // small (5 m) so the closest anchor genuinely dominates: with a
+      // 10 m floor, anchors 15 m away in GPS space pulled nearly as
+      // hard as the venue being stood in.
+      // Snap discipline (Nov 5, 2026, second fix): a snap is a claim of
+      // certainty, so it has to earn it. A fix snaps onto a venue only
+      // when ALL of these hold: (a) it is within 12 m of that venue's
+      // anchor; (b) the phone's own accuracy reading, when we have
+      // one, is decent (<= 25 m — an indoor fix that admits to ±40 m
+      // never snaps); and (c) snapping would barely move the dot —
+      // the unsnapped blend already lands within 40 viewBox units
+      // (~65 m) of the pin. The Gift Shop incident: standing in the
+      // Excellence Club bar, the fix blended toward anchors that sit
+      // close to the bar in GPS space but far away on the drawing,
+      // and the old unconditional 15 m snap then parked the dot on a
+      // wrong pin as if it were sure. When any check fails, the dot
+      // shows the raw blended position, with an accuracy halo sized
+      // by the fix's own accuracy (see layoutDots) instead of a
+      // snapped pin's false certainty.
+      function liveXY(lat, lng, acc) {
         if (!liveAnchors) liveBuildAnchors();
+        var accOut = (typeof acc === "number" && isFinite(acc) && acc > 0) ? acc : null;
         var ds = [];
         for (var i = 0; i < liveAnchors.length; i++) {
           var a = liveAnchors[i];
           ds.push({ d: liveHav(lat, lng, a.lat, a.lng), x: a.x, y: a.y });
         }
         ds.sort(function (p, q) { return p.d - q.d; });
-        if (!ds.length) return { x: 0, y: 0, near: Infinity };
+        if (!ds.length) return { x: 0, y: 0, near: Infinity, acc: accOut };
         var near = ds[0].d;
-        // Snap: a fix within 15 m of a known place is that place. The
-        // anchors sit at the venues' measured positions (Nov 2026
-        // ground-truth calibration), and indoor fixes at neighbouring
-        // venues can land closer to each other in GPS space than the
-        // venues are on the drawing — blending there pulled dots off
-        // the venue being stood in. Between venues the blend below
-        // still applies.
-        if (near <= 15) return { x: ds[0].x, y: ds[0].y, near: near };
         var n = Math.min(4, ds.length), sw = 0, sx = 0, sy = 0;
         for (var j = 0; j < n; j++) {
-          var dc = Math.max(ds[j].d, 10);
+          var dc = Math.max(ds[j].d, 5);
           var w = 1 / (dc * dc);
           sw += w; sx += w * ds[j].x; sy += w * ds[j].y;
         }
-        return { x: sx / sw, y: sy / sw, near: near };
+        var out = { x: sx / sw, y: sy / sw, near: near, acc: accOut };
+        if (near <= 12 && (accOut === null || accOut <= 25)) {
+          var sdx = out.x - ds[0].x, sdy = out.y - ds[0].y;
+          if (Math.sqrt(sdx * sdx + sdy * sdy) <= 40) {
+            out.x = ds[0].x; out.y = ds[0].y; out.snapped = true;
+          }
+        }
+        return out;
       }
       // Positions the live dots with the same transform layoutPins uses
       // for pins. A hoisted function declaration: layoutPins calls it,
@@ -7419,6 +7456,21 @@
           rec._inGrp = false;
           rec.el.style.left = rec._sx + "px";
           rec.el.style.top = rec._sy + "px";
+          // Accuracy halo: radius in screen px from the fix's accuracy
+          // in metres — 1 viewBox unit ≈ 1.61 m by the map's own scale
+          // bar (62 units ≈ 100 m). Only shown when it is wider than
+          // the dot itself; a tighter fix needs no fuzz.
+          if (rec.haloEl) {
+            var hr = (typeof rec.acc === "number" && rec.acc > 0 && !rec._off)
+              ? (rec.acc / 1.61) * u * view.k : 0;
+            if (hr >= 17) {
+              rec.haloEl.style.display = "block";
+              rec.haloEl.style.width = (hr * 2).toFixed(1) + "px";
+              rec.haloEl.style.height = (hr * 2).toFixed(1) + "px";
+            } else {
+              rec.haloEl.style.display = "none";
+            }
+          }
           if (!rec._off) placed.push(rec);
         }
         // Together grouping: members within a few metres of each other
@@ -8415,6 +8467,7 @@
             x: Math.round(liveState.mePos.x * 10) / 10,
             y: Math.round(liveState.mePos.y * 10) / 10,
             near: Math.round(liveState.mePos.near),
+            acc: (typeof liveState.mePos.acc === "number" && isFinite(liveState.mePos.acc)) ? Math.round(liveState.mePos.acc) : null,
             updatedAt: firebase.database.ServerValue.TIMESTAMP
           });
           if (liveState.lastFix) {
@@ -8485,7 +8538,7 @@
                 return;
               }
               var lat = pos.coords.latitude, lng = pos.coords.longitude;
-              var xy = liveXY(lat, lng);
+              var xy = liveXY(lat, lng, pos.coords.accuracy);
               liveState.lastFix = { lat: lat, lng: lng };
               liveState.mePos = xy;
               liveState.blipPos = xy;
@@ -8515,7 +8568,7 @@
         if (!liveState.sharing || !pos || !pos.coords) return;
         var lat = pos.coords.latitude, lng = pos.coords.longitude;
         liveState.lastFix = { lat: lat, lng: lng };
-        liveState.mePos = liveXY(lat, lng);
+        liveState.mePos = liveXY(lat, lng, pos.coords.accuracy);
         liveRender();
         var now = Date.now();
         var moved = !liveState.lastWrite ||
@@ -8723,6 +8776,10 @@
         el.className = "livedot" + (me ? " me" : "");
         // Desync the pulse rings so the group's dots don't throb in unison.
         el.style.animationDelay = (Math.random() * 1.4).toFixed(2) + "s";
+        var haloEl = document.createElement("span");
+        haloEl.className = "halo";
+        haloEl.setAttribute("aria-hidden", "true");
+        el.appendChild(haloEl);
         var iconEl = document.createElement("span");
         iconEl.className = "licon";
         iconEl.setAttribute("aria-hidden", "true");
@@ -8731,7 +8788,7 @@
         label.className = "lname";
         el.appendChild(label);
         sceneEl.appendChild(el);
-        return { el: el, label: label, iconEl: iconEl, x: 0, y: 0 };
+        return { el: el, label: label, iconEl: iconEl, haloEl: haloEl, x: 0, y: 0 };
       }
       function liveRender() {
         if (!liveState) return;
@@ -8758,6 +8815,7 @@
             color: liveValidColor(e.color),
             icon: liveValidIcon(e.icon),
             stale: liveIsStale(e.updatedAt, now),
+            acc: (typeof e.acc === "number" && e.acc > 0 && e.acc <= 300) ? e.acc : null,
             updatedAt: typeof e.updatedAt === "number" ? e.updatedAt : null
           };
         }
@@ -8765,6 +8823,7 @@
           want.__me = {
             x: liveState.mePos.x, y: liveState.mePos.y, me: true,
             name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
+            acc: (typeof liveState.mePos.acc === "number") ? liveState.mePos.acc : null,
             stale: false, updatedAt: null
           };
         }
@@ -8775,6 +8834,7 @@
           want.__me = {
             x: liveState.blipPos.x, y: liveState.blipPos.y, me: true,
             name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
+            acc: (typeof liveState.blipPos.acc === "number") ? liveState.blipPos.acc : null,
             stale: liveIsStale(liveState.blipAt, now),
             updatedAt: liveState.blipAt || null
           };
@@ -8797,6 +8857,7 @@
           rec.x = w.x; rec.y = w.y; rec.uid = key;
           rec.name = w.name; rec.color = w.color; rec.icon = w.icon; rec.me = w.me;
           rec.stale = !!w.stale; rec.updatedAt = w.updatedAt;
+          rec.acc = (typeof w.acc === "number") ? w.acc : null;
           rec.el.classList.toggle("stale", !!w.stale);
           rec.el.style.background = "#fffdf8";
           rec.el.style.borderColor = w.color;
@@ -12243,7 +12304,7 @@
           }
           if (!("geolocation" in navigator)) { cb(null, { code: 0 }); return; }
           navigator.geolocation.getCurrentPosition(function (pos) {
-            var pt = liveXY(pos.coords.latitude, pos.coords.longitude);
+            var pt = liveXY(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
             cb({ x: pt.x, y: pt.y, near: pt.near, lat: pos.coords.latitude, lng: pos.coords.longitude }, null);
           }, function (err) { cb(null, err); }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
         }
