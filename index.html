@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-04-whos-here-viewing · v116.1.99 -->
+<!-- build-2026-11-04-mapgestures · v120.1.101 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -296,7 +296,11 @@
       }
       .scene {
         position: relative; background: #79a85b; overflow: hidden;
-        height: clamp(430px, 74vh, 820px); touch-action: none; cursor: grab;
+        /* Cooperative gestures: the browser keeps one-finger vertical drags
+           for page scroll (pan-y); the pointer code below claims the gesture
+           (touch-action: none) only once a second touch lands, so two-finger
+           pan and pinch-zoom move the map. Mouse input is unaffected. */
+        height: clamp(430px, 74vh, 820px); touch-action: pan-y; cursor: grab;
         scroll-margin-top: 12px;
       }
       .scene:active { cursor: grabbing; }
@@ -319,6 +323,24 @@
       .mbtn svg { width: 20px; height: 20px; display: block; }
       .jbtn { min-height: 44px; border-radius: 999px; padding: 8px 14px; font-size: 0.9rem; }
       .mbtn:focus-visible, .jbtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      /* Two-finger hint: a small pill on the map so touch guests learn the
+         cooperative gesture before they get stuck scrolling the map. It
+         never takes taps (pointer-events: none) and pulses when a solo
+         one-finger drag is attempted on the map. */
+      .gesturehint {
+        position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+        z-index: 8; pointer-events: none; white-space: nowrap;
+        max-width: calc(100% - 116px); overflow: hidden; text-overflow: ellipsis;
+        background: rgba(14, 22, 18, 0.86); color: #fffdf8;
+        border: 1px solid rgba(255, 253, 248, 0.35); border-radius: 999px;
+        padding: 7px 13px; font-size: 0.8rem; font-weight: 600; line-height: 1.25;
+        box-shadow: 0 3px 10px rgba(30, 40, 20, 0.4); text-align: center;
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+      .gesturehint.nudge {
+        background: var(--accent); transform: translateX(-50%) scale(1.05);
+      }
+      @media (prefers-reduced-motion: reduce) { .gesturehint { transition: none; } }
       @media (max-width: 560px) { .scene { height: clamp(400px, 68vh, 640px); } }
       .scene .lbl {
         font-family: "Public Sans", system-ui, sans-serif;
@@ -858,7 +880,7 @@
         .pin.pin-enter, .brand-letter, .hero-logo, .boardbubble--new, .livedot { animation: none; }
       }
       @media print {
-        .chips, .grouptools, .mapbox, .toolbar, .skip, .gpscard, .townstrip, .installhint, .installcta, .livedlg, .livelegend, .livenote { display: none; }
+        .chips, .grouptools, .mapbox, .toolbar, .skip, .gpscard, .townstrip, .installhint, .installcta, .livedlg, .livelegend, .livenote, .liveprompt { display: none; }
         #detail { max-height: none; overflow: visible; position: static; }
         .foldbody[hidden] { display: block !important; }
         #detail details.mfold { border: 0; padding: 0; }
@@ -968,6 +990,23 @@
       .livehere .liveuser { min-height: 40px; padding: 7px 13px; font-size: 0.92rem; }
       .livehere-note { margin: 9px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
       .livehere-note[hidden] { display: none; }
+      /* Blip: the one-time ping button inside the Who's here card. Teal
+         like the Live group chip's active state, full card width, big
+         enough to hit with a thumb. */
+      .liveblip {
+        appearance: none; cursor: pointer; width: 100%;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        margin-top: 10px; min-height: 48px; padding: 11px 16px;
+        border: 0; border-radius: 999px;
+        background: #0e6e6e; color: #ffffff;
+        font: inherit; font-size: 0.98rem; font-weight: 700; line-height: 1.2;
+        box-shadow: 0 3px 10px rgba(30, 40, 20, 0.3);
+      }
+      .liveblip[hidden] { display: none; }
+      .liveblip svg { width: 19px; height: 19px; display: block; flex: none; }
+      .liveblip:disabled { opacity: 0.55; cursor: default; }
+      .liveblip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .liveblip-hint { margin-top: 7px; }
       /* Stale (last-seen) members: faded pill, desaturated icon, with the
          last-seen time shown next to the name. Still tappable to center. */
       .liveuser.stale { opacity: 0.68; }
@@ -2838,6 +2877,120 @@
       .wxnote { margin: var(--s-2) 0 0; font-size: 0.82rem; color: var(--ink-soft); }
       .wxsrc { margin: 4px 0 0; font-size: 0.75rem; color: var(--ink-soft); }
 
+      /* ---------- Live prompt: on-map banner for viewers not sharing ----------
+         The top strip of the map card, directly above the map drawing:
+         the first thing a non-sharing viewer sees on the map, and it
+         covers no part of the map itself — every pin stays tappable,
+         and the map still pans, zooms and taps exactly as before. It is
+         a banner, not a modal, and it can be dismissed for the session.
+         Visibility is driven by liveSyncPrompt() in the Live section:
+         shown only while the viewer is not sharing. */
+      .liveprompt {
+        margin: 12px 12px 0;
+        display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap;
+        background: var(--panel-2); color: var(--ink);
+        border: 2px solid var(--accent); border-radius: 14px;
+        box-shadow: var(--shadow);
+        padding: 12px 12px 12px 16px;
+      }
+      .liveprompt[hidden] { display: none; }
+      .liveprompt-text {
+        margin: 0; flex: 1 1 230px; min-width: 0;
+        font-size: 0.98rem; line-height: 1.4;
+        display: flex; align-items: flex-start; gap: 9px;
+      }
+      .liveprompt-dot {
+        width: 11px; height: 11px; border-radius: 50%; flex: none; margin-top: 5px;
+        background: #22c55e; animation: liveheredot 2.4s ease-out infinite;
+      }
+      @media (prefers-reduced-motion: reduce) { .liveprompt-dot { animation: none; } }
+      .liveprompt-text strong { font-weight: 800; }
+      .liveprompt-actions { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; }
+      .liveprompt-btn {
+        appearance: none; cursor: pointer; border: 0; border-radius: 999px;
+        background: var(--accent); color: var(--accent-ink);
+        font: inherit; font-weight: 700; font-size: 0.98rem;
+        min-height: 48px; padding: 11px 20px;
+        box-shadow: 0 3px 10px rgba(30, 40, 20, 0.3);
+      }
+      .liveprompt-btn:focus-visible, .liveprompt-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .liveprompt-x {
+        appearance: none; cursor: pointer; flex: none;
+        width: 44px; height: 44px; border: 0; border-radius: 999px;
+        background: none; color: var(--ink-soft);
+        font-size: 1.45rem; line-height: 1; font-weight: 600;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      @media (max-width: 560px) {
+        .liveprompt { padding: 10px 8px 10px 12px; gap: 8px 10px; }
+        .liveprompt-actions { flex: 1 1 auto; }
+        .liveprompt-btn { flex: 1 1 auto; padding: 11px 14px; }
+      }
+
+      /* ---------- Moon flight: go-live celebration ----------
+         Original potato riders on bicycles, silhouetted across a full
+         moon in a night sky — an homage in spirit only, all art drawn
+         here. Plays once, briefly, on the device of the person who just
+         turned Live on (see livePlayMoonFly in the Live section). The
+         overlay never takes pointer events except on its close button,
+         so the map underneath stays fully usable while it plays, and it
+         dismisses itself after a few seconds. Reduced motion gets a
+         still frame of the same scene, shown briefly with no movement. */
+      .moonfly {
+        position: fixed; left: 0; right: 0; top: 0; z-index: 96;
+        height: min(46vh, 340px); min-height: 190px;
+        pointer-events: none;
+        overflow: hidden;
+        background: linear-gradient(180deg, #070d1f 0%, #101d3a 62%, #1a2c50 100%);
+        border-bottom: 1px solid rgba(245, 237, 214, 0.25);
+        box-shadow: 0 18px 44px rgba(4, 8, 20, 0.45);
+        opacity: 0; transition: opacity 0.45s ease;
+      }
+      .moonfly[hidden] { display: none; }
+      .moonfly.show { opacity: 1; }
+      .moonfly svg { display: block; width: 100%; height: 100%; }
+      .moonfly .mf-star { fill: #dfe8ff; animation: mfTwinkle 1.6s ease-in-out infinite alternate; }
+      .moonfly .mf-star.d1 { animation-delay: 0.4s; }
+      .moonfly .mf-star.d2 { animation-delay: 0.9s; }
+      .moonfly .mf-star.d3 { animation-delay: 1.3s; }
+      @keyframes mfTwinkle { from { opacity: 0.25; } to { opacity: 0.95; } }
+      .moonfly .mf-riders { animation: mfCross 3.9s cubic-bezier(0.35, 0.05, 0.4, 0.95) both; }
+      @keyframes mfCross {
+        0% { transform: translate(-360px, 66px); }
+        45% { transform: translate(300px, 6px); }
+        62% { transform: translate(430px, 22px); }
+        100% { transform: translate(880px, 58px); }
+      }
+      .moonfly .mf-bob { animation: mfBob 0.85s ease-in-out infinite alternate; }
+      .moonfly .mf-bob.b2 { animation-delay: 0.28s; animation-duration: 0.95s; }
+      .moonfly .mf-bob.b3 { animation-delay: 0.55s; animation-duration: 1.05s; }
+      @keyframes mfBob { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+      .moonfly .mf-wheel { transform-box: fill-box; transform-origin: center; animation: mfSpin 0.65s linear infinite; }
+      @keyframes mfSpin { to { transform: rotate(360deg); } }
+      .moonfly.static .mf-riders { animation: none; transform: translate(330px, 14px); }
+      .moonfly.static .mf-bob, .moonfly.static .mf-wheel, .moonfly.static .mf-star { animation: none; }
+      .moonfly-x {
+        appearance: none; cursor: pointer; pointer-events: auto;
+        position: absolute; top: 8px; right: 8px; z-index: 2;
+        width: 44px; height: 44px; border: 0; border-radius: 999px;
+        background: rgba(10, 16, 34, 0.55); color: #f5edd6;
+        font-size: 1.45rem; line-height: 1; font-weight: 600;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .moonfly-x:focus-visible { outline: 3px solid #f5edd6; outline-offset: 2px; }
+      .moonfly-cap {
+        position: absolute; left: 0; right: 0; bottom: 10px; z-index: 2;
+        margin: 0; text-align: center; pointer-events: none;
+        font-family: var(--font-display); font-weight: 700; font-size: 1.02rem;
+        color: #f5edd6; text-shadow: 0 2px 10px rgba(4, 8, 20, 0.8);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .moonfly { transition: none; }
+        .moonfly .mf-riders { animation: none; transform: translate(330px, 14px); }
+        .moonfly .mf-bob, .moonfly .mf-wheel, .moonfly .mf-star { animation: none; }
+      }
+      @media print { .moonfly { display: none; } }
+
       /* ---------- Open-now badge, favorites, share link ---------- */
       .opennow {
         display: inline-flex; align-items: center; gap: 7px; margin: 0 0 10px;
@@ -3060,8 +3213,20 @@
       </script>
 
     <main>
+      <!-- Category filters sit directly above the map card so they are
+           visible on arrival, with no scrolling past the map to find them. -->
+      <nav class="chips" id="chips" aria-label="Filter places by category"></nav>
+      <p class="visually-hidden" id="filterStatus" role="status" aria-live="polite"></p>
+
       <div class="mapbox">
-        <div class="scene" id="scene" tabindex="0" role="group" aria-label="Drawn overview of the resort grounds: flat building footprints, pools, gardens, beach and sea, with numbered place pins. Drag to pan, scroll or pinch to zoom; the Puerto Morelos town strip is drawn at the south end of the map.">
+        <div class="liveprompt" id="livePrompt" role="region" aria-label="Appear on the map">
+          <p class="liveprompt-text"><span class="liveprompt-dot" aria-hidden="true"></span><span><strong>You're not on the map yet.</strong> <span id="livePromptBody">Set a name and turn Live on to appear here — the group can only see people who've done both.</span></span></p>
+          <div class="liveprompt-actions">
+            <button type="button" class="liveprompt-btn" id="livePromptBtn">Set a name &amp; turn Live on</button>
+            <button type="button" class="liveprompt-x" id="livePromptDismiss" aria-label="Dismiss this prompt">&times;</button>
+          </div>
+        </div>
+        <div class="scene" id="scene" tabindex="0" role="group" aria-label="Drawn overview of the resort grounds: flat building footprints, pools, gardens, beach and sea, with numbered place pins. On a touch screen use two fingers to pan and pinch to zoom — one finger scrolls the page; with a mouse, drag to pan and scroll to zoom. The Puerto Morelos town strip is drawn at the south end of the map.">
           <div class="maptools jumps" role="group" aria-label="Jump to an area of the map">
             <button type="button" class="jbtn" id="jumpResort">Resort</button>
             <button type="button" class="jbtn" id="jumpTown">Town strip ↓</button>
@@ -3071,6 +3236,7 @@
             <button type="button" class="mbtn" id="zoomOut" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></button>
             <button type="button" class="mbtn" id="zoomReset" aria-label="Reset view" title="Reset view"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 10a5.9 5.9 0 1 1-1.72-4.18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M16.6 2.4v3.7h-3.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
           </div>
+          <div class="gesturehint" id="gestureHint" aria-hidden="true">Use two fingers to move the map &middot; one finger scrolls the page</div>
           <div class="wxoverlay">
             <button type="button" class="wxchip" id="wxChip" aria-expanded="false" aria-controls="wxPop" aria-label="Resort weather — tap for the full forecast"><span class="wxicon" id="wxIcon" aria-hidden="true">🌤️</span><span id="wxTemp">…</span></button>
           </div>
@@ -3108,7 +3274,7 @@
           <span class="lkey"><span class="sw sand"></span> Beach</span>
           <span class="lkey"><span class="sw bldg"></span> Buildings</span>
           <span class="lkey"><span class="sw sea"></span> Sea, shallows to reef</span>
-          <p class="capnote"><strong>Traced from the resort's official map.</strong> The grounds are drawn from the official June 2026 resort map, in that map's own tilted orientation: entrance and lobby at the top, Buildings 1–3 down the west side, the spa island and lazy river at the center, Buildings 4–5 along the bottom, Building 6 stepping diagonally, Building 7 down the oceanfront, Building 8 at the bottom-right, and the beach and sea down the right side. Building footprints, pool shapes, and spacing follow the official map's proportions — it is a stylized drawing, not a survey: lobby to beach is ≈350 m, about a 5-minute stroll, and an ≈100 m scale bar sits at the lower-left of the grounds. Buildings are drawn as flat footprints in the official map's own tan-and-brown style, pools sit on pale stone decks, and the sea bands from pale shallows out to the dashed reef line. Every pin is also in the numbered list below, in the same order. <strong>Zoom in</strong> on the restaurant row, the lobby plaza, the pools, the beach or the spa island and the drawing fills in with detail — named restaurant buildings with their terraces, loungers and swim-up bars on the pool decks, palapa rows on the sand, and the spa island's gardens; zoom back out and it clears away. <strong>October 2026 detail pass:</strong> every building footprint, pool, path, river branch and planting was re-measured against the official map and corrected where the zoomed drawing had drifted — no building sits in a pool or the river, no path runs through a building, no tree stands on a roof or on the sand, Building 7 and Building 8 stand back from the beach with the walkway and gardens between them and the sand, and the sand now runs unbroken into the wet sand and the sea with no grass strip in between. <strong>Flagged, not guessed:</strong> where the official map's own lines are ambiguous at this scale — the exact centerline of a path where it weaves between the Garibaldi Square venue blocks, and the precise tips of the lazy-river branches — the drawing follows the closest readable route on the official map rather than inventing one; the Las Olas palapa sits on the sand, stopping just short of the waterline, as it does on the official map. <strong>Moving around the map:</strong> drag to pan, scroll or pinch to zoom, or use the + / − and reset buttons on the map — the <strong>Town strip</strong> button jumps straight to Puerto Morelos at the south end, where pins 38–44 sit on a schematic strip of the town (compressed, not to scale, past a break in the beach).</p>
+          <p class="capnote"><strong>Traced from the resort's official map.</strong> The grounds are drawn from the official June 2026 resort map, in that map's own tilted orientation: entrance and lobby at the top, Buildings 1–3 down the west side, the spa island and lazy river at the center, Buildings 4–5 along the bottom, Building 6 stepping diagonally, Building 7 down the oceanfront, Building 8 at the bottom-right, and the beach and sea down the right side. Building footprints, pool shapes, and spacing follow the official map's proportions — it is a stylized drawing, not a survey: lobby to beach is ≈350 m, about a 5-minute stroll, and an ≈100 m scale bar sits at the lower-left of the grounds. Buildings are drawn as flat footprints in the official map's own tan-and-brown style, pools sit on pale stone decks, and the sea bands from pale shallows out to the dashed reef line. Every pin is also in the numbered list below, in the same order. <strong>Zoom in</strong> on the restaurant row, the lobby plaza, the pools, the beach or the spa island and the drawing fills in with detail — named restaurant buildings with their terraces, loungers and swim-up bars on the pool decks, palapa rows on the sand, and the spa island's gardens; zoom back out and it clears away. <strong>October 2026 detail pass:</strong> every building footprint, pool, path, river branch and planting was re-measured against the official map and corrected where the zoomed drawing had drifted — no building sits in a pool or the river, no path runs through a building, no tree stands on a roof or on the sand, Building 7 and Building 8 stand back from the beach with the walkway and gardens between them and the sand, and the sand now runs unbroken into the wet sand and the sea with no grass strip in between. <strong>Flagged, not guessed:</strong> where the official map's own lines are ambiguous at this scale — the exact centerline of a path where it weaves between the Garibaldi Square venue blocks, and the precise tips of the lazy-river branches — the drawing follows the closest readable route on the official map rather than inventing one; the Las Olas palapa sits on the sand, stopping just short of the waterline, as it does on the official map. <strong>Moving around the map:</strong> on a touch screen, use two fingers to pan and pinch to zoom (one finger scrolls the page, so you can always scroll past the map); with a mouse, drag to pan and scroll to zoom — or use the + / − and reset buttons on the map — the <strong>Town strip</strong> button jumps straight to Puerto Morelos at the south end, where pins 38–44 sit on a schematic strip of the town (compressed, not to scale, past a break in the beach).</p>
           </div>
         </div>
       </div>
@@ -3148,8 +3314,6 @@
         <span class="thint">Keyboard: Tab through the pins and the place list, or use ↑ ↓ arrow keys to move between places in the list.</span>
       </div>
 
-      <nav class="chips" id="chips" aria-label="Filter places by category"></nav>
-      <p class="visually-hidden" id="filterStatus" role="status" aria-live="polite"></p>
 
       <section class="grouptools" id="groupTools" aria-labelledby="groupToolsTitle">
         <h2 class="grouptools-title" id="groupToolsTitle">Group tools</h2>
@@ -3596,7 +3760,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v116.1.100</p>
+        <p class="version-stamp">v120.1.101</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -3614,6 +3778,62 @@
       <a class="givebtn" id="spudPopGive" href="https://cash.app/$chr1sdy3r" target="_blank" rel="noopener">Give the Spud Lord a potato</a>
       <p class="fineprint">via Cash App · $chr1sdy3r</p>
       <button type="button" class="nobtn" id="spudPopNo">No thanks, I'll get lost instead</button>
+    </div>
+
+    <!-- Moon flight celebration: original potato riders on bicycles
+         crossing a full moon. Shown by livePlayMoonFly() only on the
+         device of the person who just started sharing. Purely visual —
+         the container takes no pointer events (its close button does),
+         it removes itself after a few seconds, and reduced motion gets
+         the still-frame .static variant instead of the crossing. -->
+    <div class="moonfly" id="moonFly" hidden>
+      <svg viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+        <defs>
+          <g id="mfRider">
+            <g class="mf-wheel">
+              <circle cx="0" cy="0" r="12.5" fill="none" stroke="#0a0f1e" stroke-width="3" />
+              <path d="M-9 0 H9 M0 -9 V9" stroke="#0a0f1e" stroke-width="2" />
+            </g>
+            <g class="mf-wheel">
+              <circle cx="46" cy="0" r="12.5" fill="none" stroke="#0a0f1e" stroke-width="3" />
+              <path d="M37 0 H55 M46 -9 V9" stroke="#0a0f1e" stroke-width="2" />
+            </g>
+            <path d="M0 0 L15 -25 M15 -25 L37 -22 M37 -22 L46 0 M0 0 L24 -9 M15 -25 L24 -9 M37 -22 L24 -9 M37 -22 L41 -29 M41 -29 L46 -27" fill="none" stroke="#0a0f1e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M10 -26.5 H20" stroke="#0a0f1e" stroke-width="4" stroke-linecap="round" />
+            <path d="M19 -29 L25 -11 M15 -29 L13 -13" fill="none" stroke="#0a0f1e" stroke-width="3.5" stroke-linecap="round" />
+            <path d="M33 -54 C24 -58 14 -57 6 -61 C13 -52 24 -49 33 -50 Z" fill="#0a0f1e" />
+            <path d="M21 -66 C31 -66 37 -57 36.5 -46 C36 -35 30 -28 21 -28 C12 -28 5.5 -35 5.5 -46 C5.5 -57 11 -66 21 -66 Z" fill="#0a0f1e" />
+            <path d="M21 -66 C21 -71 25 -73.5 28.5 -73.5" fill="none" stroke="#0a0f1e" stroke-width="3" stroke-linecap="round" />
+            <path d="M31 -44 L41 -28" fill="none" stroke="#0a0f1e" stroke-width="3.5" stroke-linecap="round" />
+          </g>
+        </defs>
+        <circle cx="60" cy="42" r="1.8" class="mf-star" />
+        <circle cx="140" cy="96" r="1.3" class="mf-star d1" />
+        <circle cx="215" cy="34" r="1.5" class="mf-star d2" />
+        <circle cx="300" cy="70" r="1.2" class="mf-star d3" />
+        <circle cx="392" cy="26" r="1.7" class="mf-star d1" />
+        <circle cx="668" cy="38" r="1.5" class="mf-star d2" />
+        <circle cx="724" cy="92" r="1.3" class="mf-star" />
+        <circle cx="762" cy="30" r="1.8" class="mf-star d3" />
+        <circle cx="96" cy="168" r="1.2" class="mf-star d2" />
+        <circle cx="690" cy="196" r="1.4" class="mf-star d1" />
+        <circle cx="352" cy="196" r="1.1" class="mf-star" />
+        <circle cx="452" cy="232" r="1.3" class="mf-star d3" />
+        <circle cx="545" cy="128" r="122" fill="#f5edd6" opacity="0.13" />
+        <circle cx="545" cy="128" r="96" fill="#f5edd6" />
+        <circle cx="508" cy="94" r="13" fill="#e7d9b8" />
+        <circle cx="578" cy="152" r="17" fill="#e7d9b8" />
+        <circle cx="560" cy="72" r="8" fill="#e7d9b8" />
+        <circle cx="498" cy="160" r="7" fill="#e7d9b8" />
+        <circle cx="596" cy="102" r="6" fill="#e7d9b8" />
+        <g class="mf-riders">
+          <g class="mf-bob b3"><use href="#mfRider" transform="translate(-168,152) scale(0.62)" /></g>
+          <g class="mf-bob b2"><use href="#mfRider" transform="translate(-36,82) scale(0.8)" /></g>
+          <g class="mf-bob"><use href="#mfRider" transform="translate(118,118) scale(1.05)" /></g>
+        </g>
+      </svg>
+      <p class="moonfly-cap">You're live — the spuds are airborne!</p>
+      <button type="button" class="moonfly-x" id="moonFlyClose" aria-label="Dismiss the celebration">&times;</button>
     </div>
 
     <div class="arcadedlg" id="spudArcade" role="dialog" aria-modal="true" aria-labelledby="arcadeTitle" hidden>
@@ -6355,43 +6575,86 @@
         zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 1 / 1.15, false);
       }, { passive: false });
 
-      // Drag to pan + pinch to zoom. Move/up listeners live on the window so
-      // pointer capture never retargets pin clicks; a drag suppresses the
-      // click that follows it.
+      // Drag to pan + pinch to zoom, with cooperative touch gestures.
+      // Move/up listeners live on the window so pointer capture never
+      // retargets pin clicks; a drag suppresses the click that follows it.
+      // Touch: a single finger belongs to the page — the scene's CSS
+      // touch-action is pan-y, so a one-finger vertical drag scrolls the
+      // page past the map instead of panning it, and a solo touch never
+      // pans here. When a second touch lands the scene claims the gesture
+      // (inline touch-action: none) and two fingers pan / pinch-zoom the
+      // map; the on-map hint pill pulses when a solo drag is attempted.
+      // Mouse and pen keep the original one-pointer drag-to-pan.
       var pointers = new Map();
-      var dragDist = 0, pinchD = 0, suppressUntil = 0;
+      var dragDist = 0, pinchD = 0, suppressUntil = 0, soloTouchDist = 0;
+      var gestureHintEl = document.getElementById("gestureHint");
+      var hintTimer = 0;
+      function flashGestureHint() {
+        if (!gestureHintEl) return;
+        gestureHintEl.classList.add("nudge");
+        if (hintTimer) clearTimeout(hintTimer);
+        hintTimer = setTimeout(function () { gestureHintEl.classList.remove("nudge"); }, 1600);
+      }
+      function touchPoints() {
+        var out = [];
+        pointers.forEach(function (pt) { if (pt.type === "touch") out.push(pt); });
+        return out;
+      }
       sceneEl.addEventListener("pointerdown", function (e) {
-        if (e.target.closest && e.target.closest(".maptools, .wxoverlay, .wxpop")) return;
-        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-        dragDist = 0;
-        if (pointers.size === 2) {
-          var p = Array.from(pointers.values());
-          pinchD = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+        if (e.target.closest && e.target.closest(".maptools, .wxoverlay, .wxpop, .liveprompt, .gesturehint")) return;
+        var type = e.pointerType || "mouse";
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: type });
+        var touches = touchPoints();
+        if (type === "touch" && touches.length < 2) soloTouchDist = 0;
+        if (type !== "touch" || touches.length >= 2) {
+          dragDist = 0;
+          sceneEl.classList.remove("anim");
         }
-        sceneEl.classList.remove("anim");
+        if (touches.length === 2) {
+          // Second finger down: claim the gesture for the map and seed
+          // the pinch distance from the two live touch points.
+          sceneEl.style.touchAction = "none";
+          pinchD = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
+        }
       });
       window.addEventListener("pointermove", function (e) {
         if (!pointers.has(e.pointerId)) return;
         var prev = pointers.get(e.pointerId);
         var dx = e.clientX - prev.x, dy = e.clientY - prev.y;
-        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: prev.type });
+        var touches = touchPoints();
+        if (prev.type === "touch" && touches.length < 2) {
+          // Solo touch: the page owns this drag (page scroll). Never pan;
+          // once it reads as a real drag, remind them about two fingers.
+          soloTouchDist += Math.abs(dx) + Math.abs(dy);
+          if (soloTouchDist > 24) flashGestureHint();
+          return;
+        }
         dragDist += Math.abs(dx) + Math.abs(dy);
-        if (pointers.size === 1) {
-          view.tx += dx; view.ty += dy;
-          clampView(); applyView(false);
-        } else if (pointers.size === 2) {
-          var p = Array.from(pointers.values());
-          var d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+        if (touches.length >= 2) {
+          var d = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
           var r = sceneEl.getBoundingClientRect();
-          var mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
+          var mx = (touches[0].x + touches[1].x) / 2 - r.left, my = (touches[0].y + touches[1].y) / 2 - r.top;
+          // zoomAt anchors on the midpoint, so a constant-distance move
+          // pans with the fingers and a spread/pinch zooms around them.
           if (pinchD > 0 && d > 0) zoomAt(mx, my, d / pinchD, false);
           pinchD = d;
+        } else if (pointers.size === 1) {
+          view.tx += dx; view.ty += dy;
+          clampView(); applyView(false);
         }
       });
       function endPointer(e) {
         if (!pointers.has(e.pointerId)) return;
+        var wasTouch = pointers.get(e.pointerId).type === "touch";
         pointers.delete(e.pointerId);
         if (dragDist > 8) suppressUntil = Date.now() + 300;
+        if (wasTouch && touchPoints().length < 2) {
+          // Back to zero/one touch: hand the gesture back to the page.
+          sceneEl.style.touchAction = "";
+          pinchD = 0;
+        }
+        if (!pointers.size) dragDist = 0;
       }
       window.addEventListener("pointerup", endPointer);
       window.addEventListener("pointercancel", endPointer);
@@ -6954,6 +7217,9 @@
         proximity: {},    // observerUid -> { observedUid -> Bluetooth proximity record }
         dotEls: {},       // uid (or "__me") -> { el, label, x, y }
         mePos: null,      // { x, y, near } from the latest local GPS fix
+        blipPos: null,    // { x, y, near } from the latest one-time Blip ping (not the watch)
+        blipAt: 0,        // local time of that ping — its last-seen stamp while this page is open
+        blipping: false,  // a Blip tap is mid-flight (read or write pending)
         lastFix: null,    // { lat, lng } of the latest local GPS fix
         lastWrite: null,  // { lat, lng } of the last position written
         lastWriteTime: 0,
@@ -7173,8 +7439,88 @@
       liveHereNote.textContent = "You're watching the group — tap Live group above to put your own dot on the map.";
       liveHereNote.hidden = true;
       liveHereEl.appendChild(liveHereNote);
+      // Blip button: one tap sends a single location ping (see
+      // liveBlip) — it updates the viewer's dot and last-seen time
+      // without turning Live group on: no watch, nothing keeps
+      // reporting after the tap. Sits in the card under the member
+      // list. Hidden in app mode, where the native service is the
+      // only location writer and already reports on its own.
+      var liveBlipBtn = document.createElement("button");
+      liveBlipBtn.type = "button";
+      liveBlipBtn.className = "liveblip";
+      liveBlipBtn.id = "liveBlip";
+      liveBlipBtn.setAttribute("aria-label", "Blip my location: send one location ping now");
+      var liveBlipIcon = document.createElement("span");
+      liveBlipIcon.setAttribute("aria-hidden", "true");
+      liveBlipIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21.2S5.8 15.6 5.8 10.6a6.2 6.2 0 1 1 12.4 0c0 5-6.2 10.6-6.2 10.6z"/><circle cx="12" cy="10.5" r="2.3" fill="currentColor" stroke="none"/></svg>';
+      var liveBlipTxt = document.createElement("span");
+      liveBlipTxt.textContent = "Blip my location";
+      liveBlipBtn.appendChild(liveBlipIcon);
+      liveBlipBtn.appendChild(liveBlipTxt);
+      var liveBlipHint = document.createElement("p");
+      liveBlipHint.className = "livehere-note liveblip-hint";
+      liveBlipHint.textContent = "One tap, one ping — updates your dot and last-seen time without turning Live on.";
+      if (IS_SPUDMAPS_APP) { liveBlipBtn.hidden = true; liveBlipHint.hidden = true; }
+      liveHereEl.insertBefore(liveBlipBtn, liveHereNote);
+      liveHereEl.insertBefore(liveBlipHint, liveHereNote);
+      liveBlipBtn.addEventListener("click", liveBlip);
       groupToolsEl.appendChild(liveHereEl);
       var liveUsersSig = "";
+
+      // ----- On-map Live prompt (static markup at the top of the map card) -----
+      // For viewers who are NOT sharing: a prominent banner on the map
+      // card saying they need a name + Live on to appear, with one
+      // button that starts the exact same opt-in flow as the Live group
+      // chip (name dialog in "join" mode, whose save starts sharing;
+      // or straight to sharing when a name is already saved). The
+      // prompt on its own never starts sharing, never requests
+      // geolocation and never writes presence — only the button tap
+      // does, through the existing flow. Dismissal is session-only
+      // (in-memory): a fresh visit from a non-sharing viewer shows it
+      // again. In app mode the button opens the same save-only profile
+      // dialog the chip opens, and once a profile exists the app's own
+      // service handles sharing, so the prompt steps aside.
+      var livePromptEl = document.getElementById("livePrompt");
+      var livePromptBodyEl = document.getElementById("livePromptBody");
+      var livePromptBtn = document.getElementById("livePromptBtn");
+      var livePromptDismissBtn = document.getElementById("livePromptDismiss");
+      var livePromptDismissed = false;
+      function liveSyncPrompt() {
+        if (!livePromptEl) return;
+        var show = !livePromptDismissed && !liveState.sharing;
+        if (show && IS_SPUDMAPS_APP && liveProfile) show = false;
+        if (!show) { livePromptEl.hidden = true; return; }
+        if (liveProfile && liveProfile.name) {
+          if (livePromptBodyEl) livePromptBodyEl.textContent = "You're saved as " + liveProfile.name + " — turn Live on to appear here so the group can see you.";
+          if (livePromptBtn) livePromptBtn.textContent = "Turn Live on";
+        } else {
+          if (livePromptBodyEl) livePromptBodyEl.textContent = "Set a name and turn Live on to appear here — the group can only see people who've done both.";
+          if (livePromptBtn) livePromptBtn.textContent = "Set a name & turn Live on";
+        }
+        livePromptEl.hidden = false;
+      }
+      if (livePromptBtn) {
+        livePromptBtn.addEventListener("click", function () {
+          // Mirror the Live group chip exactly: app mode opens the
+          // save-only profile dialog; no saved name opens the dialog in
+          // "join" mode (its save starts sharing); a saved name goes
+          // straight to the existing opt-in sharing start.
+          if (IS_SPUDMAPS_APP) { liveOpenDlg("app"); return; }
+          if (!liveReady) {
+            liveNote("Live group couldn't load just now — the rest of the map works as usual.", true);
+            return;
+          }
+          if (!liveProfile) { liveOpenDlg("join"); return; }
+          liveStartSharing();
+        });
+      }
+      if (livePromptDismissBtn) {
+        livePromptDismissBtn.addEventListener("click", function () {
+          livePromptDismissed = true;
+          if (livePromptEl) livePromptEl.hidden = true;
+          try { livePromptDismissBtn.blur(); } catch (e) { /* blur is a nicety */ }
+        });
+      }
 
       function liveCenterOn(x, y) {
         var u = unit();
@@ -7255,6 +7601,7 @@
         return Object.keys(out);
       }
       function liveRenderUsers(want) {
+        liveSyncPrompt();
         if (!liveState.viewing && !liveState.sharing) {
           if (!liveHereEl.hidden) liveHereEl.hidden = true;
           liveUsersSig = "";
@@ -7547,7 +7894,7 @@
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
-      liveLegendEl.textContent = "Icon dots are your group, live — each person's icon in their color. People together share one “N here” bubble — tap it to see who. A faded dot is where someone was last seen, with the time — their phone may be asleep or the page closed. Tap Live group to add your own dot; turn it off to disappear.";
+      liveLegendEl.textContent = "Icon dots are your group, live — each person's icon in their color. People together share one “N here” bubble — tap it to see who. A faded dot is where someone was last seen, with the time — their phone may be asleep or the page closed. Tap Live group to add your own dot; turn it off to disappear. Or tap Blip in Who's here for a single ping — one location update, no Live, nothing keeps reporting.";
       liveLegendEl.hidden = true;
       groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
@@ -7587,6 +7934,7 @@
       }
       liveProfile = liveLoadProfile();
       if (liveProfile) liveChipDot.style.background = liveProfile.color;
+      liveSyncPrompt();
       // A saved profile already using SpudBud could only have picked it
       // after unlocking on this device — treat it as unlocked.
       if (liveProfile && liveProfile.icon === "spudbud") liveSpudUnlocked = true;
@@ -7819,6 +8167,13 @@
           liveDlgTitle.textContent = "Your name for dinner meetups";
           liveDlgIntro.textContent = "A name is required to post a meetup or join one — the group sees who posted it and who's coming. The color tags your meetups.";
           liveDlgNote.textContent = "Your name, color and icon are saved on this device and shown with your meetups. (Same name, color and icon as your Live group dot, if you use it.)";
+        } else if (mode === "blip") {
+          // Blip with no saved name: the profile comes first, and the
+          // save sends the one-time ping (see the save handler) — it
+          // never starts continuous sharing.
+          liveDlgTitle.textContent = "Blip your location";
+          liveDlgIntro.textContent = "First, the name, dot color and icon your group will see — then saving sends a single location ping.";
+          liveDlgNote.textContent = "The ping updates your dot and last-seen time once. It doesn't turn Live on, and nothing keeps reporting after it.";
         } else if (mode === "app") {
           // App mode (SpudMaps Live app only): the same dialog as the
           // single profile editor, but save-only — saving never starts
@@ -7864,6 +8219,7 @@
         liveChipDot.style.background = liveProfile.color;
         var mode = liveDlgMode;
         liveCloseDlg();
+        liveSyncPrompt();
         if (IS_SPUDMAPS_APP || mode === "app") {
           // Save-only in app mode: never start the page's own sharing
           // and never write presence from a dialog save — on the join,
@@ -7874,6 +8230,7 @@
           // optional chaining makes this a no-op everywhere else.
           try { window.SpudMapsLive?.onProfileSaved?.(); } catch (e) {}
         } else if (mode === "join") liveStartSharing();
+        else if (mode === "blip") liveBlip();
         else if (liveState.sharing) liveWriteNow();
         // The Wedding Wall keys off the same saved profile: refresh its
         // "posting as" line, and release a note that was held for a name.
@@ -7972,6 +8329,94 @@
           }
         } catch (e) { /* a dropped write is retried on the next fix */ }
       }
+      // ----- Blip: a one-time location ping -----
+      // Started only by the Blip button in the Who's here card (or by
+      // the profile dialog's save, when the tap had to collect a name
+      // first). Exactly one geolocation read and exactly one presence
+      // write per tap: it never starts the Live group watch, so
+      // nothing reports again after the tap and sharing stays opt-in.
+      // Works in mobile Safari like any one-shot location request.
+      function liveBlipSetBusy(busy) {
+        if (!liveBlipBtn) return;
+        liveBlipBtn.disabled = busy;
+        liveBlipTxt.textContent = busy ? "Blipping…" : "Blip my location";
+      }
+      function liveBlip() {
+        if (IS_SPUDMAPS_APP) return; // app mode: the native service is the only writer
+        if (liveState.blipping) return;
+        if (!liveReady) {
+          liveNote("Live group couldn't load just now — the rest of the map works as usual.", true);
+          return;
+        }
+        if (!liveProfile) { liveOpenDlg("blip"); return; }
+        if (!("geolocation" in navigator)) {
+          liveNote("This browser doesn't offer location, so a blip can't be sent.");
+          return;
+        }
+        liveState.blipping = true;
+        liveBlipSetBusy(true);
+        var finish = function () {
+          liveState.blipping = false;
+          liveBlipSetBusy(false);
+        };
+        liveEnsureAuth(function (ok) {
+          if (!ok) {
+            finish();
+            liveNote("Couldn't connect — check your connection, then tap Blip to try again.");
+            return;
+          }
+          // The ping rides on the same read listeners viewing uses, so
+          // the group (and the Who's here list) stays live around it.
+          liveAttachListeners();
+          if (!liveListening || !livePresenceRef) {
+            finish();
+            liveNote("Couldn't connect — check your connection, then tap Blip to try again.");
+            return;
+          }
+          liveState.viewing = true;
+          liveLegendEl.hidden = false;
+          if (!liveState.staleTimer) liveState.staleTimer = setInterval(liveRender, 15000);
+          try { liveMyRef = livePresenceRef.child(liveUid); } catch (e) { liveMyRef = null; }
+          if (!liveMyRef) {
+            finish();
+            liveNote("Couldn't connect — check your connection, then tap Blip to try again.");
+            return;
+          }
+          var settled = false;
+          try {
+            navigator.geolocation.getCurrentPosition(function (pos) {
+              if (settled) return; settled = true; finish();
+              if (!pos || !pos.coords) {
+                liveNote("Your phone couldn't get a location fix, so no blip was sent. Step outside with a clear view of the sky and try again.");
+                return;
+              }
+              var lat = pos.coords.latitude, lng = pos.coords.longitude;
+              var xy = liveXY(lat, lng);
+              liveState.lastFix = { lat: lat, lng: lng };
+              liveState.mePos = xy;
+              liveState.blipPos = xy;
+              liveState.blipAt = Date.now();
+              liveWriteNow(); // the tap's one and only presence write
+              liveRender();
+              if (xy.near <= 800) {
+                liveNote("Blip sent — your dot and last-seen time just updated. That's the whole ping: nothing keeps reporting.");
+              } else {
+                liveNote("Blip sent, but you're beyond the mapped resort area, so there's no dot to show here.");
+              }
+            }, function (err) {
+              if (settled) return; settled = true; finish();
+              if (err && err.code === 1) {
+                liveNote("Location permission was denied, so no blip was sent. Allow location access for this page, then tap Blip again.");
+              } else {
+                liveNote("Your phone couldn't get a location fix, so no blip was sent. Step outside with a clear view of the sky and try again.");
+              }
+            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+          } catch (e) {
+            finish();
+            liveNote("Location isn't available, so no blip was sent.");
+          }
+        });
+      }
       function liveOnPos(pos) {
         if (!liveState.sharing || !pos || !pos.coords) return;
         var lat = pos.coords.latitude, lng = pos.coords.longitude;
@@ -8036,6 +8481,39 @@
         });
       }
 
+      // ----- Moon flight celebration -----
+      // Plays once per go-live, on this device only: original potato
+      // riders cross the moon for a few seconds. The overlay takes no
+      // pointer events apart from its close button, so the map stays
+      // fully usable underneath, and it removes itself when done.
+      // Reduced motion gets the still frame (.static) instead of the
+      // crossing; the CSS media query freezes it the same way even if
+      // the setting changes mid-play.
+      var moonFlyEl = document.getElementById("moonFly");
+      var moonFlyTimer = null;
+      function liveHideMoonFly() {
+        if (moonFlyTimer) { clearTimeout(moonFlyTimer); moonFlyTimer = null; }
+        if (!moonFlyEl) return;
+        moonFlyEl.classList.remove("show");
+        moonFlyEl.hidden = true;
+      }
+      function livePlayMoonFly() {
+        if (!moonFlyEl || !moonFlyEl.hidden) return;
+        var reduce = false;
+        try { reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { reduce = false; }
+        moonFlyEl.classList.toggle("static", reduce);
+        moonFlyEl.hidden = false;
+        // Force a reflow so the .show fade applies on repeat plays.
+        void moonFlyEl.offsetWidth;
+        moonFlyEl.classList.add("show");
+        moonFlyTimer = setTimeout(liveHideMoonFly, reduce ? 3400 : 4600);
+      }
+      var moonFlyCloseBtn = document.getElementById("moonFlyClose");
+      if (moonFlyCloseBtn) moonFlyCloseBtn.addEventListener("click", liveHideMoonFly);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && moonFlyEl && !moonFlyEl.hidden) liveHideMoonFly();
+      });
+
       // ----- Toggle on / off -----
       function liveStartSharing() {
         if (IS_SPUDMAPS_APP) {
@@ -8056,6 +8534,7 @@
             return;
           }
           liveState.sharing = true;
+          liveSyncPrompt();
           liveState.viewing = true;
           liveState.mePos = null;
           liveState.lastFix = null;
@@ -8091,6 +8570,10 @@
           }
           if (!liveState.staleTimer) liveState.staleTimer = setInterval(liveRender, 15000);
           liveRender();
+          // Sharing is genuinely on (watch running) — celebrate on
+          // this device only. Never reached on the failure paths
+          // above: they stop sharing and return before this point.
+          livePlayMoonFly();
         });
       }
       function liveStopSharing() {
@@ -8104,6 +8587,10 @@
         liveMyRef = null;
         liveState.sharing = false;
         liveState.mePos = null;
+        // The entry just removed was also the Blip's — its dot and
+        // last-seen go with it, so the local blip state clears too.
+        liveState.blipPos = null;
+        liveState.blipAt = 0;
         liveState.lastFix = null;
         liveState.lastWrite = null;
         // Viewing stays on: stopping sharing removes only your own dot
@@ -8114,6 +8601,7 @@
         liveCloseGroup();
         liveChip.setAttribute("aria-pressed", "false");
         liveEditBtn.hidden = true;
+        liveSyncPrompt();
         liveRender();
       }
       liveChip.addEventListener("click", function () {
@@ -8159,7 +8647,12 @@
         var uid, e, key;
         for (uid in entries) {
           if (!Object.prototype.hasOwnProperty.call(entries, uid)) continue;
-          if (uid === liveUid) continue;
+          // Own entry: while sharing — or just after a Blip, whose
+          // local dot below stands in for it — it is skipped so the
+          // viewer never gets two dots. Otherwise (a fresh visit after
+          // an earlier blip, say) it renders like anyone else's entry,
+          // faded last-seen included, exactly as the group sees it.
+          if (uid === liveUid && (liveState.sharing || liveState.blipPos)) continue;
           e = entries[uid];
           if (!e || typeof e.x !== "number" || typeof e.y !== "number") continue;
           // Entries older than 120s are NOT dropped: they render faded
@@ -8179,6 +8672,17 @@
             x: liveState.mePos.x, y: liveState.mePos.y, me: true,
             name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
             stale: false, updatedAt: null
+          };
+        }
+        // A Blip's dot, when Live is off: live for the same 120s
+        // window as any fix, then faded with its last-seen time —
+        // rendered locally so it lands the moment the ping is written.
+        if (!liveState.sharing && liveState.blipPos && liveState.blipPos.near <= 800 && liveProfile) {
+          want.__me = {
+            x: liveState.blipPos.x, y: liveState.blipPos.y, me: true,
+            name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
+            stale: liveIsStale(liveState.blipAt, now),
+            updatedAt: liveState.blipAt || null
           };
         }
         for (key in liveState.dotEls) {
