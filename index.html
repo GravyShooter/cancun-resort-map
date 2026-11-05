@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-04-idiotproof · v122.1.102 -->
+<!-- build-2026-11-04-tatelo-viewfix · v123.1.103 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -2296,10 +2296,22 @@
       .ball3dgame.ball3d-max .ball3d-touchrow {
         position: absolute; left: 50%; transform: translateX(-50%);
         bottom: 12px; z-index: 6; margin: 0;
-        max-width: calc(100% - 20px);
-        background: rgba(13, 18, 22, 0.66); padding: 6px; border-radius: 14px;
+        flex-wrap: nowrap;
+        max-width: calc(100% - 196px);
+        background: rgba(13, 18, 22, 0.55); padding: 5px; border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.14);
-        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      }
+      /* Slim floating controls (v123): one low row between the
+         sticks — compact chips and a capped SPLAT button — instead
+         of the wrapped two-row slab that covered the lower-middle
+         of the view mid-match. */
+      .ball3dgame.ball3d-max .ball3d-touchrow .ball3d-autofire {
+        min-height: 44px; min-width: 0; padding: 4px 8px; font-size: 0.78rem;
+      }
+      .ball3dgame.ball3d-max .ball3d-touchrow .ball-fire {
+        flex: 1 1 150px; max-width: 180px; min-height: 44px; min-width: 0;
+        font-size: 0.95rem; line-height: 1.1;
       }
       .ball3dgame.ball3d-max .ball3d-sticklabel { display: none; }
       @media (min-width: 760px) {
@@ -2431,10 +2443,18 @@
         .ball3dgame .ball3d-touchrow {
           position: absolute; left: 50%; transform: translateX(-50%);
           bottom: 8px; z-index: 6; margin: 0;
+          flex-wrap: nowrap;
           max-width: calc(100% - 208px);
-          background: rgba(13, 18, 22, 0.66); padding: 5px; border-radius: 14px;
+          background: rgba(13, 18, 22, 0.55); padding: 5px; border-radius: 12px;
           border: 1px solid rgba(255, 255, 255, 0.14);
-          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+        }
+        .ball3dgame .ball3d-touchrow .ball3d-autofire {
+          min-height: 44px; min-width: 0; padding: 4px 8px; font-size: 0.78rem;
+        }
+        .ball3dgame .ball3d-touchrow .ball-fire {
+          flex: 1 1 150px; max-width: 180px; min-height: 44px; min-width: 0;
+          font-size: 0.95rem; line-height: 1.1;
         }
         .ball3dgame .ball3d-sens { min-height: 48px; }
         .ball3dgame .ball3d-autofire { min-height: 48px; }
@@ -3792,7 +3812,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v122.1.102</p>
+        <p class="version-stamp">v123.1.103</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -4157,7 +4177,7 @@
           <div class="ball3d-sticklabel">Touch: left stick moves · right stick aims · double-tap right stick to shoot · double-tap left stick to jump</div>
           <button type="button" class="ball3d-autofire" id="ball3dWeaponBtn">Blaster: Classic</button>
           <button type="button" class="ball3d-autofire" id="ball3dAutoFire" aria-pressed="false">Auto-fire: Off</button>
-          <button type="button" class="ball-fire" id="ball3dFireBtn" style="flex:0 1 220px">SPLAT — hold to fire</button>
+          <button type="button" class="ball-fire" id="ball3dFireBtn">SPLAT — hold to fire</button>
         </div>
         <p class="spudgame-hint">Desktop: WASD + mouse (click to lock), click or Space to fire, E to jump. Touch: left stick moves, right stick aims — double-tap to shoot or jump, or leave Auto-fire on. Keys 1–5 swap blasters. Power-ups: Butter Shield eats a splat, Swift Sprout speeds you up, Extra Dollop doubles fire rate, Mega Mash supersizes shots. Splatted? You spectate until the round ends — in Splat Race you're back in seconds. Aim feeling twitchy? Tune the Aim sensitivity on the settings screen before the match — and on a phone, turn it sideways for a wider view. Esc closes.</p>
       </div>
@@ -19119,13 +19139,13 @@
 
         // ----- Max-out tables: arenas, modes, blasters, bot personas, power-ups -----
         var ARENAS = [
-          { name: "Golden Garden", fog: [243, 201, 160], skyTint: null, desc: "The original garden at golden hour — ivy stone, brick paths, balanced cover.",
+          { name: "Golden Garden", fog: [243, 201, 160], skyTint: null, skyMul: null, skyWash: null, floorTint: null, wallMul: null, desc: "The original garden at golden hour — ivy stone, brick paths, balanced cover.",
             cells: [[4,3,2],[13,10,2],[13,3,2],[4,10,2],[6,5,3],[11,8,3],[11,5,3],[6,8,3],[8,2,3],[9,11,3],[8,6,3],[9,7,3],[3,5,5],[14,8,5],[14,5,5],[3,8,5]] },
-          { name: "Midnight Mash Maze", fog: [104, 120, 170], skyTint: "rgba(30,40,96,0.38)", desc: "A moonlit hedge maze — denser cover, shorter sightlines, ambush country.",
+          { name: "Midnight Mash Maze", fog: [104, 120, 170], skyTint: "rgba(30,40,96,0.38)", skyMul: "#66779f", skyWash: "rgba(8,12,40,0.42)", floorTint: "rgba(16,26,56,0.46)", wallMul: "#93a5cf", desc: "A moonlit hedge maze — denser cover, shorter sightlines, ambush country.",
             cells: [[4,2,5],[13,11,5],[13,2,5],[4,11,5],[6,4,3],[11,9,3],[11,4,3],[6,9,3],[8,5,5],[9,8,5],[5,6,3],[12,6,3],[3,4,2],[14,9,2],[14,4,2],[3,9,2],[7,2,3],[10,11,3],[10,2,3],[7,11,3]] },
-          { name: "Butter Barn", fog: [238, 178, 138], skyTint: "rgba(120,50,10,0.16)", desc: "A crate-packed barn floor — tight corners, a stone spine, nowhere is safe for long.",
+          { name: "Butter Barn", fog: [238, 178, 138], skyTint: "rgba(120,50,10,0.16)", skyMul: "#e0aa72", skyWash: "rgba(110,52,8,0.20)", floorTint: "rgba(148,94,38,0.36)", wallMul: "#eecfa4", desc: "A crate-packed barn floor — tight corners, a stone spine, nowhere is safe for long.",
             cells: [[4,3,2],[5,3,2],[12,10,2],[13,10,2],[13,3,2],[12,3,2],[4,10,2],[5,10,2],[8,5,2],[9,8,2],[8,6,3],[9,7,3],[6,6,2],[11,7,2],[11,6,2],[6,7,2],[3,5,5],[14,8,5],[14,5,5],[3,8,5]] },
-          { name: "Frostbite Freezer Yard", fog: [196, 220, 240], skyTint: "rgba(210,232,248,0.30)", desc: "A pale, wide-open freezer yard — sparse pillars and long, exposed lanes for the Lance.",
+          { name: "Frostbite Freezer Yard", fog: [196, 220, 240], skyTint: "rgba(210,232,248,0.30)", skyMul: "#d7e6f2", skyWash: "rgba(178,208,236,0.38)", floorTint: "rgba(196,222,244,0.55)", wallMul: "#e6eff7", desc: "A pale, wide-open freezer yard — sparse pillars and long, exposed lanes for the Lance.",
             cells: [[5,4,3],[12,9,3],[12,4,3],[5,9,3],[8,6,3],[9,7,3],[4,7,3],[13,6,3],[7,2,3],[10,11,3],[6,11,5],[11,2,5]] }
         ];
         var MODES = [
@@ -21109,6 +21129,15 @@
             var src = sources[si];
             if (src) { try { ag.drawImage(src, sx, sy, 256, 256); } catch (e) { ag.fillStyle = "#8f887a"; ag.fillRect(sx, sy, 256, 256); } }
           }
+          // Per-arena material grade (v123): the wall paints are
+          // shared, so each arena multiplies the finished atlas
+          // toward its own light (moonlit, amber, icy).
+          var aWall = curArena();
+          if (aWall.wallMul) {
+            ag.globalCompositeOperation = "multiply";
+            ag.fillStyle = aWall.wallMul; ag.fillRect(0, 0, 1024, 1024);
+            ag.globalCompositeOperation = "source-over";
+          }
           if (wglTexAtlas) wgl.deleteTexture(wglTexAtlas);
           wglTexAtlas = wMakeTex(ac, false, true);
           // Floor sheet (1152x896, 64 px per arena unit)
@@ -21137,6 +21166,12 @@
           fg2.clip();
           fg2.fillStyle = fg2.createPattern(bt, "repeat"); fg2.fillRect(0, 0, 1152, 896);
           fg2.restore();
+          // Per-arena ground grade (v123): the grass/brick sheet is
+          // shared, so each arena washes it to its own ground —
+          // dark navy turf at Midnight, warm barn earth, pale ice
+          // at Frostbite — before the contact shading goes on.
+          var aFloor = curArena();
+          if (aFloor.floorTint) { fg2.fillStyle = aFloor.floorTint; fg2.fillRect(0, 0, 1152, 896); }
           // Contact shading: darken the ground against every wall —
           // a soft ambient-occlusion skirt so walls sit IN the
           // ground instead of floating on it.
@@ -21202,6 +21237,18 @@
           var sc = document.createElement("canvas"); sc.width = 2048; sc.height = 256;
           var sg = sc.getContext("2d");
           try { sg.drawImage(src, 0, 0, 2048, 256); } catch (e) { sg.fillStyle = "#e8975a"; sg.fillRect(0, 0, 2048, 256); }
+          // Per-arena sky grade (v123): the panorama is one painted
+          // golden-hour sky, so each arena grades it to its own
+          // light — Midnight goes moonlit navy, Butter Barn warm
+          // amber, Frostbite pale ice — on top of the layout, fog,
+          // and tint differences the arenas already had.
+          var aSky = curArena();
+          if (aSky.skyMul) {
+            sg.globalCompositeOperation = "multiply";
+            sg.fillStyle = aSky.skyMul; sg.fillRect(0, 0, 2048, 256);
+            sg.globalCompositeOperation = "source-over";
+          }
+          if (aSky.skyWash) { sg.fillStyle = aSky.skyWash; sg.fillRect(0, 0, 2048, 256); }
           if (wglTexSky) wgl.deleteTexture(wglTexSky);
           wglTexSky = wMakeTex(sc, true, true);
         }
@@ -21323,7 +21370,7 @@
         function renderWorldGL(cam) {
           var sig = arenaIdx + "|" + (realTex.stone ? 1 : 0) + (realTex.brick ? 1 : 0) + (realTex.grass ? 1 : 0);
           if (sig !== wglBuiltSig) { wglBuiltSig = sig; buildWglArena(); }
-          var ssig = realTex.sky ? "real" : "paint";
+          var ssig = arenaIdx + "|" + (realTex.sky ? "real" : "paint");
           if (ssig !== wglSkySig) { wglSkySig = ssig; buildWglSky(); }
           if (mode === "ready") { wglTier = 0; wglFpsAvg = 60; }
           wglApplySize();
