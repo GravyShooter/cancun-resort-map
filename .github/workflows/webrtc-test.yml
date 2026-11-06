@@ -40,7 +40,11 @@ jobs:
           if [ "${{ inputs.browser }}" = "chrome" ]; then
             echo "browser=chrome — installing Google Chrome stable via Playwright"
             npx playwright install chrome --with-deps
-            CHROME_BIN=$(find ~/.cache/ms-playwright -maxdepth 3 -path '*chrome-linux/chrome' -type f 2>/dev/null | head -1)
+            # Playwright's `install chrome` puts Google Chrome in as the
+            # system google-chrome-stable package (/usr/bin/google-chrome),
+            # NOT under ~/.cache/ms-playwright — so prefer the system path
+            # and only fall back to the Playwright cache lookup.
+            CHROME_BIN=$(command -v google-chrome || find ~/.cache/ms-playwright -maxdepth 3 -path '*chrome-linux/chrome' -type f 2>/dev/null | head -1)
             if [ -z "$CHROME_BIN" ]; then echo "ERROR: google chrome binary not found"; exit 1; fi
             echo "PLAYWRIGHT_CHROME_PATH=$CHROME_BIN" >> "$GITHUB_ENV"
             echo "Using Google Chrome: $CHROME_BIN"
