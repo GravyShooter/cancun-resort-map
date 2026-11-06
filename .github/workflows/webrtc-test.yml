@@ -14,7 +14,7 @@ on:
         required: false
         default: 'pipe'
       browser:
-        description: 'Browser: chromium (Playwright bundled, default) or chrome (Google Chrome stable)'
+        description: 'Browser: chromium (Playwright bundled, default), chrome (Google Chrome stable), or firefox (Playwright Firefox, fake-stream tone mic)'
         required: false
         default: 'chromium'
 # Do NOT cancel a running host test when a new run is dispatched: each
@@ -47,8 +47,13 @@ jobs:
             CHROME_BIN=$(command -v google-chrome || find ~/.cache/ms-playwright -maxdepth 3 -path '*chrome-linux/chrome' -type f 2>/dev/null | head -1)
             if [ -z "$CHROME_BIN" ]; then echo "ERROR: google chrome binary not found"; exit 1; fi
             echo "PLAYWRIGHT_CHROME_PATH=$CHROME_BIN" >> "$GITHUB_ENV"
+            echo "BROWSER=chrome" >> "$GITHUB_ENV"
             echo "Using Google Chrome: $CHROME_BIN"
             "$CHROME_BIN" --version
+          elif [ "${{ inputs.browser }}" = "firefox" ]; then
+            echo "browser=firefox — installing Playwright Firefox"
+            npx playwright install firefox --with-deps
+            echo "BROWSER=firefox" >> "$GITHUB_ENV"
           fi
       - name: Install virtual audio + display
         # PulseAudio provides the mic; xvfb-run provides a display
