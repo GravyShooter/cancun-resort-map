@@ -43,7 +43,16 @@ jobs:
         with:
           node-version: '20'
       - name: Install system deps
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng cmake build-essential
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng cmake build-essential pulseaudio xvfb pulseaudio-utils
+      - name: Start PulseAudio (null sink)
+        # Headless Chromium renders Web Audio as silence with no audio
+        # device, so the fake mic is empty and no voice can flow.
+        # PulseAudio + a null sink gives it an output to render to.
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=virt
+          pactl set-default-sink virt
+          pactl list sinks short
       - name: Install Playwright + Chromium
         run: |
           npm ci
@@ -60,7 +69,7 @@ jobs:
           if [ -n "${{ inputs.order_id }}" ]; then
             echo "id=${{ inputs.order_id }}" >> "$GITHUB_OUTPUT"
           else
-            ID=$(node poll-queued.js)
+            ID=$(xvfb-run -a node poll-queued.js)
             if [ "$ID" = "NO_QUEUED_ORDER" ]; then ID=""; fi
             echo "id=$ID" >> "$GITHUB_OUTPUT"
           fi
@@ -72,9 +81,9 @@ jobs:
           WHISPER_MODEL: ${{ github.workspace }}/whisper.cpp/models/ggml-tiny.en.bin
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            node gha-call.js --order-id "${{ steps.order.outputs.id }}" --dry-run --result result.json
+            xvfb-run -a node gha-call.js --order-id "${{ steps.order.outputs.id }}" --dry-run --result result.json
           else
-            node gha-call.js --order-id "${{ steps.order.outputs.id }}" --live --code "${{ inputs.code }}" --result result.json
+            xvfb-run -a node gha-call.js --order-id "${{ steps.order.outputs.id }}" --live --code "${{ inputs.code }}" --result result.json
           fi
       - name: Upload result
         if: always()

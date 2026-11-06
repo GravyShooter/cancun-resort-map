@@ -17,5 +17,17 @@ jobs:
         run: |
           npm ci
           npx playwright install chromium --with-deps
+      - name: Install virtual audio + display
+        # Headless Chromium renders Web Audio as silence with no audio
+        # device, so the fake mic is empty (micLevel 0) and no voice can
+        # flow. PulseAudio + a null sink gives it an output to render to;
+        # xvfb-run provides a display session for the audio stack.
+        run: sudo apt-get update && sudo apt-get install -y pulseaudio xvfb pulseaudio-utils
+      - name: Start PulseAudio (null sink)
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=virt
+          pactl set-default-sink virt
+          pactl list sinks short
       - name: Run WebRTC host check
-        run: node test-host.js
+        run: xvfb-run -a node test-host.js
