@@ -1587,21 +1587,25 @@ async function liveCall(order, script, orderAudio, to, orderId, idToken, directC
     await ensureLoggedIn(page, email, orderId, idToken, directCode, onWaitingForCode);
     event({ event: 'dialing', to });
     log('dial', 'opening the dialer');
-    // Navigate to the dialer. Use 'commit' (fires when navigation starts)
-    // rather than 'domcontentloaded' — the TextNow SPA can delay
-    // domcontentloaded past the timeout in headless Firefox even when the
-    // page is usable. Wait for the dial elements explicitly instead.
-    // Retry once on failure.
-    let navigated = false;
-    for (let attempt = 1; attempt <= 2 && !navigated; attempt++) {
-      try {
-        await page.goto(SELECTORS.appUrl, { waitUntil: 'commit', timeout: 30000 });
-        navigated = true;
-      } catch (e) {
-        log('dial', 'goto attempt ' + attempt + ' failed: ' + e.message);
-        if (attempt === 2) throw e;
-        await page.waitForTimeout(2000);
+    // After login the browser is ALREADY on /messaging: isLoggedIn navigated
+    // there to check the session. Do NOT navigate again to the same URL —
+    // a redundant same-URL goto hangs in this headless Firefox + TextNow
+    // SPA (it timed out in both run #18 and run #19). Only navigate when
+    // we are not already on the messaging page.
+    if (!/\/messaging/i.test(page.url())) {
+      let navigated = false;
+      for (let attempt = 1; attempt <= 2 && !navigated; attempt++) {
+        try {
+          await page.goto(SELECTORS.appUrl, { waitUntil: 'commit', timeout: 30000 });
+          navigated = true;
+        } catch (e) {
+          log('dial', 'goto attempt ' + attempt + ' failed: ' + e.message);
+          if (attempt === 2) throw e;
+          await page.waitForTimeout(2000);
+        }
       }
+    } else {
+      log('dial', 'already on the messaging page — skipping the redundant goto');
     }
     await page.waitForTimeout(2000);
     await page.locator(SELECTORS.newCallButton).first().click({ timeout: 15000 })
