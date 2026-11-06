@@ -691,7 +691,7 @@ async function hostCheck() {
   }
 
   const browser = await launchHostBrowser(['--disable-features=WebRtcHideLocalIpsWithMdns']);
-  try { log('host', 'browser: ' + (await browser.version()) + (process.env.PLAYWRIGHT_CHROME_PATH ? ' (custom path ' + process.env.PLAYWRIGHT_CHROME_PATH + ')' : ' (playwright chromium)')); } catch (_) {}
+  try { log('host', 'browser: ' + (await browser.version()) + ' (' + (IS_FIREFOX ? 'firefox' : (process.env.PLAYWRIGHT_CHROME_PATH ? 'chrome custom path ' + process.env.PLAYWRIGHT_CHROME_PATH : 'playwright chromium')) + ')'); } catch (_) {}
   let blank = null;
   try {
     const page = await browser.newPage();
@@ -835,34 +835,47 @@ async function hostCheck() {
           // in the encoder/transport; if ~0 the fake device itself
           // delivers silence on this host. Then let the remote peer
           // record the tone for the remaining ~4s.
+          // Headless Firefox can hang on ctx.resume() forever (no audio
+          // device to start rendering against) — run #17 stalled here
+          // for 26+ min with no log output. Race the resume against a
+          // 3s timeout and read the Analyser regardless (a suspended
+          // context yields zeros, which is itself diagnostic). The whole
+          // measurement is also raced against a 15s Node-side timeout so
+          // a hung evaluate can never stall the run again.
           try {
-            const localMic = await page.evaluate(async () => {
-              const stream = window.__hostMicStream;
-              if (!stream) return { error: 'no mic stream on window' };
-              const track = stream.getAudioTracks()[0];
-              if (!track) return { error: 'no audio track' };
-              const ctx = new (window.AudioContext || window.webkitAudioContext)();
-              await ctx.resume();
-              const src = ctx.createMediaStreamSource(stream);
-              const analyser = ctx.createAnalyser();
-              analyser.fftSize = 2048;
-              src.connect(analyser);
-              const buf = new Float32Array(analyser.fftSize);
-              let max = 0;
-              for (let i = 0; i < 4; i++) {
-                await new Promise((r) => setTimeout(r, 500));
-                analyser.getFloatTimeDomainData(buf);
-                let sum = 0;
-                for (let j = 0; j < buf.length; j++) sum += buf[j] * buf[j];
-                max = Math.max(max, Math.sqrt(sum / buf.length));
-              }
-              return { rms: +max.toFixed(4), muted: track.muted, enabled: track.enabled, readyState: track.readyState, label: track.label || '' };
-            });
+            const localMic = await Promise.race([
+              page.evaluate(async () => {
+                const stream = window.__hostMicStream;
+                if (!stream) return { error: 'no mic stream on window' };
+                const track = stream.getAudioTracks()[0];
+                if (!track) return { error: 'no audio track' };
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                // Don't await resume() bare: race it so a context that
+                // never starts (headless Firefox, no audio device)
+                // can't hang this measurement.
+                await Promise.race([ctx.resume(), new Promise((r) => setTimeout(r, 3000))]);
+                const src = ctx.createMediaStreamSource(stream);
+                const analyser = ctx.createAnalyser();
+                analyser.fftSize = 2048;
+                src.connect(analyser);
+                const buf = new Float32Array(analyser.fftSize);
+                let max = 0;
+                for (let i = 0; i < 4; i++) {
+                  await new Promise((r) => setTimeout(r, 500));
+                  analyser.getFloatTimeDomainData(buf);
+                  let sum = 0;
+                  for (let j = 0; j < buf.length; j++) sum += buf[j] * buf[j];
+                  max = Math.max(max, Math.sqrt(sum / buf.length));
+                }
+                return { rms: +max.toFixed(4), muted: track.muted, enabled: track.enabled, readyState: track.readyState, label: track.label || '', ctxState: ctx.state };
+              }),
+              new Promise((resolve) => setTimeout(() => resolve({ error: 'local mic measure timed out after 15s' }), 15000)),
+            ]);
             if (localMic.error) {
               log('host', 'local mic track: ' + localMic.error);
             } else {
               out.localMicRms = localMic.rms;
-              log('host', 'local mic track rms=' + localMic.rms.toFixed(4) + ' muted=' + localMic.muted + ' enabled=' + localMic.enabled + ' state=' + localMic.readyState + ' label=' + localMic.label);
+              log('host', 'local mic track rms=' + localMic.rms.toFixed(4) + ' muted=' + localMic.muted + ' enabled=' + localMic.enabled + ' state=' + localMic.readyState + ' label=' + localMic.label + ' ctxState=' + (localMic.ctxState || '?'));
             }
           } catch (e) { log('host', 'local mic track measure failed: ' + e.message); }
           log('host', (IS_FIREFOX ? 'firefox fake-stream mic (generated tone)' : 'fake-file mic (60s tone)') + '; letting the remote peer record ~4s');
