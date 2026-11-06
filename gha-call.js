@@ -57,6 +57,7 @@ const INJECT = fs.readFileSync(path.join(__dirname, 'inject.js'), 'utf8');
 const DEFAULT_TO = '+529988728500'; // Excellence Riviera Cancun front desk
 const DEFAULT_EMAIL = 'cgd2049+textnow@gmail.com';
 const PROFILE_DIR = path.join(__dirname, '.browser-profile');
+const FIREFOX_PROFILE_DIR = path.join(__dirname, '.browser-profile-firefox'); // separate: a Chrome profile dir is not a Firefox profile
 const AUDIO_DIR = __dirname; // flat repo-root layout: reply MP3s sit next to this file
 // Pipe-source mic (NEW method): the mic is a REAL PulseAudio source
 // (module-pipe-source, source_name=virtmic, fed live by the FIFO
@@ -97,11 +98,11 @@ const PAPLAY_SINK = process.env.PULSE_TTS_SINK || 'tts_sink';
 const MIC_MODE = process.env.MIC_MODE || 'pipe';
 // BROWSER: 'chromium' (default, Playwright bundled), 'chrome' (Google
 // Chrome stable via PLAYWRIGHT_CHROME_PATH), or 'firefox' (Playwright
-// Firefox with media.navigator.streams.fake — a generated tone as the
-// mic; no file, no PulseAudio). Firefox is the fallback when the
-// Chromium-family encoder eats the audio on the runner (runs #13-16:
-// mic track carries the tone, bytes flow, remote decodes silence in
-// BOTH Playwright Chromium and Chrome 157).
+// Firefox; fake-file = generated-tone fake stream, pipe = real
+// PulseAudio virtmic). Firefox + pipe is the PROVEN call path: runs
+// #20 (fake-file) and #22 (pipe) both PASSED the host check, while
+// Chromium-family runs #10-#16 decoded silence at the remote peer
+// (mic track carries the tone, bytes flow, remote hears nothing).
 const BROWSER = (process.env.BROWSER || 'chromium').toLowerCase();
 const IS_FIREFOX = BROWSER === 'firefox';
 // Fake-mic path: Chromium fake-file flag OR Firefox fake-stream pref.
@@ -649,6 +650,22 @@ async function launchHostBrowser(extraArgs) {
     return firefox.launch({ headless: true, firefoxUserPrefs: prefs });
   }
   return chromium.launch(chromiumOpts(extraArgs));
+}
+
+// Launch a PERSISTENT browser context for the live call (TextNow login
+// session lives in the profile dir). Firefox uses its own profile dir
+// (a Chrome profile is not a Firefox profile) with permission
+// auto-granted and NO fake-stream pref — the real PulseAudio virtmic
+// is the mic in pipe mode. Firefox + fake-file is refused by liveCall
+// (the generated tone cannot speak the order); use pipe.
+async function launchCallPersistentContext() {
+  if (IS_FIREFOX) {
+    return firefox.launchPersistentContext(FIREFOX_PROFILE_DIR, {
+      headless: true,
+      firefoxUserPrefs: { 'media.navigator.permission.disabled': true },
+    });
+  }
+  return chromium.launchPersistentContext(PROFILE_DIR, chromiumOpts());
 }
 
 // ---------- WebRTC host check (dry-run phase 1) ----------
@@ -1425,7 +1442,7 @@ async function dryRun(order, script, orderAudio) {
 
   log('dry-run', 'phase 2 — simulated staff conversation (two-peer loop)');
   await ensurePipe(); // pipe already open from hostCheck; no-op if so
-  const browser = await chromium.launch(chromiumOpts());
+  const browser = await launchHostBrowser(); // browser-aware: Firefox when BROWSER=firefox
   const result = { ok: false, mode: 'dry-run', host, transcript: [], turns: 0 };
   let blank = null;
   try {
@@ -1538,23 +1555,26 @@ async function dryRun(order, script, orderAudio) {
 // ---------- Live call ----------
 async function liveCall(order, script, orderAudio, to, orderId, idToken, directCode, onWaitingForCode) {
   const email = process.env.TEXTNOW_EMAIL || DEFAULT_EMAIL;
-  // Fake-file mode: the ORDER audio IS the mic. Convert the order MP3
-  // to a real WAV (mono 48kHz s16) BEFORE launching Chromium — the
-  // flag needs the file to exist at launch, and it is loaded whole at
-  // first capture. %noloop so the order plays ONCE, then silence
-  // (looping would repeat the order to the staff). ONE-SHOT: live
-  // replies to staff questions are NOT possible in this mode — the
-  // pipe path is the only live/dynamic mic. See converse().
-  // Pipe mode: open the pipe BEFORE launching Chromium so the
+  // Fake-file mode (Chromium only): the ORDER audio IS the mic.
+  // Convert the order MP3 to a real WAV (mono 48kHz s16) BEFORE
+  // launching the browser — the flag needs the file to exist at
+  // launch, and it is loaded whole at first capture. %noloop so the
+  // order plays ONCE, then silence (looping would repeat the order to
+  // the staff). ONE-SHOT: live replies to staff questions are NOT
+  // possible in this mode — the pipe path is the only live/dynamic
+  // mic. See converse(). Firefox + fake-file is refused: the
+  // generated tone cannot speak the order — use pipe.
+  // Pipe mode: open the pipe BEFORE launching the browser so the
   // pipe-source is live (fed with silence) when TextNow opens the mic.
   if (MIC_MODE === 'fake-file') {
+    if (IS_FIREFOX) throw new Error('Firefox live calls require MIC_MODE=pipe — the fake-stream tone cannot speak the order');
     await mp3ToWavFile(orderAudio, FAKE_MIC_WAV);
     process.env.FAKE_MIC_NOLOOP = '1';
     log('fake-file', 'live call: order is the mic WAV (one-shot, %noloop); replies cannot be spoken in this mode');
   } else {
     await ensurePipe();
   }
-  const context = await chromium.launchPersistentContext(PROFILE_DIR, chromiumOpts());
+  const context = await launchCallPersistentContext();
   await context.addInitScript(INJECT);
   const page = context.pages()[0] || await context.newPage();
   // Receive remote audio forwarded by inject.js. Exposed BEFORE
