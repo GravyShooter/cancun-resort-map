@@ -1587,8 +1587,23 @@ async function liveCall(order, script, orderAudio, to, orderId, idToken, directC
     await ensureLoggedIn(page, email, orderId, idToken, directCode, onWaitingForCode);
     event({ event: 'dialing', to });
     log('dial', 'opening the dialer');
-    await page.goto(SELECTORS.appUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForTimeout(3000);
+    // Navigate to the dialer. Use 'commit' (fires when navigation starts)
+    // rather than 'domcontentloaded' — the TextNow SPA can delay
+    // domcontentloaded past the timeout in headless Firefox even when the
+    // page is usable. Wait for the dial elements explicitly instead.
+    // Retry once on failure.
+    let navigated = false;
+    for (let attempt = 1; attempt <= 2 && !navigated; attempt++) {
+      try {
+        await page.goto(SELECTORS.appUrl, { waitUntil: 'commit', timeout: 30000 });
+        navigated = true;
+      } catch (e) {
+        log('dial', 'goto attempt ' + attempt + ' failed: ' + e.message);
+        if (attempt === 2) throw e;
+        await page.waitForTimeout(2000);
+      }
+    }
+    await page.waitForTimeout(2000);
     await page.locator(SELECTORS.newCallButton).first().click({ timeout: 15000 })
       .catch(() => log('dial', 'no separate new-call button; trying the dial input directly'));
     await page.fill(SELECTORS.dialInput, to, { timeout: 15000 });
@@ -1609,7 +1624,14 @@ async function liveCall(order, script, orderAudio, to, orderId, idToken, directC
              guest: script.guest, durationSec: +playedSec.toFixed(1), script: script.text,
              transcript: convo.transcript, turns: convo.turns, conversationEnded: convo.ended };
   } finally {
-    await context.close();
+    // Stop the pipe keepalive so it cannot keep the process alive, and do
+    // not let a hung browser block exit: race the close against a timeout
+    // so a navigation failure fails fast instead of hanging the step.
+    pipeState.keepaliveOn = false;
+    await Promise.race([
+      context.close().catch(() => {}),
+      sleep(10000),
+    ]).catch(() => {});
   }
 }
 
