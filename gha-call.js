@@ -56,6 +56,10 @@ const DEFAULT_TO = '+529988728500'; // Excellence Riviera Cancun front desk
 const DEFAULT_EMAIL = 'cgd2049+textnow@gmail.com';
 const PROFILE_DIR = path.join(__dirname, '.browser-profile');
 const AUDIO_DIR = __dirname; // flat repo-root layout: reply MP3s sit next to this file
+// Vexa pattern: the mic is Chromium's real default mic (PulseAudio
+// virtual_mic, a remap source of tts_sink.monitor). TTS audio is played
+// into tts_sink with paplay. Override with PULSE_TTS_SINK if needed.
+const TTS_SINK = process.env.PULSE_TTS_SINK || 'tts_sink';
 const CONVERSATION_TIMEOUT_MS = 90 * 1000; // max two-way conversation
 const UTTERANCE_SILENCE_MS = 1500; // silence after speech = end of utterance
 const REMOTE_LEVEL_THRESHOLD = 0.02; // RMS above this = staff speaking
@@ -85,6 +89,89 @@ function log(step, msg) {
 function event(obj) { console.log('EVENT ' + JSON.stringify(obj)); }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
+// ---------- PulseAudio helpers (Vexa pattern) ----------
+// Audio is played into the tts_sink with paplay; the PulseAudio
+// virtual_mic (remap source of tts_sink.monitor) feeds it to Chromium
+// as the real mic. No Web Audio fake mic is used anywhere.
+const { spawn, execFile } = require('child_process');
+const os = require('os');
+
+function runCmd(cmd, args, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let stdout = '';
+    let stderr = '';
+    const child = execFile(cmd, args, { timeout: timeoutMs || 60000, maxBuffer: 4 * 1024 * 1024 }, (err) => {
+      if (err) return reject(new Error(cmd + ' failed: ' + (stderr || err.message).slice(0, 300)));
+      resolve({ stdout, stderr });
+    });
+    child.stdout.on('data', (d) => { stdout += d.toString(); });
+    child.stderr.on('data', (d) => { stderr += d.toString(); });
+  });
+}
+
+// Decode an MP3 buffer to a 44.1kHz WAV file. Returns the WAV path.
+async function mp3ToWav(mp3Buf) {
+  const tag = 'hailmary-play-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
+  const tmpMp3 = path.join(os.tmpdir(), tag + '.mp3');
+  const tmpWav = path.join(os.tmpdir(), tag + '.wav');
+  fs.writeFileSync(tmpMp3, mp3Buf);
+  try {
+    await runCmd('ffmpeg', ['-y', '-v', 'error', '-i', tmpMp3, '-ac', '1', '-ar', '44100', '-f', 'wav', tmpWav], 60000);
+    if (!fs.existsSync(tmpWav) || fs.statSync(tmpWav).size < 100) throw new Error('ffmpeg produced no usable WAV');
+    return { wav: tmpWav, mp3: tmpMp3 };
+  } catch (e) {
+    try { fs.unlinkSync(tmpMp3); } catch (_) {}
+    try { fs.unlinkSync(tmpWav); } catch (_) {}
+    throw e;
+  }
+}
+
+// Duration of an audio file in seconds (ffprobe).
+async function audioDuration(file) {
+  const { stdout } = await runCmd('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], 30000);
+  const d = parseFloat(String(stdout).trim());
+  return Number.isFinite(d) ? d : 0;
+}
+
+// Play an MP3 buffer into the PulseAudio tts_sink (the mic hears it).
+// Awaits playback completion. Returns the duration in seconds.
+async function playToSink(mp3Buf, sink) {
+  const { wav, mp3 } = await mp3ToWav(mp3Buf);
+  try {
+    const dur = await audioDuration(wav);
+    await runCmd('paplay', ['--device=' + sink, wav], Math.max(60000, Math.ceil(dur * 1000) + 30000));
+    return dur;
+  } finally {
+    try { fs.unlinkSync(wav); } catch (_) {}
+    try { fs.unlinkSync(mp3); } catch (_) {}
+  }
+}
+
+// Generate a sine tone WAV and start playing it into the sink.
+// Returns the paplay ChildProcess (caller awaits/kills it). The WAV
+// file is removed once playback ends.
+function playToneToSink(freq, seconds, sink) {
+  const tag = 'hailmary-tone-' + Date.now() + '.wav';
+  const tmpWav = path.join(os.tmpdir(), tag);
+  const child = spawn('sh', ['-c', 'ffmpeg -y -v error -f lavfi -i "sine=frequency=' + freq + ':duration=' + seconds + '" -ac 1 -ar 44100 -f wav "' + tmpWav + '" && paplay --device=' + sink + ' "' + tmpWav + '"; rm -f "' + tmpWav + '"'], { stdio: 'ignore' });
+  return child;
+}
+
+// Mean volume (dB) of an audio file via ffmpeg volumedetect.
+// Returns { meanDb, linear } — linear = 10^(dB/20); 0 when silent/empty.
+async function measureVolumeDb(file) {
+  try {
+    const { stderr } = await runCmd('ffmpeg', ['-i', file, '-af', 'volumedetect', '-f', 'null', '-'], 60000);
+    const m = /mean_volume:\s*(-?[\d.]+|-\s*inf)\s*dB/.exec(stderr);
+    if (!m) return { meanDb: null, linear: 0 };
+    if (/inf/i.test(m[1])) return { meanDb: -Infinity, linear: 0 };
+    const db = parseFloat(m[1]);
+    return { meanDb: db, linear: Number.isFinite(db) ? Math.pow(10, db / 20) : 0 };
+  } catch (e) {
+    return { meanDb: null, linear: 0 };
+  }
+}
+
 function parseArgs(argv) {
   const a = { orderId: '', order: null, orderAudio: '', code: '', to: DEFAULT_TO, live: false, json: false, result: '' };
   for (let i = 0; i < argv.length; i++) {
@@ -104,7 +191,12 @@ function parseArgs(argv) {
 function chromiumOpts(extraArgs) {
   const opts = {
     headless: true,
-    args: ['--autoplay-policy=no-user-gesture-required', '--no-sandbox', '--disable-dev-shm-usage'].concat(extraArgs || []),
+    // --use-fake-ui-for-media-stream auto-accepts the mic permission
+    // prompt. NEVER add --use-fake-device-for-media-stream (it bypasses
+    // PulseAudio entirely, so the virtual mic is never used) or
+    // --use-file-for-fake-audio-capture (forces silence as mic input).
+    // Those two flags break the Vexa PulseAudio mic (see inject.js).
+    args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--no-sandbox', '--disable-dev-shm-usage'].concat(extraArgs || []),
   };
   // On GitHub Actions Playwright installs its own Chromium; on this VM
   // the path is fixed. Honour an explicit path when set.
@@ -113,12 +205,16 @@ function chromiumOpts(extraArgs) {
 }
 
 // ---------- WebRTC host check (dry-run phase 1) ----------
-// Returns { udpOk, turnRelay, twoPeerConnected, twoPeerRms }.
+// Returns { udpOk, turnRelay, twoPeerConnected, twoPeerRms, micLabel, recvDb, recvBytes }.
 // UDP: direct socket send to loopback + to a public STUN host.
 // TURN: ICE gathering against openrelay.metered.ca (TCP/TLS).
-// Two-peer: two RTCPeerConnections in-page, tone flows A -> B.
+// Two-peer: two RTCPeerConnections in-page; peer A uses the REAL
+// PulseAudio mic (virtual_mic), a tone is played into tts_sink with
+// paplay, and peer B's received audio is measured with MediaRecorder
+// (decoded + ffmpeg volumedetect). This tests the Vexa mic path —
+// the old Web Audio tone test is gone (it was always silent here).
 async function hostCheck() {
-  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0 };
+  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0 };
   // UDP socket send (loopback). EPERM here = the host blocks UDP.
   try {
     await new Promise((resolve, reject) => {
@@ -163,45 +259,46 @@ async function hostCheck() {
     log('host', 'ICE candidates: host=' + host.length + ' srflx=' + srflx.length + ' relay=' + relay.length + ' (gathering ' + cands.gathering + ')');
     out.turnRelay = relay.length > 0;
     if (out.udpOk && (host.length > 0 || srflx.length > 0)) {
-      // UDP path exists — try two peers over host/srflx.
-      const two = await page.evaluate(async () => {
+      // UDP path exists — try two peers over host/srflx, using the REAL
+      // PulseAudio mic (virtual_mic). A tone is played into tts_sink
+      // with paplay and must arrive at the remote peer; the remote side
+      // is measured with MediaRecorder (not a Web Audio Analyser).
+      const setup = await page.evaluate(async () => {
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-        const hm = window.__hailmary;
+        let micInfo = null;
+        let micStream = null;
+        try {
+          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const track = micStream.getAudioTracks()[0];
+          micInfo = { label: track.label || '', readyState: track.readyState, enabled: track.enabled };
+        } catch (e) {
+          return { ok: false, micError: String(e), micInfo: null };
+        }
         const pcA = new RTCPeerConnection();
         const pcB = new RTCPeerConnection();
         pcA.onicecandidate = (e) => { if (e.candidate) pcB.addIceCandidate(e.candidate).catch(() => {}); };
         pcB.onicecandidate = (e) => { if (e.candidate) pcA.addIceCandidate(e.candidate).catch(() => {}); };
-        let remoteLevel = 0;
-        let remoteCtxState = '';
+        let recResolve = null;
+        const recDone = new Promise((res) => { recResolve = res; });
+        const rec = { chunks: [], recorder: null, done: recDone, resolve: recResolve };
         pcB.ontrack = (ev) => {
-          const track = ev.track;
-          const src = new (window.AudioContext || window.webkitAudioContext)();
-          // Headless Chrome starts a new AudioContext suspended; a suspended
-          // context feeds silence to the Analyser even when the track carries
-          // audio, so RMS reads 0 and the host check fails. Resume it.
-          src.resume().catch(() => {});
-          remoteCtxState = src.state;
-          const analyser = src.createAnalyser();
-          analyser.fftSize = 2048;
-          src.createMediaStreamSource(new MediaStream([track])).connect(analyser);
-          const buf = new Float32Array(2048);
-          const iv = setInterval(() => {
-            analyser.getFloatTimeDomainData(buf);
-            let sum = 0;
-            for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
-            const rms = Math.sqrt(sum / buf.length);
-            if (rms > remoteLevel) remoteLevel = rms;
-          }, 100);
-          setTimeout(() => clearInterval(iv), 12000);
+          const rtrack = ev.track;
+          try {
+            const r = new MediaRecorder(new MediaStream([rtrack]));
+            r.ondataavailable = (e2) => { if (e2.data && e2.data.size) rec.chunks.push(e2.data); };
+            r.onstop = () => rec.resolve();
+            r.start(250);
+            rec.recorder = r;
+          } catch (e) { rec.resolve(); }
         };
-        pcA.addTrack(hm.mic.getAudioTracks()[0], hm.mic);
+        window.__hostRec = rec;
+        pcA.addTrack(micStream.getAudioTracks()[0], micStream);
         const offer = await pcA.createOffer();
         await pcA.setLocalDescription(offer);
         await pcB.setRemoteDescription(offer);
         const answer = await pcB.createAnswer();
         await pcB.setLocalDescription(answer);
         await pcA.setRemoteDescription(answer);
-        hm.tone(880, 10.0);
         const t0 = Date.now();
         let state = '';
         while (Date.now() - t0 < 30000) {
@@ -209,12 +306,53 @@ async function hostCheck() {
           if (pcA.connectionState === 'connected') break;
           await sleep(250);
         }
-        await sleep(3000);
-        return { state, remoteLevel, remoteCtxState, micLevel: (typeof hm.micLevel === 'function' ? hm.micLevel() : -1) };
+        return { ok: pcA.connectionState === 'connected', state, micInfo };
       });
-      log('host', 'two-peer: state=' + two.state + ' remote RMS=' + two.remoteLevel.toFixed(4) + ' remoteCtx=' + (two.remoteCtxState || '?') + ' micLevel=' + (typeof two.micLevel === 'number' ? two.micLevel.toFixed(4) : '?'));
-      out.twoPeerConnected = two.state.startsWith('connected');
-      out.twoPeerRms = +two.remoteLevel.toFixed(4);
+      log('host', 'two-peer setup: connected=' + setup.ok + ' state=' + (setup.state || '?') +
+        ' mic=' + (setup.micInfo ? JSON.stringify(setup.micInfo) : 'none') +
+        (setup.micError ? ' micError=' + setup.micError : ''));
+      out.micLabel = setup.micInfo ? setup.micInfo.label : '';
+      out.twoPeerConnected = !!setup.ok;
+      if (setup.ok) {
+        // Play a 6s tone into tts_sink while the remote peer records.
+        const toneProc = playToneToSink(880, 6, TTS_SINK);
+        await new Promise((res) => { toneProc.on('close', res); toneProc.on('error', res); });
+        await sleep(800); // let the last recorder slice flush
+        const captured = await page.evaluate(async () => {
+          const rec = window.__hostRec;
+          if (!rec || !rec.recorder) return { chunksB64: [], totalBytes: 0, chunkCount: 0 };
+          if (rec.recorder.state !== 'inactive') {
+            rec.recorder.stop();
+            await rec.done;
+          }
+          const bufs = [];
+          let total = 0;
+          for (const b of rec.chunks) {
+            const ab = await b.arrayBuffer();
+            bufs.push(Buffer.from(ab).toString('base64'));
+            total += b.size;
+          }
+          return { chunksB64: bufs, totalBytes: total, chunkCount: rec.chunks.length };
+        });
+        out.recvBytes = captured.totalBytes;
+        log('host', 'remote captured: chunks=' + captured.chunkCount + ' bytes=' + captured.totalBytes);
+        if (captured.totalBytes > 0) {
+          const webm = Buffer.concat(captured.chunksB64.map((b) => Buffer.from(b, 'base64')));
+          const tmpWebm = path.join(os.tmpdir(), 'hostcheck-remote-' + Date.now() + '.webm');
+          fs.writeFileSync(tmpWebm, webm);
+          try {
+            const vol = await measureVolumeDb(tmpWebm);
+            out.recvDb = vol.meanDb;
+            out.twoPeerRms = +vol.linear.toFixed(4);
+          } finally {
+            try { fs.unlinkSync(tmpWebm); } catch (_) {}
+          }
+        }
+        log('host', 'two-peer: state=' + setup.state + ' mic=' + (out.micLabel || '?') +
+          ' recvBytes=' + out.recvBytes + ' meanDb=' +
+          (out.recvDb === null || out.recvDb === undefined ? 'n/a' : (out.recvDb === -Infinity ? '-inf' : out.recvDb)) +
+          ' recvRMS=' + out.twoPeerRms.toFixed(4));
+      }
     }
   } finally {
     await browser.close();
@@ -223,21 +361,18 @@ async function hostCheck() {
 }
 
 // ---------- Audio helpers ----------
-// Play an MP3 buffer into the fake mic on the given page. Returns duration.
+// Play an MP3 buffer into the PulseAudio tts_sink (the mic hears it).
+// Returns duration in seconds. The page argument is unused — playback
+// is Node-side paplay, not Web Audio — but the signature is kept so
+// callers don't change.
 async function playAudio(page, audioBuf) {
-  const b64 = audioBuf.toString('base64');
-  return page.evaluate(async (b64) => {
-    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-    return window.__hailmary.sayBuffer(bytes.buffer);
-  }, b64);
+  return playToSink(audioBuf, TTS_SINK);
 }
 
 // Synthesize the order script with espeak-ng (last-resort fallback when
 // no Chatty Porch audio was supplied). Robotic — the parent should supply
 // Chatty Porch audio for the real call. Returns an MP3 Buffer, or null.
 async function espeakSynthesize(text) {
-  const { execFile } = require('child_process');
-  const os = require('os');
   const tmpWav = path.join(os.tmpdir(), 'hailmary-espeak-' + Date.now() + '.wav');
   const tmpMp3 = tmpWav + '.mp3';
   try {
@@ -320,13 +455,23 @@ async function converse(page, order, orderAudio, script, remoteState) {
 
   const t0 = Date.now();
   log('listen', 'two-way loop started (timeout ' + (CONVERSATION_TIMEOUT_MS / 1000) + 's)');
+  // Fallback speech detection: the remote Analyser can read 0 in headless
+  // Chrome even when audio flows, but MediaRecorder chunks for speech are
+  // much larger than silence frames. Track chunk growth alongside level.
+  let prevChunkCount = 0;
   while (Date.now() - t0 < CONVERSATION_TIMEOUT_MS && !ended) {
     const level = await page.evaluate(() => {
       try { return window.__hailmary.remoteLevel(); } catch (_) { return 0; }
     }).catch(() => 0);
+    let chunkSpeech = false;
+    if (chunks.length > prevChunkCount) {
+      prevChunkCount = chunks.length;
+      const last = chunks[chunks.length - 1];
+      if (last && last.length > 150) chunkSpeech = true;
+    }
     const now = Date.now();
-    if (level > REMOTE_LEVEL_THRESHOLD) {
-      if (!speaking) { speaking = true; log('listen', 'staff speaking (level ' + level.toFixed(3) + ')'); }
+    if (level > REMOTE_LEVEL_THRESHOLD || chunkSpeech) {
+      if (!speaking) { speaking = true; log('listen', 'staff speaking (level ' + level.toFixed(3) + (chunkSpeech ? ', chunk' : '') + ')'); }
       lastSpeechAt = now;
     } else if (speaking && now - lastSpeechAt > UTTERANCE_SILENCE_MS && now - remoteState.lastChunkAt > 500) {
       // End of an utterance — transcribe it and respond.
@@ -444,8 +589,9 @@ async function ensureLoggedIn(page, email, orderId, idToken, directCode, onWaiti
 // ---------- Dry run ----------
 // Phase 1: host WebRTC check. Phase 2: full loop against a simulated
 // staff peer (two PeerConnections in-page; peer A plays a staff
-// utterance, peer B captures it, Whisper transcribes, the responder
-// picks a reply, the reply plays into the fake mic). No TextNow.
+// utterance through the real PulseAudio mic, peer B captures it,
+// Whisper transcribes, the responder picks a reply, the reply plays
+// back through the mic). No TextNow.
 async function dryRun(order, script, orderAudio) {
   log('dry-run', 'phase 1 — WebRTC host check');
   const host = await hostCheck();
@@ -478,17 +624,21 @@ async function dryRun(order, script, orderAudio) {
     const staffFile = path.join(AUDIO_DIR, 'test-staff-everything.mp3');
     if (!fs.existsSync(staffFile)) throw new Error('missing test fixture test-staff-everything.mp3');
     const staffAudio = fs.readFileSync(staffFile);
-    const staffB64 = staffAudio.toString('base64');
-    const sim = await page.evaluate(async (staffB64) => {
+    const sim = await page.evaluate(async () => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-      const hm = window.__hailmary;
+      let micLabel = '';
+      let micStream = null;
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micLabel = micStream.getAudioTracks()[0].label || '';
+      } catch (e) {
+        return { connected: false, state: 'gum-failed: ' + e, micLabel };
+      }
       const pcA = new RTCPeerConnection();
       const pcB = new RTCPeerConnection();
       pcA.onicecandidate = (e) => { if (e.candidate) pcB.addIceCandidate(e.candidate).catch(() => {}); };
       pcB.onicecandidate = (e) => { if (e.candidate) pcA.addIceCandidate(e.candidate).catch(() => {}); };
-      // Peer B's remote track is captured by inject.js (hook) — the
-      // same path a real TextNow call uses.
-      pcA.addTrack(hm.mic.getAudioTracks()[0], hm.mic);
+      pcA.addTrack(micStream.getAudioTracks()[0], micStream);
       const offer = await pcA.createOffer();
       await pcA.setLocalDescription(offer);
       await pcB.setRemoteDescription(offer);
@@ -502,24 +652,25 @@ async function dryRun(order, script, orderAudio) {
         if (pcA.connectionState === 'connected') break;
         await sleep(250);
       }
-      if (pcA.connectionState !== 'connected') return { connected: false, state };
-      // Play the staff utterance into peer A's mic (so peer B hears it).
-      const bytes = Uint8Array.from(atob(staffB64), (c) => c.charCodeAt(0));
-      const dur = await hm.sayBuffer(bytes.buffer);
-      await sleep(dur * 1000 + 1500);
-      const remoteChunks = hm.remoteChunks.length;
-      const remoteLevel = hm.remoteLevel();
-      return { connected: true, state, playedSec: dur, remoteChunks, remoteLevel };
-    }, staffB64);
-    log('dry-run', 'sim peer: connected=' + sim.connected + ' state=' + sim.state +
-      ' played=' + (sim.playedSec ? sim.playedSec.toFixed(1) + 's' : 'n/a') +
-      ' remoteChunks=' + (sim.remoteChunks || 0) + ' remoteLevel=' + (sim.remoteLevel || 0).toFixed(3));
-    if (!sim.connected || !(sim.remoteChunks > 0)) {
-      result.error = 'simulated staff audio was not captured (connected=' + sim.connected + ', chunks=' + (sim.remoteChunks || 0) + ')';
+      return { connected: pcA.connectionState === 'connected', state, micLabel };
+    });
+    log('dry-run', 'sim peer: connected=' + sim.connected + ' state=' + sim.state + ' mic=' + (sim.micLabel || '?'));
+    if (!sim.connected) {
+      result.error = 'simulated peer did not connect (state=' + sim.state + ')';
+      return result;
+    }
+    // Play the staff utterance into the real mic (paplay -> tts_sink).
+    const staffDur = await playToSink(staffAudio, TTS_SINK);
+    await sleep(1500); // let the last recorder slice + forwarding flush
+    const staffBytes = chunks.reduce((n, b) => n + b.length, 0);
+    log('dry-run', 'staff fixture played (' + staffDur.toFixed(1) + 's); peer B captured chunks=' + chunks.length + ' bytes=' + staffBytes);
+    if (!(chunks.length > 0 && staffBytes > 1000)) {
+      result.error = 'simulated staff audio was not captured (chunks=' + chunks.length + ', bytes=' + staffBytes + ')';
       return result;
     }
     // Transcribe the captured chunks with Whisper.
     const webm = Buffer.concat(chunks);
+    chunks.length = 0; // reset for the reply capture below
     const tmp = path.join(__dirname, 'dryrun-remote.webm');
     fs.writeFileSync(tmp, webm);
     let text = '';
@@ -534,19 +685,15 @@ async function dryRun(order, script, orderAudio) {
     }
     result.transcript.push({ speaker: 'us', text: '(reply: ' + res.key + ')' });
     result.turns = 1;
-    // Verify the reply plays into the fake mic with audible level.
+    // Verify the reply actually flows through the mic to the peer:
+    // play it via paplay and check peer B captures new audio.
     const replyBuf = fs.readFileSync(path.join(AUDIO_DIR, res.key + '.mp3'));
     const playedSec = await playAudio(page, replyBuf);
-    let maxLevel = 0;
-    const mt0 = Date.now();
-    while (Date.now() - mt0 < Math.min(playedSec * 1000, 8000)) {
-      const lvl = await page.evaluate(() => window.__hailmary.micLevel());
-      if (lvl > maxLevel) maxLevel = lvl;
-      await sleep(200);
-    }
-    log('dry-run', 'reply "' + res.key + '" played into fake mic, max RMS=' + maxLevel.toFixed(4));
-    result.ok = maxLevel > 0.005;
-    if (!result.ok) result.error = 'reply did not produce audible mic audio (max RMS ' + maxLevel.toFixed(4) + ')';
+    await sleep(1500);
+    const replyBytes = chunks.reduce((n, b) => n + b.length, 0);
+    log('dry-run', 'reply "' + res.key + '" played (' + playedSec.toFixed(1) + 's); peer B captured chunks=' + chunks.length + ' bytes=' + replyBytes);
+    result.ok = chunks.length > 0 && replyBytes > 1000;
+    if (!result.ok) result.error = 'reply was not captured by the peer (chunks=' + chunks.length + ', bytes=' + replyBytes + ')';
     return result;
   } finally {
     await browser.close();
