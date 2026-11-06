@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-05-b6-pools-w-wrap · v130.1.110 -->
+<!-- build-2026-11-05-gps-only-no-wifi-no-handset · v131.1.110 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -1030,44 +1030,20 @@
       .liveblip:disabled { opacity: 0.55; cursor: default; }
       .liveblip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
       .liveblip-hint { margin-top: 7px; }
-      /* Set my spot by hand: manual placement for when GPS can't work
-         indoors. Lives in the Who's here card under Blip. A hand-set
-         dot is the guest's stated position, not a GPS fix — the dashed
-         ring and the "set by hand" labels keep that honest everywhere
-         the dot appears. */
-      .livemanual { margin-top: 12px; border-top: 1px dashed var(--ink-soft); padding-top: 11px; }
-      .livemanual[hidden] { display: none; }
-      .livemanual-title { margin: 0 0 4px; font-size: 0.98rem; font-weight: 800; }
-      .livemanual-why { margin: 0 0 9px; font-size: 0.85rem; color: var(--ink-soft); }
-      .livemanual-warn { margin: 0 0 9px; font-size: 0.88rem; font-weight: 700; color: var(--c-dining); }
-      .livemanual-warn[hidden] { display: none; }
-      .livemanual-row { display: flex; gap: 8px; align-items: stretch; }
-      .livemanual-row input.ocontrol { flex: 1 1 auto; min-width: 0; min-height: 48px; }
-      .livemanual-btn {
-        appearance: none; cursor: pointer; flex: none;
-        min-height: 48px; padding: 10px 16px;
-        border: 0; border-radius: 999px;
-        background: #0e6e6e; color: #ffffff;
-        font: inherit; font-size: 0.95rem; font-weight: 700; line-height: 1.2;
-        box-shadow: 0 3px 10px rgba(30, 40, 20, 0.3);
-      }
-      .livemanual-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-      .livemanual-selwrap { display: block; margin-top: 9px; font-size: 0.85rem; color: var(--ink-soft); }
-      .livemanual-selwrap select.ocontrol { display: block; width: 100%; margin-top: 5px; min-height: 48px; }
-      .livemanual-status { margin: 10px 0 0; font-size: 0.88rem; font-weight: 600; color: var(--ink); }
-      .livemanual-status[hidden] { display: none; }
-      .livemanual-gps {
-        appearance: none; cursor: pointer; margin-top: 9px;
-        min-height: 44px; padding: 9px 16px;
-        border: 2px solid var(--accent); border-radius: 999px;
-        background: var(--panel); color: var(--ink);
-        font: inherit; font-size: 0.92rem; font-weight: 700;
-      }
-      .livemanual-gps[hidden] { display: none; }
-      .livemanual-gps:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-      /* Hand-set dot: dashed ring instead of the solid GPS ring. */
-      .livedot.manual { border-style: dashed; }
-      .livedot.manual .lname { max-width: 230px; }
+      /* GPS-only status: lives in the Who's here card under Blip.
+         There is no hand placement — a dot only ever comes from a
+         real satellite GPS fix, and this panel says plainly what the
+         phone's GPS is doing (good fix, or guesses being ignored) and
+         whether anyone is currently showing as near this phone. */
+      .livegps { margin-top: 12px; border-top: 1px dashed var(--ink-soft); padding-top: 11px; }
+      .livegps[hidden] { display: none; }
+      .livegps-title { margin: 0 0 4px; font-size: 0.98rem; font-weight: 800; }
+      .livegps-why { margin: 0 0 9px; font-size: 0.85rem; color: var(--ink-soft); }
+      .livegps-status { margin: 0 0 9px; font-size: 0.88rem; font-weight: 700; color: var(--c-dining); }
+      .livegps-status.ok { color: var(--ink); font-weight: 600; }
+      .livegps-status[hidden] { display: none; }
+      .livegps-node { margin: 0; font-size: 0.85rem; color: var(--ink-soft); }
+      .livegps-node[hidden] { display: none; }
       /* Stale (last-seen) members: faded pill, desaturated icon, with the
          last-seen time shown next to the name. Still tappable to center. */
       .liveuser.stale { opacity: 0.68; }
@@ -3874,7 +3850,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v130.1.110</p>
+        <p class="version-stamp">v131.1.110</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -7410,10 +7386,15 @@
         entries: {},      // uid -> latest presence snapshot entry
         proximity: {},    // observerUid -> { observedUid -> Bluetooth proximity record }
         dotEls: {},       // uid (or "__me") -> { el, label, x, y }
-        mePos: null,      // { x, y, near } from the latest local GPS fix
-        manualPos: null,  // { x, y, near: 0, acc: null, manual: true, place } — the guest's hand-set spot, or null
-        manualPlace: "",  // name of the building a hand-set spot sits on
-        gpsWeak: false,   // the latest GPS fix looked stale or inaccurate (the indoor failure)
+        mePos: null,      // { x, y, near } from the latest accepted local GPS fix
+        gpsWeak: false,   // the latest readings look like Wi-Fi guesses and are being ignored (GPS only)
+        gpsStuck: false,  // the watch keeps re-delivering one identical spot — a stuck fix being re-sent
+        lastRawLat: null, // coordinates of the latest raw reading, accepted or not (stuck detection)
+        lastRawLng: null,
+        lastRawAt: 0,     // local arrival time of that raw reading
+        stuckSince: 0,    // when the current run of identical readings began
+        lastFixAcc: null, // accuracy (m) of the latest accepted GPS fix
+        lastFixAt: 0,     // local time of the latest accepted GPS fix
         blipPos: null,    // { x, y, near } from the latest one-time Blip ping (not the watch)
         blipAt: 0,        // local time of that ping — its last-seen stamp while this page is open
         blipping: false,  // a Blip tap is mid-flight (read or write pending)
@@ -7702,235 +7683,98 @@
       liveHereEl.insertBefore(liveBlipHint, liveHereNote);
       liveBlipBtn.addEventListener("click", liveBlip);
 
-      // ----- Set my spot by hand (the indoor fix) -----
-      // GPS satellite signals cannot penetrate the resort buildings:
-      // indoors a phone falls back to Wi-Fi positioning or reuses its
-      // last outdoor fix, so the Live dot can sit a long way from where
-      // the guest actually is — no code change makes satellite GPS work
-      // inside concrete. The fix is manual placement: the guest states
-      // where they are — a room number resolved to its building via the
-      // same room ranges the room finder uses (room 6131 -> Building 6),
-      // or a building picked from the list — and their dot sits on that
-      // building's pin instead of following the bad phone fix.
-      // A hand-set position is written to presence with manual: true
-      // and the building's name, and every surface keeps it honest: the
-      // dot gets a dashed ring, its label and its Who's here row say
-      // "set by hand", and nothing about it claims to be a GPS fix.
-      // While a hand-set spot is active the GPS watch (when sharing)
-      // keeps running — it still notices when the phone gets a good
-      // fix again — but its fixes no longer move or overwrite the dot;
-      // the shared entry is just re-written on a slow timer so it
-      // doesn't fade to last-seen while the guest sits in their room.
-      var liveManualEl = document.createElement("div");
-      liveManualEl.className = "livemanual";
-      liveManualEl.id = "liveManual";
-      var liveManualTitle = document.createElement("p");
-      liveManualTitle.className = "livemanual-title";
-      liveManualTitle.textContent = "Indoors? Set your spot by hand";
-      var liveManualWhy = document.createElement("p");
-      liveManualWhy.className = "livemanual-why";
-      liveManualWhy.textContent = "GPS can't get through the buildings — inside, your phone guesses from Wi-Fi or reuses an old fix, so your dot can land in completely the wrong place. Tell the map where you are instead:";
-      var liveManualWarn = document.createElement("p");
-      liveManualWarn.className = "livemanual-warn";
-      liveManualWarn.id = "liveManualWarn";
-      liveManualWarn.setAttribute("role", "status");
-      liveManualWarn.hidden = true;
-      var liveManualRow = document.createElement("div");
-      liveManualRow.className = "livemanual-row";
-      var liveManualRoom = document.createElement("input");
-      liveManualRoom.type = "text";
-      liveManualRoom.className = "ocontrol";
-      liveManualRoom.id = "liveManualRoom";
-      try { liveManualRoom.inputMode = "numeric"; } catch (e) { /* older browsers */ }
-      liveManualRoom.setAttribute("autocomplete", "off");
-      liveManualRoom.setAttribute("placeholder", "Room # — e.g. 6131");
-      liveManualRoom.setAttribute("aria-label", "Your room number");
-      var liveManualPlaceBtn = document.createElement("button");
-      liveManualPlaceBtn.type = "button";
-      liveManualPlaceBtn.className = "livemanual-btn";
-      liveManualPlaceBtn.textContent = "Place my dot";
-      liveManualRow.appendChild(liveManualRoom);
-      liveManualRow.appendChild(liveManualPlaceBtn);
-      var liveManualSelWrap = document.createElement("label");
-      liveManualSelWrap.className = "livemanual-selwrap";
-      var liveManualSelTxt = document.createElement("span");
-      liveManualSelTxt.textContent = "No room number handy? Pick your building:";
-      var liveManualSel = document.createElement("select");
-      liveManualSel.className = "ocontrol";
-      liveManualSel.id = "liveManualBldg";
-      liveManualSel.setAttribute("aria-label", "Pick your building");
-      var liveManualOpt0 = document.createElement("option");
-      liveManualOpt0.value = "";
-      liveManualOpt0.textContent = "Choose a building…";
-      liveManualSel.appendChild(liveManualOpt0);
-      PLACES.forEach(function (p, i) {
-        if (!p || !p.rooms) return;
-        var o = document.createElement("option");
-        o.value = String(i);
-        o.textContent = p.name + " (rooms " + p.rooms + ")";
-        liveManualSel.appendChild(o);
-      });
-      liveManualSelWrap.appendChild(liveManualSelTxt);
-      liveManualSelWrap.appendChild(liveManualSel);
-      var liveManualStatus = document.createElement("p");
-      liveManualStatus.className = "livemanual-status";
-      liveManualStatus.id = "liveManualStatus";
-      liveManualStatus.hidden = true;
-      var liveManualGpsBtn = document.createElement("button");
-      liveManualGpsBtn.type = "button";
-      liveManualGpsBtn.className = "livemanual-gps";
-      liveManualGpsBtn.id = "liveManualGps";
-      liveManualGpsBtn.textContent = "Use my phone's GPS instead";
-      liveManualGpsBtn.hidden = true;
-      liveManualEl.appendChild(liveManualTitle);
-      liveManualEl.appendChild(liveManualWhy);
-      liveManualEl.appendChild(liveManualWarn);
-      liveManualEl.appendChild(liveManualRow);
-      liveManualEl.appendChild(liveManualSelWrap);
-      liveManualEl.appendChild(liveManualStatus);
-      liveManualEl.appendChild(liveManualGpsBtn);
+      // ----- GPS only: no Wi-Fi location, no hand placement -----
+      // A dot on this map only ever comes from the phone's satellite
+      // GPS. Browsers hand back whatever the phone's fused location
+      // stack produces, and indoors that stack quietly substitutes
+      // Wi-Fi positioning or reuses an old fix — the Building 6 dot
+      // while its owner sat at the Stone Gazebo. The page can't reach
+      // into the phone and switch that off, so it does the next thing:
+      // it refuses to use any reading that carries the Wi-Fi/stale
+      // signature (accuracy worse than \u00b150 m, no accuracy at all, or a
+      // fix timestamp over a minute old), and any reading from a
+      // stream that has gone stuck — bit-identical coordinates
+      // re-delivered for 45 s+, however good the accuracy claimed
+      // (see liveStuckCheck). Such readings never move a
+      // dot and are never written to presence; the last real GPS fix
+      // stands and fades to last-seen on the normal clock. There is
+      // deliberately NO hand placement anymore: the owner asked for
+      // GPS only, so when GPS can't fix, the honest states are the
+      // last real fix or nothing.
+      // The panel also reports the phone-as-node side: this phone's
+      // own Bluetooth proximity records (written by the companion
+      // app) let friends with no GPS fix of their own show up as
+      // "near <this phone>" — they bounce off this node.
+      var liveGpsEl = document.createElement("div");
+      liveGpsEl.className = "livegps";
+      liveGpsEl.id = "liveGps";
+      var liveGpsTitle = document.createElement("p");
+      liveGpsTitle.className = "livegps-title";
+      liveGpsTitle.textContent = "GPS only — no Wi-Fi location";
+      var liveGpsWhy = document.createElement("p");
+      liveGpsWhy.className = "livegps-why";
+      liveGpsWhy.textContent = "Your dot only ever comes from your phone's satellite GPS — never from Wi-Fi, and never set by hand. A reading that looks like a Wi-Fi guess (promising worse than \u00b150 m, or over a minute old) is thrown away, and so is a stuck one: if your phone keeps re-sending the exact same spot, that's a cached fix being re-reported, not live GPS, and it stops being trusted until the spot actually changes. Your dot stays at your last real GPS spot instead of jumping to a guess. One honest limit: if a phone's very first answer is a confident re-send of an old fix, no web page can tell it apart from real GPS — toggling Location off and on in the phone's settings forces the phone itself to drop it. Under a roof, GPS may not reach you at all — step into the open and Blip, or turn Live on and walk out.";
+      var liveGpsStatus = document.createElement("p");
+      liveGpsStatus.className = "livegps-status";
+      liveGpsStatus.id = "liveGpsStatus";
+      liveGpsStatus.setAttribute("role", "status");
+      liveGpsStatus.hidden = true;
+      var liveGpsNode = document.createElement("p");
+      liveGpsNode.className = "livegps-node";
+      liveGpsNode.id = "liveGpsNode";
+      liveGpsNode.hidden = true;
+      liveGpsEl.appendChild(liveGpsTitle);
+      liveGpsEl.appendChild(liveGpsWhy);
+      liveGpsEl.appendChild(liveGpsStatus);
+      liveGpsEl.appendChild(liveGpsNode);
       // App mode: the app's native service is the only location writer,
-      // so the page offers no placement of its own there (same rule as
-      // Blip). The panel simply never joins the card.
-      if (!IS_SPUDMAPS_APP) liveHereEl.insertBefore(liveManualEl, liveHereNote);
+      // so the page offers no location panel of its own there (same
+      // rule as Blip). The panel simply never joins the card.
+      if (!IS_SPUDMAPS_APP) liveHereEl.insertBefore(liveGpsEl, liveHereNote);
 
-      function liveBuildingIdxForRoom(n) {
-        for (var i = 0; i < PLACES.length; i++) {
-          var p = PLACES[i];
-          if (!p || !p.rooms) continue;
-          var m = /(\d+)\s*[–-]\s*(\d+)/.exec(p.rooms);
-          if (m && n >= parseInt(m[1], 10) && n <= parseInt(m[2], 10)) return i;
-        }
-        return -1;
-      }
-      function liveRoomRangesText() {
-        var out = [];
-        PLACES.forEach(function (p) { if (p && p.rooms) out.push(p.rooms); });
-        return out.join(", ");
-      }
-      function liveManualSync() {
-        var on = !!liveState.manualPos;
-        liveManualStatus.hidden = !on;
-        liveManualGpsBtn.hidden = !on;
-        if (on) {
-          liveManualStatus.textContent = "Your dot is set by hand at " + liveState.manualPlace + " — that's where you said you are, not a GPS fix. It stays there until you switch back to GPS.";
-        }
-      }
-      function liveManualWarnShow(msg) {
-        liveManualWarn.textContent = msg;
-        liveManualWarn.hidden = false;
-      }
-      function liveManualWarnHide() { liveManualWarn.hidden = true; }
-      // A placement held while the name dialog collects a profile —
-      // the same held-action pattern the board and meetups use: the
-      // building index waits here and the dialog's save applies it.
-      var livePendingPlace = -1;
-      function livePlaceManual(idx) {
-        if (IS_SPUDMAPS_APP) return; // app mode: the page never writes presence
-        var p = PLACES[idx];
-        var xy = (typeof PINXY !== "undefined") ? PINXY[idx] : null;
-        if (!p || !xy || (xy[0] === 0 && xy[1] === 0)) {
-          liveNote("Couldn't place your dot there — try another building.");
-          return;
-        }
-        if (!liveReady) {
-          liveNote("Live group couldn't load just now — the rest of the map works as usual.", true);
-          return;
-        }
-        if (!liveProfile) { livePendingPlace = idx; liveOpenDlg("place"); return; }
-        var pos = { x: xy[0], y: xy[1], near: 0, acc: null, manual: true, place: p.name };
-        liveState.manualPos = pos;
-        liveState.manualPlace = p.name;
-        liveManualWarnHide();
-        liveManualSync();
-        if (liveState.sharing) {
-          // Sharing: the hand-set spot replaces the GPS position at
-          // once and the watch stops moving it (see liveOnPos).
-          liveState.mePos = pos;
-          liveWriteNow();
-          liveRender();
-          liveNote("Your dot is now at " + p.name + ", set by hand — it stays there until you switch back to GPS.");
-          return;
-        }
-        // Not sharing: place it the way a Blip does — exactly one
-        // presence write on the same read listeners viewing uses, and
-        // nothing keeps reporting afterwards.
-        liveEnsureAuth(function (ok) {
-          if (!ok) {
-            liveNote("Couldn't connect — check your connection, then try placing your dot again.");
-            return;
-          }
-          liveAttachListeners();
-          if (!liveListening || !livePresenceRef) {
-            liveNote("Couldn't connect — check your connection, then try placing your dot again.");
-            return;
-          }
-          liveState.viewing = true;
-          liveLegendEl.hidden = false;
-          if (!liveState.staleTimer) liveState.staleTimer = setInterval(liveRender, 15000);
-          try { liveMyRef = livePresenceRef.child(liveUid); } catch (e) { liveMyRef = null; }
-          if (!liveMyRef) {
-            liveNote("Couldn't connect — check your connection, then try placing your dot again.");
-            return;
-          }
-          liveState.blipPos = pos;
-          liveState.blipAt = Date.now();
-          liveState.mePos = pos;
-          liveWriteNow(); // the placement's one and only presence write
-          liveRender();
-          liveNote("Your dot is now at " + p.name + ", set by hand — shown once, like a Blip. It isn't a GPS fix, and nothing keeps watching you.");
-        });
-      }
-      function liveClearManual() {
-        liveState.manualPos = null;
-        liveState.manualPlace = "";
-        liveState.gpsWeak = false;
-        liveManualWarnHide();
-        liveManualSync();
-        if (liveState.sharing) {
-          // GPS takes over again: drop the held spot and clear the
-          // last-write record so the watch's next fix moves the dot
-          // and writes, even if it lands near the previous GPS write.
-          liveState.mePos = null;
-          liveState.lastWrite = null;
-          liveState.lastWriteTime = 0;
-          liveRender();
-          liveNote("Back to your phone's GPS — your dot moves with its next fix. Indoors, that fix may wander again; you can set your spot by hand anytime.");
+      // Keeps the GPS-only status line and the phone-as-node line
+      // current. Called whenever a fix is accepted or rejected, when
+      // sharing starts/stops, and on every render (proximity records
+      // arrive on their own listener).
+      function liveGpsSync() {
+        if (liveState.gpsStuck) {
+          liveGpsStatus.hidden = false;
+          liveGpsStatus.classList.remove("ok");
+          liveGpsStatus.textContent = "Your phone keeps re-sending the exact same spot, to the last decimal — that's a stuck fix, not live GPS, so it stopped being trusted. Toggle Location off and on in your phone settings to force the phone to drop the old fix, then step into the open.";
+        } else if (liveState.gpsWeak) {
+          liveGpsStatus.hidden = false;
+          liveGpsStatus.classList.remove("ok");
+          liveGpsStatus.textContent = liveState.lastFixAt
+            ? "Right now your phone is only offering Wi-Fi-style guesses, so they're being ignored — your dot is holding at your last real GPS fix. Step into the open for a fresh satellite fix."
+            : "Right now your phone is only offering Wi-Fi-style guesses, so they're being ignored — nothing is shown for you until a real satellite fix lands. Step into the open and your dot will appear.";
+        } else if (liveState.lastFixAt) {
+          liveGpsStatus.hidden = false;
+          liveGpsStatus.classList.add("ok");
+          var accTxt = (typeof liveState.lastFixAcc === "number") ? " (\u00b1" + Math.round(liveState.lastFixAcc) + " m)" : "";
+          liveGpsStatus.textContent = "Last real GPS fix" + accTxt + " · " + liveLastSeenText(liveState.lastFixAt).replace(/^last seen /, "");
         } else {
-          liveState.blipPos = null;
-          liveState.blipAt = 0;
-          if (liveState.mePos && liveState.mePos.manual) liveState.mePos = null;
-          liveRender();
-          // Replace the hand-set entry with one fresh GPS ping; if the
-          // phone can't fix (the usual indoor story), Blip's own note
-          // explains and the hand-set entry stays as last-seen.
-          liveBlip();
+          liveGpsStatus.hidden = true;
         }
-      }
-      function liveManualGo() {
-        var raw = liveManualRoom.value.replace(/\D/g, "");
-        if (raw) {
-          var idx = liveBuildingIdxForRoom(parseInt(raw, 10));
-          if (idx < 0) {
-            liveNote("That room number doesn't match a building here — resort rooms run " + liveRoomRangesText() + ". Or pick your building from the list.");
-            try { liveManualRoom.focus(); liveManualRoom.select(); } catch (e) { /* focus is a nicety */ }
-            return;
+        // Phone as a node: count the friends this phone currently
+        // holds fresh Bluetooth sightings of. Their rows and badges
+        // ("near <you>") come from these same records.
+        var nodeN = 0;
+        var myProx = (liveState.proximity || {})[liveUid];
+        if (myProx) {
+          var nowN = Date.now();
+          for (var ouid in myProx) {
+            if (!Object.prototype.hasOwnProperty.call(myProx, ouid)) continue;
+            var rec = myProx[ouid];
+            if (rec && typeof rec.updatedAt === "number" && isFinite(rec.updatedAt) && !liveIsStale(rec.updatedAt, nowN)) nodeN++;
           }
-          livePlaceManual(idx);
-          return;
         }
-        var sv = liveManualSel.value;
-        if (sv === "" || sv === null) {
-          liveNote("Type your room number, or pick your building from the list, then tap Place my dot.");
-          return;
+        if (nodeN > 0) {
+          liveGpsNode.hidden = false;
+          liveGpsNode.textContent = "Your phone is a locating node: " + nodeN + (nodeN === 1 ? " friend is" : " friends are") + " showing as near you right now, bounced off your phone over Bluetooth — they show even when their own GPS can't get a fix.";
+        } else {
+          liveGpsNode.hidden = true;
         }
-        livePlaceManual(parseInt(sv, 10));
       }
-      liveManualPlaceBtn.addEventListener("click", liveManualGo);
-      liveManualRoom.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") { e.preventDefault(); liveManualGo(); }
-      });
-      liveManualGpsBtn.addEventListener("click", liveClearManual);
 
       groupToolsEl.appendChild(liveHereEl);
       var liveUsersSig = "";
@@ -8107,7 +7951,7 @@
           proxRows.push({ uid: uid, name: nm, badge: bg.text });
         });
         proxRows.sort(function (a, b) { return a.name < b.name ? -1 : 1; });
-        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon + "|" + (want[k].stale ? "stale:" + want[k].updatedAt : "live") + "|" + (want[k].manual ? "man:" + want[k].place : "") + "|" + (badges[k] || ""); }).join(";") +
+        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon + "|" + (want[k].stale ? "stale:" + want[k].updatedAt : "live") + "|" + (badges[k] || ""); }).join(";") +
           "|prox" + proxRows.map(function (r) { return r.uid + "|" + r.name + "|" + r.badge; }).join(";") +
           "|potato" + potatoStage() +
           "|share" + (liveState.sharing ? "1" : "0");
@@ -8140,8 +7984,7 @@
           b.type = "button";
           b.className = "liveuser" + (w.stale ? " stale" : "");
           var seenTxt = w.stale ? liveLastSeenText(w.updatedAt) : "";
-          var manTxt = w.manual ? ((w.place ? "at " + w.place + " — " : "") + "set by hand, not GPS") : "";
-          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name) + (seenTxt ? " (" + seenTxt + ")" : "") + (manTxt ? " (" + manTxt + ")" : "") + (badges[k] ? " (" + badges[k] + ")" : ""));
+          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name) + (seenTxt ? " (" + seenTxt + ")" : "") + (badges[k] ? " (" + badges[k] + ")" : ""));
           var d = document.createElement("span");
           d.className = "uicon";
           d.style.borderColor = w.color;
@@ -8157,12 +8000,6 @@
             s.className = "useen";
             s.textContent = "· " + seenTxt;
             b.appendChild(s);
-          }
-          if (manTxt) {
-            var mn = document.createElement("span");
-            mn.className = "useen uman";
-            mn.textContent = "· " + manTxt;
-            b.appendChild(mn);
           }
           if (badges[k]) {
             var px = document.createElement("span");
@@ -8369,7 +8206,7 @@
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
-      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once. GPS can't get through the buildings, so indoors a dot can sit in the wrong place — a dot with a dashed ring was placed by hand at the building its owner picked: it's where they say they are, not a GPS fix. Set your own by hand in Who's here.";
+      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once. Every dot is satellite GPS only: a reading that looks like a Wi-Fi guess is thrown away rather than shown, so under a roof a dot may hold at its last real GPS spot and fade — it will never jump to a guess, and there is no setting a spot by hand. A friend whose GPS can't fix can still show as “near” someone whose phone sees them over Bluetooth — they bounce off that phone.";
       liveLegendEl.hidden = true;
       groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
@@ -8649,13 +8486,6 @@
           liveDlgTitle.textContent = "Blip your location";
           liveDlgIntro.textContent = "First pick your name and a color — that's what friends will see. Then tap Save and your spot shows on the map, just this once.";
           liveDlgNote.textContent = "This shows you once. It does not keep following you, and it doesn't turn Live on.";
-        } else if (mode === "place") {
-          // Hand placement with no saved name: the profile comes
-          // first, and the save applies the held building pick (see
-          // the save handler) — it never starts continuous sharing.
-          liveDlgTitle.textContent = "Set your spot by hand";
-          liveDlgIntro.textContent = "First pick your name and a color — that's what friends will see. Then tap Save and your dot goes to the building you picked.";
-          liveDlgNote.textContent = "A hand-set dot is where you say you are — it isn't a GPS fix, and the map labels it that way.";
         } else if (mode === "app") {
           // App mode (SpudMaps Live app only): the same dialog as the
           // single profile editor, but save-only — saving never starts
@@ -8713,7 +8543,6 @@
           try { window.SpudMapsLive?.onProfileSaved?.(); } catch (e) {}
         } else if (mode === "join") liveStartSharing();
         else if (mode === "blip") liveBlip();
-        else if (mode === "place" && livePendingPlace >= 0) { var ppi = livePendingPlace; livePendingPlace = -1; livePlaceManual(ppi); }
         else if (liveState.sharing) liveWriteNow();
         // The Wedding Wall keys off the same saved profile: refresh its
         // "posting as" line, and release a note that was held for a name.
@@ -8805,12 +8634,11 @@
             y: Math.round(liveState.mePos.y * 10) / 10,
             near: Math.round(liveState.mePos.near),
             acc: (typeof liveState.mePos.acc === "number" && isFinite(liveState.mePos.acc)) ? Math.round(liveState.mePos.acc) : null,
-            // Hand-set positions carry their honesty with them: manual
-            // + the building's name, so every viewer renders the dot
-            // as placed-by-hand. GPS writes send null, which clears
-            // both fields from the entry.
-            manual: liveState.mePos.manual ? true : null,
-            place: liveState.mePos.manual ? (liveState.mePos.place || null) : null,
+            // GPS only: there is no hand placement anymore, so these
+            // are always null — which also clears the manual flag and
+            // building name off any entry an older build wrote.
+            manual: null,
+            place: null,
             updatedAt: firebase.database.ServerValue.TIMESTAMP
           });
           if (liveState.lastFix) {
@@ -8880,26 +8708,45 @@
                 liveNote("Your phone couldn't find where you are, so nothing was sent. Step outside where you can see the sky, then try again.");
                 return;
               }
+              // GPS only: a reading with the Wi-Fi/stale signature —
+              // accuracy worse than ±50 m, no accuracy at all, or a
+              // fix timestamp over a minute old — is the phone
+              // guessing, not satellite GPS. It is never written: the
+              // tap sends nothing rather than send a guess.
+              var bAcc = (typeof pos.coords.accuracy === "number" && isFinite(pos.coords.accuracy) && pos.coords.accuracy > 0) ? pos.coords.accuracy : null;
+              var bAge = (typeof pos.timestamp === "number" && isFinite(pos.timestamp)) ? (Date.now() - pos.timestamp) : 0;
+              var bStuck = liveStuckCheck(pos.coords.latitude, pos.coords.longitude);
+              if (bStuck) {
+                // Bit-identical to the spot this phone has been
+                // reporting for 45 s+ — a stuck fix being re-sent,
+                // whatever accuracy it claims. Not written.
+                liveState.gpsWeak = true;
+                liveGpsSync();
+                liveNote("Your phone just re-sent the exact same spot it has been reporting — that's a stuck fix, not live GPS, so nothing was sent. Toggle Location off and on in your phone settings to force it to drop the old fix, step into the open, then tap Blip again.");
+                return;
+              }
+              if (bAcc === null || bAcc > 50 || bAge > 60000) {
+                liveState.gpsWeak = true;
+                liveGpsSync();
+                liveNote("That reading wasn't satellite GPS" +
+                  (bAcc !== null && bAcc > 50 ? " — it only promises ±" + Math.round(bAcc) + " m, which is your phone guessing from Wi-Fi" : "") +
+                  (bAge > 60000 ? " — it's an old fix your phone is reusing" : "") +
+                  ", so nothing was sent. GPS only here. Step into the open where your phone can see the sky, then tap Blip again.");
+                return;
+              }
+              liveState.gpsWeak = false;
               var lat = pos.coords.latitude, lng = pos.coords.longitude;
               var xy = liveXY(lat, lng, pos.coords.accuracy);
               liveState.lastFix = { lat: lat, lng: lng };
+              liveState.lastFixAcc = bAcc;
+              liveState.lastFixAt = Date.now();
               liveState.mePos = xy;
               liveState.blipPos = xy;
               liveState.blipAt = Date.now();
               liveWriteNow(); // the tap's one and only presence write
               liveRender();
               if (xy.near <= 800) {
-                if (typeof pos.coords.accuracy === "number" && pos.coords.accuracy > 50) {
-                  // A rough fix is the indoor story: GPS can't get
-                  // through the building, so the phone guessed. Say so,
-                  // and point at hand placement instead of pretending
-                  // the dot is where the guest is.
-                  liveState.gpsWeak = true;
-                  liveManualWarnShow("That Blip only promises ±" + Math.round(pos.coords.accuracy) + " m — indoors, GPS can't get through the buildings, so your phone is guessing and the dot may have landed in the wrong place. Set your spot by hand below and it will sit on your building instead.");
-                  liveNote("Blip sent, but that fix was rough (±" + Math.round(pos.coords.accuracy) + " m). If the dot landed wrong, set your spot by hand in Who's here.");
-                } else {
-                  liveNote("Done — your spot on the map just updated. That's all: nothing keeps watching you.");
-                }
+                liveNote("Done — your spot on the map just updated from a real GPS fix (±" + Math.round(bAcc) + " m). That's all: nothing keeps watching you.");
               } else {
                 liveNote("Done, but you're outside the area this map covers, so there's no dot to show.");
               }
@@ -8908,8 +8755,7 @@
               if (err && err.code === 1) {
                 liveNote("Your phone said no to sharing location, so nothing was sent. Allow location for this page, then tap Blip again.");
               } else {
-                liveManualWarnShow("Your phone couldn't get a fix at all — indoors, GPS can't get through the buildings. You don't need a fix: set your spot by hand below, with your room number or building.");
-                liveNote("Your phone couldn't find where you are, so nothing was sent. Indoors that usually means GPS can't get through the building — set your spot by hand in Who's here instead: type your room number and tap Place my dot.");
+                liveNote("Your phone couldn't get a GPS fix, so nothing was sent. Under a roof the satellites can't reach it — step outside where you can see the sky, then tap Blip again.");
               }
             }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
           } catch (e) {
@@ -8918,39 +8764,67 @@
           }
         });
       }
+      // Stuck-fix detection, shared by the watch and Blip: genuine
+      // satellite GPS never returns bit-identical coordinates twice —
+      // real fixes jitter by metres even when the phone sits still.
+      // A reading whose lat/lng exactly equal the previous raw
+      // reading is the phone re-sending a cached fix while claiming
+      // it's fresh — the Building 6 dot while its owner sat at the
+      // Stone Gazebo, claiming ±3 m the whole time. Exact repeats
+      // spanning 45 s or more mark the stream stuck; the readings
+      // stop being trusted until the coordinates actually change.
+      // (A single first reading can't be cross-checked this way: if
+      // a phone's very first answer is a confident re-send, no page
+      // can tell it apart from real GPS — the panel says so, and the
+      // fix there is the phone's Location toggle, which forces the
+      // phone itself to drop the old fix.)
+      function liveStuckCheck(lat, lng) {
+        var now = Date.now();
+        var same = liveState.lastRawLat === lat && liveState.lastRawLng === lng && liveState.lastRawAt > 0;
+        if (same) {
+          if (!liveState.stuckSince) liveState.stuckSince = liveState.lastRawAt;
+        } else {
+          liveState.stuckSince = 0;
+          liveState.gpsStuck = false;
+        }
+        liveState.lastRawLat = lat;
+        liveState.lastRawLng = lng;
+        liveState.lastRawAt = now;
+        if (same && liveState.stuckSince && now - liveState.stuckSince >= 45000) liveState.gpsStuck = true;
+        return liveState.gpsStuck;
+      }
       function liveOnPos(pos) {
         if (!liveState.sharing || !pos || !pos.coords) return;
         var lat = pos.coords.latitude, lng = pos.coords.longitude;
-        liveState.lastFix = { lat: lat, lng: lng };
-        // Indoor check: a fix that admits to ±50 m or worse, has no
+        // GPS only, two rejection tests. (1) The Wi-Fi/stale
+        // signature: a reading that admits to ±50 m or worse, has no
         // accuracy reading at all, or whose own timestamp is over a
-        // minute old is the phone guessing (Wi-Fi positioning) or
-        // reusing a stale outdoor fix — the classic indoor failure,
-        // because satellite GPS can't get through the buildings. When
-        // that happens, offer hand placement (the panel in Who's here)
-        // instead of silently letting the dot follow the guess.
+        // minute old — the phone guessing (Wi-Fi positioning) or
+        // reusing an old fix, because satellite GPS can't get
+        // through the buildings. (2) The stuck signature (see
+        // liveStuckCheck): bit-identical coordinates re-delivered
+        // for 45 s+, however good the accuracy they claim. A reading
+        // failing either test is IGNORED outright: it never moves
+        // the dot and is never written. The dot holds at the last
+        // real GPS fix and fades to last-seen on the normal clock if
+        // no real fix follows; the status line in Who's here says
+        // what's happening. maximumAge: 0 on the watch (below)
+        // already tells the phone not to hand back cached fixes at
+        // all — these checks are the enforcement when it does anyway.
         var accNow = (typeof pos.coords.accuracy === "number" && isFinite(pos.coords.accuracy) && pos.coords.accuracy > 0) ? pos.coords.accuracy : null;
         var fixAge = (typeof pos.timestamp === "number" && isFinite(pos.timestamp)) ? (Date.now() - pos.timestamp) : 0;
-        var weak = (accNow === null || accNow > 50 || fixAge > 60000);
-        if (liveState.manualPos) {
-          // A hand-set spot wins: GPS fixes no longer move the dot or
-          // overwrite the shared entry. The entry is re-written on a
-          // slow timer so it doesn't fade to last-seen while the guest
-          // sits in their room, and the weak-fix warning stays hidden —
-          // the guest already answered it by placing the dot.
-          liveState.gpsWeak = weak;
-          if (Date.now() - liveState.lastWriteTime >= 60000) liveWriteNow();
+        var stuck = liveStuckCheck(lat, lng);
+        var weak = (accNow === null || accNow > 50 || fixAge > 60000 || stuck);
+        if (weak) {
+          if (!liveState.gpsWeak) { liveState.gpsWeak = true; }
+          liveGpsSync();
           return;
         }
-        if (weak && !liveState.gpsWeak) {
-          liveManualWarnShow("Your phone's location looks unreliable right now" +
-            (accNow !== null && accNow > 50 ? " — it only promises ±" + Math.round(accNow) + " m" : "") +
-            (fixAge > 60000 ? " — its last real fix is over a minute old" : "") +
-            ". That's the indoor GPS problem: the signal can't get through the building, so the phone is guessing. Set your spot by hand below and your dot will stay where you put it.");
-        } else if (!weak && liveState.gpsWeak) {
-          liveManualWarnHide();
-        }
-        liveState.gpsWeak = weak;
+        liveState.lastFix = { lat: lat, lng: lng };
+        liveState.lastFixAcc = accNow;
+        liveState.lastFixAt = Date.now();
+        if (liveState.gpsWeak) { liveState.gpsWeak = false; }
+        liveGpsSync();
         liveState.mePos = liveXY(lat, lng, pos.coords.accuracy);
         liveRender();
         var now = Date.now();
@@ -8965,7 +8839,7 @@
           liveNote("Your phone said no to sharing location, so Live group turned off. Allow location for this page, then tap Live group again.");
         } else if (!liveState.mePos) {
           liveStopSharing();
-          liveNote("Your phone couldn't find where you are, so Live group turned off. Indoors, GPS can't get through the buildings — you can still put your dot on the map by hand: open Who's here, type your room number, and tap Place my dot.");
+          liveNote("Your phone couldn't get a GPS fix, so Live group turned off. GPS only here — step outside where you can see the sky, then tap Live group again.");
         }
         // With a fix already on the map, a transient error is ignored —
         // the watch keeps running and the next fix lands on its own.
@@ -9067,16 +8941,18 @@
           liveSyncPrompt();
           liveState.viewing = true;
           liveState.mePos = null;
-          // Turning Live on means GPS sharing: any hand-set spot from
-          // a one-time placement is cleared, and the watch takes over.
-          // (If the phone's fix is the indoor guess, liveOnPos offers
-          // hand placement again while sharing.)
-          liveState.manualPos = null;
-          liveState.manualPlace = "";
+          // GPS only: the watch takes over, and liveOnPos ignores any
+          // reading with the Wi-Fi/stale signature outright.
           liveState.gpsWeak = false;
-          liveManualWarnHide();
-          liveManualSync();
+          liveState.gpsStuck = false;
+          liveState.stuckSince = 0;
+          liveState.lastRawLat = null;
+          liveState.lastRawLng = null;
+          liveState.lastRawAt = 0;
           liveState.lastFix = null;
+          liveState.lastFixAcc = null;
+          liveState.lastFixAt = 0;
+          liveGpsSync();
           liveState.lastWrite = null;
           liveState.lastWriteTime = 0;
           // Sharing rides on the same read listeners viewing uses —
@@ -9100,7 +8976,10 @@
           }
           try {
             liveState.watchId = navigator.geolocation.watchPosition(liveOnPos, liveOnGeoErr, {
-              enableHighAccuracy: true, maximumAge: 5000, timeout: 20000
+              // maximumAge: 0 — never hand back a cached fix; every
+              // reading must be fresh from the phone's location stack,
+              // and liveOnPos still rejects any that smell like Wi-Fi.
+              enableHighAccuracy: true, maximumAge: 0, timeout: 20000
             });
           } catch (e) {
             liveStopSharing();
@@ -9126,13 +9005,10 @@
         liveMyRef = null;
         liveState.sharing = false;
         liveState.mePos = null;
-        // Stopping sharing clears any hand-set spot too — the entry it
-        // was holding up is gone with the rest of the local dot state.
-        liveState.manualPos = null;
-        liveState.manualPlace = "";
         liveState.gpsWeak = false;
-        liveManualWarnHide();
-        liveManualSync();
+        liveState.gpsStuck = false;
+        liveState.stuckSince = 0;
+        liveGpsSync();
         // The entry just removed was also the Blip's — its dot and
         // last-seen go with it, so the local blip state clears too.
         liveState.blipPos = null;
@@ -9208,6 +9084,11 @@
           // Entries older than 120s are NOT dropped: they render faded
           // with a last-seen label (see the stale branch below).
           if (typeof e.near === "number" && e.near > 800) continue;
+          // GPS only: an entry an older build wrote as hand-set is not
+          // a position this map shows at all — no dot, no row. It
+          // clears itself the next time that phone sends a real GPS
+          // fix (every current writer sends manual: null).
+          if (e.manual === true) continue;
           want[uid] = {
             x: e.x, y: e.y, me: false,
             name: typeof e.name === "string" && e.name ? e.name : "Guest",
@@ -9215,8 +9096,6 @@
             icon: liveValidIcon(e.icon),
             stale: liveIsStale(e.updatedAt, now),
             acc: (typeof e.acc === "number" && e.acc > 0 && e.acc <= 300) ? e.acc : null,
-            manual: e.manual === true,
-            place: (typeof e.place === "string" && e.place) ? e.place : "",
             updatedAt: typeof e.updatedAt === "number" ? e.updatedAt : null
           };
         }
@@ -9225,8 +9104,6 @@
             x: liveState.mePos.x, y: liveState.mePos.y, me: true,
             name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
             acc: (typeof liveState.mePos.acc === "number") ? liveState.mePos.acc : null,
-            manual: !!liveState.mePos.manual,
-            place: liveState.mePos.manual ? (liveState.mePos.place || "") : "",
             stale: false, updatedAt: null
           };
         }
@@ -9238,8 +9115,6 @@
             x: liveState.blipPos.x, y: liveState.blipPos.y, me: true,
             name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
             acc: (typeof liveState.blipPos.acc === "number") ? liveState.blipPos.acc : null,
-            manual: !!liveState.blipPos.manual,
-            place: liveState.blipPos.manual ? (liveState.blipPos.place || "") : "",
             stale: liveIsStale(liveState.blipAt, now),
             updatedAt: liveState.blipAt || null
           };
@@ -9263,17 +9138,12 @@
           rec.name = w.name; rec.color = w.color; rec.icon = w.icon; rec.me = w.me;
           rec.stale = !!w.stale; rec.updatedAt = w.updatedAt;
           rec.acc = (typeof w.acc === "number") ? w.acc : null;
-          rec.manual = !!w.manual; rec.place = w.place || "";
           rec.el.classList.toggle("stale", !!w.stale);
-          rec.el.classList.toggle("manual", !!w.manual);
           rec.el.style.background = "#fffdf8";
           rec.el.style.borderColor = w.color;
           rec.el.style.color = w.color;
           if (rec.iconEl) rec.iconEl.innerHTML = liveIconSvg(w.icon);
-          // A hand-set dot says so on its label: name, building, and
-          // "set by hand" — never dressed up as a GPS position.
           var lbl = w.name;
-          if (w.manual) lbl += " · " + (w.place ? w.place + " · " : "") + "set by hand";
           if (w.stale) lbl += " · " + liveLastSeenText(w.updatedAt);
           rec.label.textContent = lbl;
           rec.label.style.borderLeftColor = w.color;
@@ -9281,6 +9151,7 @@
         layoutDots();
         liveCountEl.textContent = (liveState.viewing || liveState.sharing) && count > 0 ? "· " + count : "";
         liveRenderUsers(want);
+        liveGpsSync();
       }
 
       // ---------- The Wedding Wall: shared notes on the Firebase `board` node ----------
@@ -11957,15 +11828,21 @@
             verdict = "You're well away from the resort — from Puerto Morelos town, a taxi back takes about 10 minutes.";
           }
           var when = new Date(pos.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+          // GPS only, same rule as the Live dots: a reading that only
+          // promises ±50 m or worse, or whose fix is over a minute
+          // old, is a Wi-Fi guess or a reused fix — it is not used
+          // here either. The watch keeps running, so a real satellite
+          // fix replaces this message the moment the phone gets one.
+          var fixAge = (typeof pos.timestamp === "number" && isFinite(pos.timestamp)) ? (Date.now() - pos.timestamp) : 0;
+          if (!(acc > 0) || acc > 50 || fixAge > 60000) {
+            read.textContent = "That reading isn't satellite GPS" + (acc > 50 ? " — it only promises ±" + Math.round(acc) + " m, which is your phone guessing from Wi-Fi" : "") + (fixAge > 60000 ? " — it's an old fix being reused" : "") + ", so it isn't being used. Step outside where you can see the sky and a real GPS fix will land here.";
+            btn.disabled = true;
+            btn.textContent = "Live location on";
+            stopBtn.hidden = false;
+            return;
+          }
           read.innerHTML = "<strong>" + verdict + "</strong> The lobby is " + fmtDist(dLobby) + " " + dir +
             " of you · accurate to about ±" + Math.round(acc) + " m · updated " + when + ".";
-          if (acc > 50) {
-            // That wide an error bar indoors means the phone is
-            // guessing: satellite GPS can't get through the buildings,
-            // so it falls back to Wi-Fi or an old fix. Say so plainly
-            // and point at the honest alternative — hand placement.
-            read.innerHTML += " That ±" + Math.round(acc) + " m is too rough to trust: indoors, GPS can't get through the buildings, so your phone is guessing from Wi-Fi or an old fix. To put your dot where you actually are, use “Set your spot by hand” in Who's here (under Live group) — type your room number and your dot sits on your building.";
-          }
           btn.disabled = true;
           btn.textContent = "Live location on";
           stopBtn.hidden = false;
@@ -11993,7 +11870,7 @@
           btn.disabled = true;
           btn.textContent = "Locating…";
           watchId = navigator.geolocation.watchPosition(onPos, onErr, {
-            enableHighAccuracy: true, maximumAge: 5000, timeout: 20000
+            enableHighAccuracy: true, maximumAge: 0, timeout: 20000
           });
         });
         stopBtn.addEventListener("click", function () {
@@ -12723,9 +12600,15 @@
           }
           if (!("geolocation" in navigator)) { cb(null, { code: 0 }); return; }
           navigator.geolocation.getCurrentPosition(function (pos) {
+            // GPS only, same rule as everywhere else on this map: a
+            // Wi-Fi-signature reading (worse than ±50 m, or a fix over
+            // a minute old) counts as no fix, never as a position.
+            var wAcc = pos.coords.accuracy;
+            var wAge = (typeof pos.timestamp === "number" && isFinite(pos.timestamp)) ? (Date.now() - pos.timestamp) : 0;
+            if (!(typeof wAcc === "number" && wAcc > 0) || wAcc > 50 || wAge > 60000) { cb(null, { code: 2 }); return; }
             var pt = liveXY(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
             cb({ x: pt.x, y: pt.y, near: pt.near, lat: pos.coords.latitude, lng: pos.coords.longitude }, null);
-          }, function (err) { cb(null, err); }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+          }, function (err) { cb(null, err); }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
         }
         function walkFromLobby(i, statusEl, why) {
           var rr = computeRoute(0, i);
