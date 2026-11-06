@@ -328,6 +328,27 @@ function summarizeSourceOutputs(text) {
   return lines.join(' | ') || '(none)';
 }
 
+// Measure a recorded audio file's loudness with ffmpeg volumedetect.
+// Returns { meanDb, linear } where linear = 10^(meanDb/20) (0..1 RMS-ish).
+// Silent/empty audio yields meanDb -Infinity and linear 0. Never throws:
+// on any ffmpeg/parse failure it returns { meanDb: null, linear: 0 }.
+async function measureVolumeDb(file) {
+  try {
+    const out = await new Promise((resolve, reject) => {
+      execFile('ffmpeg', ['-i', file, '-af', 'volumedetect', '-f', 'null', '-'],
+        { timeout: 30000, maxBuffer: 4 * 1024 * 1024 },
+        (err, stdout, stderr) => { err && !stderr ? reject(err) : resolve(String(stderr || '') + String(stdout || '')); });
+    });
+    const m = out.match(/mean_volume:\s*(-?\d+(?:\.\d+)?)\s*dB/);
+    if (!m) return { meanDb: null, linear: 0 };
+    const meanDb = parseFloat(m[1]);
+    const linear = (meanDb === -Infinity || meanDb <= -91) ? 0 : Math.pow(10, meanDb / 20);
+    return { meanDb, linear };
+  } catch (e) {
+    return { meanDb: null, linear: 0 };
+  }
+}
+
 // Log the audio state during the call: whether Chromium has a recording
 // stream on virtmic, and whether virtmic is RUNNING (reading) or IDLE
 // (stub — never reads the FIFO). Call before/after the tone.
