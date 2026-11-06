@@ -324,16 +324,30 @@ async function playTonePipe(freq, seconds) {
 // outPath. Used by MIC_MODE=fake-file as Chromium's mic (host test).
 // Must be a REAL file on disk — Chromium reads the whole file into
 // memory at first capture; a FIFO has no length and yields silence.
-// Returns { path, seconds } and records the duration in
-// fakeMicWavSeconds.
+// The tone is 60s at FULL SCALE (aevalsrc, mean ~-3 dB): ffmpeg's
+// `sine` lavfi source is quiet (mean ~-21 dB), and a 10s tone was too
+// short — the file starts playing when Chromium launches, so a 10s tone
+// is over before the ~6s record window (~27s after launch). 60s covers
+// the whole test even if it plays once and never loops. Returns
+// { path, seconds } and records the duration in fakeMicWavSeconds.
 async function makeFakeMicToneWav(freq, seconds, outPath) {
   await runCmd('ffmpeg', ['-y', '-v', 'error', '-f', 'lavfi', '-i',
-    'sine=frequency=' + freq + ':sample_rate=48000:duration=' + seconds,
+    "aevalsrc='sin(2*PI*" + freq + "*t)':s=48000:d=" + seconds,
     '-ac', '1', '-ar', '48000', outPath], 60000);
   if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 100) throw new Error('ffmpeg produced no usable fake-mic WAV');
   const secs = Math.max(0, (fs.statSync(outPath).size - 44) / (48000 * 2));
   fakeMicWavSeconds = secs;
   log('fake-file', 'tone WAV ' + outPath + ' (' + secs.toFixed(1) + 's, mono 48kHz s16)');
+  // Runner-side verification: confirm the WAV itself is loud, so a
+  // silent remote is a Chromium-delivery problem, not a WAV problem.
+  try {
+    const v = await measureVolumeDb(outPath);
+    log('fake-file', 'tone WAV rms=' + (v.linear === 0 ? '0.0000' : v.linear.toFixed(4)) +
+      ' meanDb=' + (v.meanDb === null || v.meanDb === undefined ? 'n/a' : v.meanDb));
+    if (v.meanDb === null || v.meanDb <= -40) {
+      log('fake-file', 'WARNING: tone WAV is silent/quiet (meanDb=' + v.meanDb + ') — the remote will hear nothing');
+    }
+  } catch (e) { log('fake-file', 'tone WAV measure failed: ' + e.message); }
   return { path: outPath, seconds: secs };
 }
 
@@ -639,7 +653,7 @@ async function hostCheck() {
   // Pipe mode: open the pipe BEFORE launching Chromium so the
   // pipe-source is live (fed with silence) when Chromium opens the mic.
   if (MIC_MODE === 'fake-file') {
-    try { await makeFakeMicToneWav(880, 10, FAKE_MIC_WAV); } catch (e) { log('host', 'fake-mic WAV failed: ' + e.message); }
+    try { await makeFakeMicToneWav(880, 60, FAKE_MIC_WAV); } catch (e) { log('host', 'fake-mic WAV failed: ' + e.message); }
   } else {
     try { await ensurePipe(); } catch (e) { log('host', 'pipe open failed: ' + e.message); }
   }
@@ -774,10 +788,11 @@ async function hostCheck() {
       out.twoPeerConnected = !!setup.ok;
       if (setup.ok) {
         if (MIC_MODE === 'fake-file') {
-          // Fake-file mic: the tone WAV is already looping as the mic —
-          // no pipe tone, no PulseAudio diagnostics (there is no sound
-          // server). Just let the remote peer record the looping tone.
-          log('host', 'fake-file mic looping; letting the remote peer record ~6s');
+          // Fake-file mic: the 60s tone WAV is the mic — it covers the
+          // whole test even if it plays once and never loops. No pipe
+          // tone, no PulseAudio diagnostics (there is no sound server).
+          // Just let the remote peer record the tone.
+          log('host', 'fake-file mic (60s tone); letting the remote peer record ~6s');
           await sleep(6000);
         } else {
           // Diagnostics: is Chromium actually recording from virtmic, and
