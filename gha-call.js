@@ -659,6 +659,7 @@ async function hostCheck() {
   }
 
   const browser = await chromium.launch(chromiumOpts(['--disable-features=WebRtcHideLocalIpsWithMdns']));
+  try { log('host', 'browser: ' + (await browser.version()) + (process.env.PLAYWRIGHT_CHROME_PATH ? ' (custom path ' + process.env.PLAYWRIGHT_CHROME_PATH + ')' : ' (playwright chromium)')); } catch (_) {}
   let blank = null;
   try {
     const page = await browser.newPage();
