@@ -1,9 +1,18 @@
 name: WebRTC host test
 # Verifies the GitHub Actions runner supports WebRTC media (UDP socket,
 # TURN ICE, two-peer connection). Run this first, before the call workflow.
-# Trigger: Actions tab -> Run workflow. No inputs needed.
+# Trigger: Actions tab -> Run workflow. Inputs: mic_mode — 'pipe'
+# (default, live/dynamic PulseAudio mic) or 'fake-file' (Chromium's
+# built-in --use-file-for-fake-audio-capture; a real WAV file as the
+# mic, needs NO PulseAudio at all). The fake-file flag is the ONLY
+# method with verified end-to-end WebRTC audio flow.
 on:
   workflow_dispatch:
+    inputs:
+      mic_mode:
+        description: 'Mic mode: pipe (live/dynamic) or fake-file (Chromium file-as-mic)'
+        required: false
+        default: 'pipe'
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -25,8 +34,11 @@ jobs:
         # PipeWire (see the next step).
         run: sudo apt-get update && sudo apt-get install -y pulseaudio xvfb pulseaudio-utils ffmpeg pipewire
       - name: Start audio (pipe-source or pw-loopback mic)
-        # Detect the sound server FIRST (pactl info "Server Name"):
-        # real PulseAudio vs PipeWire. Run #7 showed module-pipe-source
+        # MIC_MODE=fake-file: SKIP all PulseAudio setup — Chromium's
+        # --use-file-for-fake-audio-capture needs NO sound server at
+        # all (the mic is a real WAV file). MIC_MODE=pipe: detect the
+        # sound server FIRST (pactl info "Server Name"): real
+        # PulseAudio vs PipeWire. Run #7 showed module-pipe-source
         # creates virtmic but it stays IDLE — PulseAudio never reads the
         # FIFO — which is what pipewire-pulse's partial module emulation
         # looks like. If the server is PipeWire, use the PipeWire-native
@@ -37,8 +49,14 @@ jobs:
         # Chromium output goes to spk_sink so it never feeds back into
         # the mic. Do NOT use --use-fake-device-for-media-stream
         # (bypasses PulseAudio) or --use-file-for-fake-audio-capture
-        # (forces silence as mic input).
+        # (forces silence as mic input) — except in MIC_MODE=fake-file,
+        # where those flags ARE the mic.
         run: |
+          if [ "${{ inputs.mic_mode }}" = "fake-file" ]; then
+            echo "MIC_MODE=fake-file — no PulseAudio setup needed (Chromium file-as-mic)"
+            echo "MIC_MODE=fake-file" >> "$GITHUB_ENV"
+            exit 0
+          fi
           pulseaudio --start --exit-idle-time=-1 || echo "pulseaudio --start failed (maybe PipeWire already running)"
           pactl info
           SERVER_NAME=$(pactl info | awk -F': ' '/^Server Name/{print $2}')
@@ -68,4 +86,5 @@ jobs:
       - name: Run WebRTC host check
         env:
           PULSE_SOURCE: virtmic
+          MIC_MODE: ${{ inputs.mic_mode }}
         run: xvfb-run -a node test-host.js
