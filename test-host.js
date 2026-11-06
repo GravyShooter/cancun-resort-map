@@ -16,15 +16,19 @@ const { hostCheck } = require('./gha-call');
 (async () => {
   const h = await hostCheck();
   console.log(JSON.stringify(h, null, 2));
-  const ok = h.udpOk && h.twoPeerConnected && h.twoPeerRms > 0.005;
+  // PASS if EITHER receive path proves audio: Web Audio PCM RMS or
+  // MediaRecorder RMS above 0.005 (either proves the remote track
+  // carries audio). MediaRecorder can be blind even when RTP flows.
+  const ok = h.udpOk && h.twoPeerConnected && (h.twoPeerRms > 0.005 || (h.webaudioRms || 0) > 0.005);
   console.log('micMode=' + (h.micMode || '?') + ' mic=' + (h.micLabel || '?') + ' recvBytes=' + (h.recvBytes || 0) +
     ' meanDb=' + (h.recvDb === null || h.recvDb === undefined ? 'n/a' : (h.recvDb === -Infinity ? '-inf' : h.recvDb)) +
     ' recvRMS=' + (h.twoPeerRms || 0) +
+    ' webaudioRMS=' + (h.webaudioRms || 0) + ' webaudioSamples=' + (h.webaudioSamples || 0) + ' recvVia=' + (h.recvVia || '?') +
     ' bytesSent=' + (h.bytesSent === null || h.bytesSent === undefined ? 'n/a' : h.bytesSent) +
     ' bytesReceived=' + (h.bytesReceived === null || h.bytesReceived === undefined ? 'n/a' : h.bytesReceived) +
     ' micRecDb=' + (h.micRecDb === null || h.micRecDb === undefined ? 'n/a' : (h.micRecDb === -Infinity ? '-inf' : h.micRecDb)) +
     ' micRecRMS=' + (h.micRecRms || 0));
-  console.log(ok ? 'HOST CHECK: PASS — WebRTC media can flow on this host (micMode=' + (h.micMode || '?') + ').'
+  console.log(ok ? 'HOST CHECK: PASS — WebRTC media can flow on this host (micMode=' + (h.micMode || '?') + ', recvVia=' + (h.recvVia || '?') + ').'
                  : 'HOST CHECK: FAIL — WebRTC media cannot flow on this host.');
   process.exit(ok ? 0 : 1);
 })().catch((e) => { console.error('TEST ERROR:', e); process.exit(1); });

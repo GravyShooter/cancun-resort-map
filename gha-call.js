@@ -454,6 +454,113 @@ function recordMicWav(device, seconds, outFile) {
   });
 }
 
+// ---------- Web Audio PCM receive capture ----------
+// The page (inject.js) forwards raw Float32 PCM samples of the remote
+// track via window.__sendAudioPcm(base64, sampleRate). Node accumulates
+// them per remoteState and can (a) compute RMS, (b) write them as a
+// 16kHz mono WAV for whisper (no WebM/ffmpeg conversion needed).
+// This is the PRIMARY receive path — MediaRecorder can be blind in
+// headless Chromium (0 chunks even when RTP flows, run #11 proved it:
+// bytesSent=bytesReceived=25087 but MediaRecorder captured 0 chunks).
+// The WebM/MediaRecorder path is kept as a fallback.
+function newRemoteState() {
+  return { chunks: [], lastChunkAt: 0, pcmChunks: [], pcmSampleRate: 48000, lastPcmAt: 0, lastPcmSpeechAt: 0, lastPcmRms: 0, pcmSamples: 0 };
+}
+async function exposeRemoteReceivers(page, remoteState) {
+  await page.exposeFunction('__sendAudioChunk', (dataUrl) => {
+    try {
+      const b64 = String(dataUrl).split(',')[1] || '';
+      const buf = Buffer.from(b64, 'base64');
+      if (buf.length) { remoteState.chunks.push(buf); remoteState.lastChunkAt = Date.now(); }
+    } catch (_) { /* drop malformed chunk */ }
+  });
+  await page.exposeFunction('__sendAudioPcm', (b64, sampleRate) => {
+    try {
+      const buf = Buffer.from(String(b64 || ''), 'base64');
+      const n = Math.floor(buf.length / 4) * 4;
+      if (n < 4) return;
+      // Slice to a fresh, aligned ArrayBuffer (Buffer pools are not
+      // 4-byte aligned, so a direct Float32Array view can throw).
+      const copy = new Float32Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + n));
+      let sum = 0;
+      for (let i = 0; i < copy.length; i++) sum += copy[i] * copy[i];
+      const rms = copy.length ? Math.sqrt(sum / copy.length) : 0;
+      remoteState.pcmChunks.push(copy);
+      remoteState.pcmSamples += copy.length;
+      if (sampleRate) remoteState.pcmSampleRate = sampleRate;
+      remoteState.lastPcmAt = Date.now();
+      remoteState.lastPcmRms = rms;
+      if (rms > REMOTE_LEVEL_THRESHOLD) remoteState.lastPcmSpeechAt = Date.now();
+    } catch (_) { /* drop malformed batch */ }
+  });
+}
+// RMS over all accumulated PCM samples (does NOT clear the buffer).
+function pcmStateRms(state) {
+  if (!state.pcmSamples) return 0;
+  let sum = 0;
+  for (const c of state.pcmChunks) for (let i = 0; i < c.length; i++) sum += c[i] * c[i];
+  return Math.sqrt(sum / state.pcmSamples);
+}
+// Concatenate all accumulated PCM samples and clear the buffer.
+function takePcm(state) {
+  const all = new Float32Array(state.pcmSamples);
+  let off = 0;
+  for (const c of state.pcmChunks) { all.set(c, off); off += c.length; }
+  state.pcmChunks = [];
+  state.pcmSamples = 0;
+  return all;
+}
+// Write Float32 samples (native rate) as a standard s16le WAV.
+function writePcmWav(samples, sampleRate, outPath) {
+  const n = samples.length;
+  const data = Buffer.alloc(n * 2);
+  for (let i = 0; i < n; i++) {
+    const v = Math.max(-1, Math.min(1, samples[i]));
+    data.writeInt16LE(Math.round(v * 32767), i * 2);
+  }
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0); header.writeUInt32LE(36 + data.length, 4); header.write('WAVE', 8);
+  header.write('fmt ', 12); header.writeUInt32LE(16, 16); header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22); header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * 2, 28); header.writeUInt16LE(2, 32); header.writeUInt16LE(16, 34);
+  header.write('data', 36); header.writeUInt32LE(data.length, 40);
+  fs.writeFileSync(outPath, Buffer.concat([header, data]));
+  return outPath;
+}
+// Transcribe whatever remote audio was captured in `state` (a
+// remoteState from newRemoteState). Prefers Web Audio PCM (primary);
+// falls back to MediaRecorder WebM chunks. Clears the consumed audio.
+// Returns '' when nothing was captured or transcription fails.
+async function transcribeRemote(state) {
+  if (state.pcmSamples > 0) {
+    const samples = takePcm(state);
+    state.chunks.length = 0; // same audio window — don't transcribe twice
+    const wav = path.join(__dirname, 'remote-' + Date.now() + '.wav');
+    try {
+      writePcmWav(samples, state.pcmSampleRate, wav);
+      return await transcribe(wav);
+    } catch (e) {
+      log('stt', 'PCM transcription failed: ' + e.message);
+      return '';
+    } finally {
+      try { fs.unlinkSync(wav); } catch (_) {}
+    }
+  }
+  if (!state.chunks.length) return '';
+  const webm = Buffer.concat(state.chunks);
+  state.chunks.length = 0;
+  const tmp = path.join(__dirname, 'remote-' + Date.now() + '.webm');
+  try {
+    fs.writeFileSync(tmp, webm);
+    return await transcribe(tmp);
+  } catch (e) {
+    log('stt', 'transcription failed: ' + e.message);
+    return '';
+  } finally {
+    try { fs.unlinkSync(tmp); } catch (_) {}
+  }
+}
+
 function parseArgs(argv) {
   const a = { orderId: '', order: null, orderAudio: '', code: '', to: DEFAULT_TO, live: false, json: false, result: '' };
   for (let i = 0; i < argv.length; i++) {
@@ -503,15 +610,16 @@ function chromiumOpts(extraArgs) {
 // UDP: direct socket send to loopback + to a public STUN host.
 // TURN: ICE gathering against openrelay.metered.ca (TCP/TLS).
 // Two-peer: two RTCPeerConnections in-page; peer A uses the mic and
-// peer B's received audio is measured with MediaRecorder (decoded +
-// ffmpeg volumedetect).
+// peer B's received audio is measured TWO ways: Web Audio PCM (primary
+// — raw Float32 via ScriptProcessor, RMS in Node) and MediaRecorder
+// (fallback — decoded + ffmpeg volumedetect). PASS if either RMS > 0.005.
 //  - MIC_MODE=pipe (default): peer A uses the REAL pipe-source mic
 //    (virtmic); a tone is written into the pipe.
 //  - MIC_MODE=fake-file: peer A uses Chromium's built-in file-as-mic
 //    (the tone WAV loops automatically); no PulseAudio at all. This is
 //    the ONLY method with verified end-to-end WebRTC audio flow.
 async function hostCheck() {
-  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0, micRecDb: null, micRecRms: 0, micMode: MIC_MODE, bytesSent: null, bytesReceived: null, packetsSent: null, packetsReceived: null, ontrackFired: null, remoteTrack: null, recorderState: null };
+  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0, micRecDb: null, micRecRms: 0, micMode: MIC_MODE, bytesSent: null, bytesReceived: null, packetsSent: null, packetsReceived: null, ontrackFired: null, remoteTrack: null, recorderState: null, webaudioRms: 0, webaudioSamples: 0, recvVia: 'none' };
   // UDP socket send (loopback). EPERM here = the host blocks UDP.
   try {
     await new Promise((resolve, reject) => {
@@ -545,6 +653,11 @@ async function hostCheck() {
     // so serve a blank page from localhost instead.
     blank = await serveBlankPage();
     await page.goto(blank.url);
+    // Expose the remote-audio receivers BEFORE the two-peer setup so
+    // the Web Audio PCM batches (primary) and MediaRecorder chunks
+    // (fallback) are captured from the moment the remote track arrives.
+    const hostPcm = newRemoteState();
+    await exposeRemoteReceivers(page, hostPcm);
     const iceServers = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'turn:openrelay.metered.ca:80?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
@@ -781,10 +894,41 @@ async function hostCheck() {
             try { fs.unlinkSync(tmpWebm); } catch (_) {}
           }
         }
+        // Web Audio PCM (PRIMARY receive path): flush any buffered
+        // page PCM to Node, then measure its RMS. MediaRecorder can be
+        // blind (0 chunks) even when RTP flows; the PCM path pulls audio
+        // through the Web Audio graph, so it measures the real level.
+        try {
+          await page.evaluate(() => { try { window.__hailmary.flushPcm(true); } catch (_) {} }).catch(() => {});
+          await sleep(300);
+        } catch (e) { /* page PCM flush unavailable */ }
+        out.webaudioRms = +pcmStateRms(hostPcm).toFixed(4);
+        out.webaudioSamples = hostPcm.pcmSamples;
+        // Fallback: if Node received no PCM (expose not wired), read the
+        // in-page RMS directly (the page buffers PCM when Node is not
+        // listening).
+        if (hostPcm.pcmSamples === 0) {
+          try {
+            const pageRms = await page.evaluate(() => {
+              try { return window.__hailmary.pcmRms(); } catch (_) { return 0; }
+            });
+            if (pageRms > 0) {
+              out.webaudioRms = +pageRms.toFixed(4);
+              out.webaudioSamples = await page.evaluate(() => {
+                try { return window.__hailmary.pcmCount(); } catch (_) { return 0; }
+              });
+            }
+          } catch (e) { /* in-page RMS unavailable */ }
+        }
+        out.recvVia = out.webaudioRms > 0.005 ? (out.twoPeerRms > 0.005 ? 'both' : 'webaudio') : (out.twoPeerRms > 0.005 ? 'mediarecorder' : 'none');
+        log('host', 'remote level via webaudio rms=' + out.webaudioRms.toFixed(4) + ' samples=' + out.webaudioSamples +
+          ' | via mediarecorder rms=' + out.twoPeerRms.toFixed(4) + ' bytes=' + out.recvBytes +
+          ' | recvVia=' + out.recvVia);
         log('host', 'two-peer: state=' + setup.state + ' mic=' + (out.micLabel || '?') +
           ' recvBytes=' + out.recvBytes + ' meanDb=' +
           (out.recvDb === null || out.recvDb === undefined ? 'n/a' : (out.recvDb === -Infinity ? '-inf' : out.recvDb)) +
           ' recvRMS=' + out.twoPeerRms.toFixed(4) +
+          ' webaudioRMS=' + out.webaudioRms.toFixed(4) + ' recvVia=' + out.recvVia +
           ' micRecDb=' + (out.micRecDb === null || out.micRecDb === undefined ? 'n/a' : (out.micRecDb === -Infinity ? '-inf' : out.micRecDb)) +
           ' micRecRMS=' + out.micRecRms.toFixed(4) +
           ' bytesSent=' + (out.bytesSent === null || out.bytesSent === undefined ? 'n/a' : out.bytesSent) +
@@ -880,20 +1024,8 @@ async function converse(page, order, orderAudio, script, remoteState) {
   let ended = false;
 
   async function transcribeAccumulated() {
-    if (!chunks.length) return '';
-    const webm = Buffer.concat(chunks);
-    chunks.length = 0;
-    const tmp = path.join(__dirname, 'remote-' + Date.now() + '.webm');
-    try {
-      fs.writeFileSync(tmp, webm);
-      const text = await transcribe(tmp);
-      return text;
-    } catch (e) {
-      log('stt', 'transcription failed: ' + e.message);
-      return '';
-    } finally {
-      try { fs.unlinkSync(tmp); } catch (_) {}
-    }
+    // Prefers Web Audio PCM (primary); falls back to MediaRecorder WebM.
+    return transcribeRemote(remoteState);
   }
 
   async function speakReply(key) {
@@ -914,9 +1046,14 @@ async function converse(page, order, orderAudio, script, remoteState) {
 
   const t0 = Date.now();
   log('listen', 'two-way loop started (timeout ' + (CONVERSATION_TIMEOUT_MS / 1000) + 's)');
-  // Fallback speech detection: the remote Analyser can read 0 in headless
-  // Chrome even when audio flows, but MediaRecorder chunks for speech are
-  // much larger than silence frames. Track chunk growth alongside level.
+  // Speech detection (three signals, any one counts):
+  //  - Web Audio PCM (PRIMARY): a recent ~500ms batch above threshold.
+  //    The ScriptProcessor forces the graph to render, so this works
+  //    even when MediaRecorder/Analyser read 0 in headless Chrome.
+  //  - remote Analyser level (can read 0 in headless even when audio
+  //    flows — kept as a secondary signal).
+  //  - MediaRecorder chunk growth (chunks for speech are much larger
+  //    than silence frames).
   let prevChunkCount = 0;
   while (Date.now() - t0 < CONVERSATION_TIMEOUT_MS && !ended) {
     const level = await page.evaluate(() => {
@@ -928,11 +1065,14 @@ async function converse(page, order, orderAudio, script, remoteState) {
       const last = chunks[chunks.length - 1];
       if (last && last.length > 150) chunkSpeech = true;
     }
+    // Web Audio PCM: batches arrive ~every 500ms, so accept one up to
+    // 800ms old. lastPcmRms is the RMS of the most recent batch.
+    const pcmSpeech = (Date.now() - remoteState.lastPcmAt) < 800 && remoteState.lastPcmRms > REMOTE_LEVEL_THRESHOLD;
     const now = Date.now();
-    if (level > REMOTE_LEVEL_THRESHOLD || chunkSpeech) {
-      if (!speaking) { speaking = true; log('listen', 'staff speaking (level ' + level.toFixed(3) + (chunkSpeech ? ', chunk' : '') + ')'); }
+    if (level > REMOTE_LEVEL_THRESHOLD || chunkSpeech || pcmSpeech) {
+      if (!speaking) { speaking = true; log('listen', 'staff speaking (level ' + level.toFixed(3) + (chunkSpeech ? ', chunk' : '') + (pcmSpeech ? ', pcm ' + remoteState.lastPcmRms.toFixed(3) : '') + ')'); }
       lastSpeechAt = now;
-    } else if (speaking && now - lastSpeechAt > UTTERANCE_SILENCE_MS && now - remoteState.lastChunkAt > 500) {
+    } else if (speaking && now - lastSpeechAt > UTTERANCE_SILENCE_MS && now - remoteState.lastChunkAt > 500 && now - remoteState.lastPcmSpeechAt > 500) {
       // End of an utterance — transcribe it and respond.
       speaking = false;
       const text = await transcribeAccumulated();
@@ -1081,14 +1221,11 @@ async function dryRunFakeFile(order, script, orderAudio, host) {
     await page.addInitScript(INJECT);
     blank = await serveBlankPage();
     await page.goto(blank.url);
-    const chunks = [];
-    await page.exposeFunction('__sendAudioChunk', (dataUrl) => {
-      try {
-        const b64 = String(dataUrl).split(',')[1] || '';
-        const buf = Buffer.from(b64, 'base64');
-        if (buf.length) chunks.push(buf);
-      } catch (_) {}
-    });
+    // Receive remote audio (Web Audio PCM primary, MediaRecorder
+    // fallback) from the peer that hears the order WAV.
+    const simState = newRemoteState();
+    await exposeRemoteReceivers(page, simState);
+    const chunks = simState.chunks; // MediaRecorder fallback (same array)
     const sim = await page.evaluate(async () => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       const apmOff = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
@@ -1128,17 +1265,16 @@ async function dryRunFakeFile(order, script, orderAudio, host) {
     // Let the looping order WAV flow to the peer, then check capture.
     await sleep(8000);
     const bytes = chunks.reduce((n, b) => n + b.length, 0);
-    log('dry-run', 'order WAV captured by peer: chunks=' + chunks.length + ' bytes=' + bytes);
-    if (!(chunks.length > 0 && bytes > 1000)) {
-      result.error = 'order audio was not captured by the peer (chunks=' + chunks.length + ', bytes=' + bytes + ')';
+    const orderPcmRms = pcmStateRms(simState);
+    log('dry-run', 'order WAV captured by peer: pcmSamples=' + simState.pcmSamples + ' pcmRms=' + orderPcmRms.toFixed(4) + ' | chunks=' + chunks.length + ' bytes=' + bytes);
+    const orderCaptured = (simState.pcmSamples > 0 && orderPcmRms > 0.005) || (chunks.length > 0 && bytes > 1000);
+    if (!orderCaptured) {
+      result.error = 'order audio was not captured by the peer (pcmSamples=' + simState.pcmSamples + ', pcmRms=' + orderPcmRms.toFixed(4) + ', chunks=' + chunks.length + ', bytes=' + bytes + ')';
       return result;
     }
-    // Transcribe the captured order audio to confirm it is the order.
-    const webm = Buffer.concat(chunks);
-    const tmp = path.join(__dirname, 'dryrun-fake-remote.webm');
-    fs.writeFileSync(tmp, webm);
-    let text = '';
-    try { text = await transcribe(tmp); } finally { try { fs.unlinkSync(tmp); } catch (_) {} }
+    // Transcribe the captured order audio to confirm it is the order
+    // (prefers Web Audio PCM; falls back to MediaRecorder WebM).
+    const text = await transcribeRemote(simState);
     log('dry-run', 'Whisper transcribed captured order audio as: "' + text + '"');
     result.transcript.push({ speaker: 'us', text: '(order via fake-file mic) ' + script.text });
     if (text) result.transcript.push({ speaker: 'peer-heard', text });
@@ -1154,9 +1290,12 @@ async function dryRunFakeFile(order, script, orderAudio, host) {
 async function dryRun(order, script, orderAudio) {
   log('dry-run', 'phase 1 — WebRTC host check');
   const host = await hostCheck();
-  const hostOk = host.udpOk && host.twoPeerConnected && host.twoPeerRms > 0.005;
+  // PASS if EITHER receive path proves audio: Web Audio PCM RMS or
+  // MediaRecorder RMS above 0.005 (either proves the remote track
+  // carries audio).
+  const hostOk = host.udpOk && host.twoPeerConnected && (host.twoPeerRms > 0.005 || (host.webaudioRms || 0) > 0.005);
   log('dry-run', 'host check: udp=' + host.udpOk + ' turnRelay=' + host.turnRelay +
-    ' twoPeer=' + host.twoPeerConnected + ' rms=' + host.twoPeerRms + ' -> ' + (hostOk ? 'PASS' : 'FAIL'));
+    ' twoPeer=' + host.twoPeerConnected + ' rms=' + host.twoPeerRms + ' webaudioRms=' + (host.webaudioRms || 0) + ' recvVia=' + (host.recvVia || '?') + ' -> ' + (hostOk ? 'PASS' : 'FAIL'));
   if (!hostOk) {
     return { ok: false, mode: 'dry-run', host, error: 'host WebRTC check failed (udp=' + host.udpOk + ', twoPeer=' + host.twoPeerConnected + ')' };
   }
@@ -1180,15 +1319,11 @@ async function dryRun(order, script, orderAudio) {
     // so serve a blank page from localhost instead.
     blank = await serveBlankPage();
     await page.goto(blank.url);
-    // Expose the chunk receiver (same as the live loop).
-    const chunks = [];
-    await page.exposeFunction('__sendAudioChunk', (dataUrl) => {
-      try {
-        const b64 = String(dataUrl).split(',')[1] || '';
-        const buf = Buffer.from(b64, 'base64');
-        if (buf.length) chunks.push(buf);
-      } catch (_) {}
-    });
+    // Expose the remote-audio receivers (Web Audio PCM primary,
+    // MediaRecorder fallback — same as the live loop).
+    const simState = newRemoteState();
+    await exposeRemoteReceivers(page, simState);
+    const chunks = simState.chunks; // MediaRecorder fallback (same array)
     // Build a simulated staff peer: peer A plays a staff utterance
     // (test fixture audio), peer B receives it through the hooked
     // RTCPeerConnection (so inject.js captures + records it).
@@ -1246,18 +1381,17 @@ async function dryRun(order, script, orderAudio) {
     const staffDur = await playAudio(page, staffAudio);
     await sleep(1500); // let the last recorder slice + forwarding flush
     const staffBytes = chunks.reduce((n, b) => n + b.length, 0);
-    log('dry-run', 'staff fixture played (' + staffDur.toFixed(1) + 's); peer B captured chunks=' + chunks.length + ' bytes=' + staffBytes);
-    if (!(chunks.length > 0 && staffBytes > 1000)) {
-      result.error = 'simulated staff audio was not captured (chunks=' + chunks.length + ', bytes=' + staffBytes + ')';
+    const staffPcmRms = pcmStateRms(simState);
+    log('dry-run', 'staff fixture played (' + staffDur.toFixed(1) + 's); peer B captured pcmSamples=' + simState.pcmSamples + ' pcmRms=' + staffPcmRms.toFixed(4) + ' | chunks=' + chunks.length + ' bytes=' + staffBytes);
+    const staffCaptured = (simState.pcmSamples > 0 && staffPcmRms > 0.005) || (chunks.length > 0 && staffBytes > 1000);
+    if (!staffCaptured) {
+      result.error = 'simulated staff audio was not captured (pcmSamples=' + simState.pcmSamples + ', pcmRms=' + staffPcmRms.toFixed(4) + ', chunks=' + chunks.length + ', bytes=' + staffBytes + ')';
       return result;
     }
-    // Transcribe the captured chunks with Whisper.
-    const webm = Buffer.concat(chunks);
-    chunks.length = 0; // reset for the reply capture below
-    const tmp = path.join(__dirname, 'dryrun-remote.webm');
-    fs.writeFileSync(tmp, webm);
-    let text = '';
-    try { text = await transcribe(tmp); } finally { try { fs.unlinkSync(tmp); } catch (_) {} }
+    // Transcribe the captured audio with Whisper (prefers Web Audio
+    // PCM; falls back to MediaRecorder WebM). Clears both buffers, so
+    // the reply capture below starts fresh.
+    const text = await transcribeRemote(simState);
     log('dry-run', 'Whisper transcribed simulated staff as: "' + text + '"');
     result.transcript.push({ speaker: 'staff', text });
     const res = respond(text, order);
@@ -1274,9 +1408,10 @@ async function dryRun(order, script, orderAudio) {
     const playedSec = await playAudio(page, replyBuf);
     await sleep(1500);
     const replyBytes = chunks.reduce((n, b) => n + b.length, 0);
-    log('dry-run', 'reply "' + res.key + '" played (' + playedSec.toFixed(1) + 's); peer B captured chunks=' + chunks.length + ' bytes=' + replyBytes);
-    result.ok = chunks.length > 0 && replyBytes > 1000;
-    if (!result.ok) result.error = 'reply was not captured by the peer (chunks=' + chunks.length + ', bytes=' + replyBytes + ')';
+    const replyPcmRms = pcmStateRms(simState);
+    log('dry-run', 'reply "' + res.key + '" played (' + playedSec.toFixed(1) + 's); peer B captured pcmSamples=' + simState.pcmSamples + ' pcmRms=' + replyPcmRms.toFixed(4) + ' | chunks=' + chunks.length + ' bytes=' + replyBytes);
+    result.ok = (simState.pcmSamples > 0 && replyPcmRms > 0.005) || (chunks.length > 0 && replyBytes > 1000);
+    if (!result.ok) result.error = 'reply was not captured by the peer (pcmSamples=' + simState.pcmSamples + ', pcmRms=' + replyPcmRms.toFixed(4) + ', chunks=' + chunks.length + ', bytes=' + replyBytes + ')';
     return result;
   } finally {
     if (blank) blank.close();
@@ -1306,17 +1441,12 @@ async function liveCall(order, script, orderAudio, to, orderId, idToken, directC
   const context = await chromium.launchPersistentContext(PROFILE_DIR, chromiumOpts());
   await context.addInitScript(INJECT);
   const page = context.pages()[0] || await context.newPage();
-  // Receive remote audio chunks forwarded by inject.js. Exposed BEFORE
-  // login/dial so no early staff audio is dropped (the MediaRecorder
-  // starts as soon as a remote track is captured on call connect).
-  const remoteState = { chunks: [], lastChunkAt: 0 };
-  await page.exposeFunction('__sendAudioChunk', (dataUrl) => {
-    try {
-      const b64 = String(dataUrl).split(',')[1] || '';
-      const buf = Buffer.from(b64, 'base64');
-      if (buf.length) { remoteState.chunks.push(buf); remoteState.lastChunkAt = Date.now(); }
-    } catch (_) { /* drop malformed chunk */ }
-  });
+  // Receive remote audio forwarded by inject.js. Exposed BEFORE
+  // login/dial so no early staff audio is dropped (capture starts as
+  // soon as a remote track is captured on call connect). Web Audio PCM
+  // is the primary receive path; MediaRecorder chunks are the fallback.
+  const remoteState = newRemoteState();
+  await exposeRemoteReceivers(page, remoteState);
   try {
     await ensureLoggedIn(page, email, orderId, idToken, directCode, onWaitingForCode);
     event({ event: 'dialing', to });
