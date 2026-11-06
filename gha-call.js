@@ -47,7 +47,7 @@ const path = require('path');
 const dgram = require('dgram');
 const http = require('http');
 const os = require('os');
-const { chromium } = require('playwright');
+const { chromium, firefox } = require('playwright');
 const { buildScript } = require('./script');
 const { respond } = require('./respond');
 const { transcribe } = require('./whisper');
@@ -95,6 +95,18 @@ const PAPLAY_SINK = process.env.PULSE_TTS_SINK || 'tts_sink';
 //    one whole-file read; a FIFO has length -1 -> silence). The file
 //    MUST be a real file on disk.
 const MIC_MODE = process.env.MIC_MODE || 'pipe';
+// BROWSER: 'chromium' (default, Playwright bundled), 'chrome' (Google
+// Chrome stable via PLAYWRIGHT_CHROME_PATH), or 'firefox' (Playwright
+// Firefox with media.navigator.streams.fake — a generated tone as the
+// mic; no file, no PulseAudio). Firefox is the fallback when the
+// Chromium-family encoder eats the audio on the runner (runs #13-16:
+// mic track carries the tone, bytes flow, remote decodes silence in
+// BOTH Playwright Chromium and Chrome 157).
+const BROWSER = (process.env.BROWSER || 'chromium').toLowerCase();
+const IS_FIREFOX = BROWSER === 'firefox';
+// Fake-mic path: Chromium fake-file flag OR Firefox fake-stream pref.
+// Both give the mic track a tone with no sound server.
+const IS_FAKE_MIC = MIC_MODE === 'fake-file' || IS_FIREFOX;
 const FAKE_MIC_WAV = process.env.FAKE_MIC_WAV || path.join(os.tmpdir(), 'fake-mic.wav');
 // Set FAKE_MIC_NOLOOP=1 (env, read at Chromium launch) to append
 // %noloop to the fake-file flag (play once, then silence) — used for
@@ -619,6 +631,23 @@ function chromiumOpts(extraArgs) {
   return opts;
 }
 
+// Launch the configured browser for the host check. Firefox uses
+// Playwright's firefox.launch with the fake-stream prefs (generated
+// tone mic, permission auto-granted); Chromium/Chrome use
+// chromium.launch with chromiumOpts (fake-file flags when applicable).
+async function launchHostBrowser(extraArgs) {
+  if (IS_FIREFOX) {
+    return firefox.launch({
+      headless: true,
+      firefoxUserPrefs: {
+        'media.navigator.streams.fake': true,
+        'media.navigator.permission.disabled': true,
+      },
+    });
+  }
+  return chromium.launch(chromiumOpts(extraArgs));
+}
+
 // ---------- WebRTC host check (dry-run phase 1) ----------
 // Returns { udpOk, turnRelay, twoPeerConnected, twoPeerRms, micLabel, recvDb, recvBytes, micMode }.
 // UDP: direct socket send to loopback + to a public STUN host.
@@ -650,15 +679,18 @@ async function hostCheck() {
   // Fake-file mode: generate the tone WAV BEFORE launching Chromium
   // (the flag needs the real file to exist at launch; it is loaded
   // whole at first capture). No pipe, no PulseAudio needed.
+  // Firefox: no WAV — the fake-stream pref generates the tone.
   // Pipe mode: open the pipe BEFORE launching Chromium so the
   // pipe-source is live (fed with silence) when Chromium opens the mic.
-  if (MIC_MODE === 'fake-file') {
+  if (MIC_MODE === 'fake-file' && !IS_FIREFOX) {
     try { await makeFakeMicToneWav(880, 60, FAKE_MIC_WAV); } catch (e) { log('host', 'fake-mic WAV failed: ' + e.message); }
+  } else if (IS_FIREFOX) {
+    log('host', 'firefox fake-stream mic (generated tone via media.navigator.streams.fake)');
   } else {
     try { await ensurePipe(); } catch (e) { log('host', 'pipe open failed: ' + e.message); }
   }
 
-  const browser = await chromium.launch(chromiumOpts(['--disable-features=WebRtcHideLocalIpsWithMdns']));
+  const browser = await launchHostBrowser(['--disable-features=WebRtcHideLocalIpsWithMdns']);
   try { log('host', 'browser: ' + (await browser.version()) + (process.env.PLAYWRIGHT_CHROME_PATH ? ' (custom path ' + process.env.PLAYWRIGHT_CHROME_PATH + ')' : ' (playwright chromium)')); } catch (_) {}
   let blank = null;
   try {
@@ -785,17 +817,18 @@ async function hostCheck() {
           await sleep(250);
         }
         return { ok: pcA.connectionState === 'connected', state, micInfo };
-      }, MIC_MODE === 'fake-file');
+      }, IS_FAKE_MIC);
       log('host', 'two-peer setup: connected=' + setup.ok + ' state=' + (setup.state || '?') +
         ' mic=' + (setup.micInfo ? JSON.stringify(setup.micInfo) : 'none') +
         (setup.micError ? ' micError=' + setup.micError : ''));
       out.micLabel = setup.micInfo ? setup.micInfo.label : '';
       out.twoPeerConnected = !!setup.ok;
       if (setup.ok) {
-        if (MIC_MODE === 'fake-file') {
-          // Fake-file mic: the 60s tone WAV is the mic — it covers the
-          // whole test even if it plays once and never loops. No pipe
-          // tone, no PulseAudio diagnostics (there is no sound server).
+        if (IS_FAKE_MIC) {
+          // Fake mic: Chromium fake-file = the 60s tone WAV (covers the
+          // whole test even if it plays once and never loops); Firefox
+          // fake-stream = the pref's generated tone. No pipe tone, no
+          // PulseAudio diagnostics (there is no sound server).
           // DECISIVE diagnostic first: measure the LOCAL mic track RMS
           // in-page (Web Audio Analyser on window.__hostMicStream).
           // If local RMS ~0.7 the fake device works and the failure is
@@ -832,7 +865,7 @@ async function hostCheck() {
               log('host', 'local mic track rms=' + localMic.rms.toFixed(4) + ' muted=' + localMic.muted + ' enabled=' + localMic.enabled + ' state=' + localMic.readyState + ' label=' + localMic.label);
             }
           } catch (e) { log('host', 'local mic track measure failed: ' + e.message); }
-          log('host', 'fake-file mic (60s tone); letting the remote peer record ~4s');
+          log('host', (IS_FIREFOX ? 'firefox fake-stream mic (generated tone)' : 'fake-file mic (60s tone)') + '; letting the remote peer record ~4s');
           await sleep(4000);
         } else {
           // Diagnostics: is Chromium actually recording from virtmic, and
