@@ -1,0 +1,23 @@
+name: WebRTC host test
+# Verifies the GitHub Actions runner supports WebRTC media (UDP socket,
+# TURN ICE, two-peer connection). Run this first, before the call workflow.
+# Trigger: Actions tab -> Run workflow. No inputs needed.
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright + Chromium
+        working-directory: hailmary-gha
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
+      - name: Run WebRTC host check
+        working-directory: hailmary-gha
+        run: node test-host.js

@@ -1,0 +1,1 @@
+{"dependencies":{"playwright":"^1.49.0"},"description":"Free two-way conversational room-service caller for GitHub Actions (TextNow web).","name":"hailmary-gha","private":true,"scripts":{"call":"node gha-call.js --order-id $ORDER_ID --live","dry-run":"node gha-call.js --order sample-order.json --dry-run","test-host":"node test-host.js"},"version":"1.0.0"}

@@ -1,0 +1,8 @@
+node_modules/
+.browser-profile/
+whisper.cpp/
+result.json
+remote-*.webm
+dryrun-remote.webm
+textnow-after-email.png
+*.log

@@ -1,0 +1,89 @@
+name: Room service call (two-way)
+# FREE two-way conversational room-service caller (TextNow web).
+# Listens to the front desk, transcribes with whisper.cpp (offline),
+# and answers back with rule-based Chatty Porch replies.
+#
+# Triggers:
+#   - workflow_dispatch: run now for one order. Inputs: order_id
+#     (Firebase hailmary-orders-2way push ID), code (optional 6-digit
+#     TextNow login code; otherwise polled from Firebase), dry_run.
+#   - schedule: every 5 min, poll Firebase for a queued two-way order
+#     and process it automatically (so tapping Auto-call on the order
+#     page eventually places the call with no manual trigger).
+# The order (items, room, guest, language) and the Chatty Porch order
+# audio (orderAudioB64) live in Firebase node hailmary-orders-2way.
+# The parent writes the order + audio there and, when the run reports
+# waiting-for-code, reads Gmail and writes the 6-digit code to the order.
+on:
+  workflow_dispatch:
+    inputs:
+      order_id:
+        description: 'Firebase hailmary-orders-2way push ID'
+        required: false
+        default: ''
+      code:
+        description: '6-digit TextNow login code (optional — otherwise polled from Firebase)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run only (verify host + loop, no live call)'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '*/5 * * * *'
+jobs:
+  call:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FIREBASE_NODE: hailmary-orders-2way
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install system deps
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng cmake build-essential
+      - name: Install Playwright + Chromium
+        working-directory: hailmary-gha
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
+      - name: Install whisper.cpp + tiny model
+        working-directory: hailmary-gha
+        run: |
+          git clone --depth 1 https://github.com/ggerganov/whisper.cpp.git
+          cmake -S whisper.cpp -B whisper.cpp/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build whisper.cpp/build -j --target whisper-cli
+          ./whisper.cpp/models/download-ggml-model.sh tiny.en
+      - name: Resolve order id
+        id: order
+        working-directory: hailmary-gha
+        run: |
+          if [ -n "${{ inputs.order_id }}" ]; then
+            echo "id=${{ inputs.order_id }}" >> "$GITHUB_OUTPUT"
+          else
+            ID=$(node poll-queued.js)
+            if [ "$ID" = "NO_QUEUED_ORDER" ]; then ID=""; fi
+            echo "id=$ID" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run two-way call
+        if: steps.order.outputs.id != '' || inputs.dry_run == true
+        working-directory: hailmary-gha
+        env:
+          HAILMARY_LIVE: '1'
+          WHISPER_BIN: ${{ github.workspace }}/hailmary-gha/whisper.cpp/build/bin/whisper-cli
+          WHISPER_MODEL: ${{ github.workspace }}/hailmary-gha/whisper.cpp/models/ggml-tiny.en.bin
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            node gha-call.js --order-id "${{ steps.order.outputs.id }}" --dry-run --result result.json
+          else
+            node gha-call.js --order-id "${{ steps.order.outputs.id }}" --live --code "${{ inputs.code }}" --result result.json
+          fi
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: call-result-${{ steps.order.outputs.id }}
+          path: hailmary-gha/result.json
+          if-no-files-found: ignore
