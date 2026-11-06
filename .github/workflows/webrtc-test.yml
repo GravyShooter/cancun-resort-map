@@ -18,34 +18,53 @@ jobs:
           npm ci
           npx playwright install chromium --with-deps
       - name: Install virtual audio + display
-        # PulseAudio provides the pipe-source mic (virtmic); xvfb-run
-        # provides a display session for the audio stack.
-        # ffmpeg is needed by the host check (tone generation + volume
-        # measurement of the received audio).
-        run: sudo apt-get update && sudo apt-get install -y pulseaudio xvfb pulseaudio-utils ffmpeg
-      - name: Start PulseAudio (pipe-source mic)
-        # NEW method: module-pipe-source creates a REAL source (virtmic)
-        # fed live by the FIFO /tmp/virtmic. The module creates the FIFO
-        # itself — do NOT mkfifo it. Node writes raw s16le 48kHz mono PCM
-        # into the FIFO; Chromium opens virtmic as its mic. This replaces
-        # the Vexa remap-source approach (Chromium refuses a .monitor as
-        # a mic input). Chromium output goes to spk_sink so it never
-        # feeds back into the mic. Do NOT use
-        # --use-fake-device-for-media-stream (bypasses PulseAudio) or
-        # --use-file-for-fake-audio-capture (forces silence as mic input).
-        # Fail fast if the module does not load (PipeWire on ubuntu-24.04
-        # only partially emulates pactl modules).
+        # PulseAudio provides the mic; xvfb-run provides a display
+        # session for the audio stack. ffmpeg is needed by the host
+        # check (tone generation + volume measurement). pipewire is
+        # installed so pw-loopback exists if the server turns out to be
+        # PipeWire (see the next step).
+        run: sudo apt-get update && sudo apt-get install -y pulseaudio xvfb pulseaudio-utils ffmpeg pipewire
+      - name: Start audio (pipe-source or pw-loopback mic)
+        # Detect the sound server FIRST (pactl info "Server Name"):
+        # real PulseAudio vs PipeWire. Run #7 showed module-pipe-source
+        # creates virtmic but it stays IDLE — PulseAudio never reads the
+        # FIFO — which is what pipewire-pulse's partial module emulation
+        # looks like. If the server is PipeWire, use the PipeWire-native
+        # pw-loopback instead: it mirrors tts_sink into a REAL source
+        # node named virtmic, fed by paplay into tts_sink. If it is real
+        # PulseAudio, keep module-pipe-source (FIFO /tmp/virtmic).
+        # MIC_FEED (pipe|paplay) is passed to Node via GITHUB_ENV.
+        # Chromium output goes to spk_sink so it never feeds back into
+        # the mic. Do NOT use --use-fake-device-for-media-stream
+        # (bypasses PulseAudio) or --use-file-for-fake-audio-capture
+        # (forces silence as mic input).
         run: |
-          pulseaudio --start --exit-idle-time=-1
+          pulseaudio --start --exit-idle-time=-1 || echo "pulseaudio --start failed (maybe PipeWire already running)"
+          pactl info
+          SERVER_NAME=$(pactl info | awk -F': ' '/^Server Name/{print $2}')
+          echo "audio server: $SERVER_NAME"
           pactl load-module module-null-sink sink_name=spk_sink sink_properties=device.description=spk_sink
-          pactl load-module module-pipe-source source_name=virtmic file=/tmp/virtmic format=s16le rate=48000 channels=1
           pactl set-default-sink spk_sink
-          pactl set-default-source virtmic
+          if echo "$SERVER_NAME" | grep -qi pipewire; then
+            echo "MIC_FEED=paplay" >> "$GITHUB_ENV"
+            echo "PipeWire detected — pw-loopback virtmic (feed via paplay into tts_sink)"
+            pactl load-module module-null-sink sink_name=tts_sink sink_properties=device.description=tts_sink
+            nohup pw-loopback --capture-props='node.target=tts_sink' --playback-props='media.class=Audio/Source node.name=virtmic node.description=virtmic' > /tmp/pw-loopback.log 2>&1 &
+            disown
+            sleep 3
+            cat /tmp/pw-loopback.log || true
+            pactl set-default-source virtmic
+          else
+            echo "MIC_FEED=pipe" >> "$GITHUB_ENV"
+            echo "PulseAudio detected — module-pipe-source virtmic (feed via /tmp/virtmic FIFO)"
+            pactl load-module module-pipe-source source_name=virtmic file=/tmp/virtmic format=s16le rate=48000 channels=1
+            pactl set-default-source virtmic
+            ls -l /tmp/virtmic
+          fi
           pactl list sinks short
           pactl list sources short
           pactl get-default-source
-          pactl list sources short | grep -q virtmic || { echo "ERROR: virtmic source missing (module-pipe-source did not load)"; exit 1; }
-          ls -l /tmp/virtmic
+          pactl list sources short | grep -q virtmic || { echo "ERROR: virtmic source missing"; exit 1; }
       - name: Run WebRTC host check
         env:
           PULSE_SOURCE: virtmic
