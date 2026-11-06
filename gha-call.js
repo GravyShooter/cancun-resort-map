@@ -55,7 +55,7 @@ const INJECT = fs.readFileSync(path.join(__dirname, 'inject.js'), 'utf8');
 const DEFAULT_TO = '+529988728500'; // Excellence Riviera Cancun front desk
 const DEFAULT_EMAIL = 'cgd2049+textnow@gmail.com';
 const PROFILE_DIR = path.join(__dirname, '.browser-profile');
-const AUDIO_DIR = path.join(__dirname, 'audio');
+const AUDIO_DIR = __dirname; // flat repo-root layout: reply MP3s sit next to this file
 const CONVERSATION_TIMEOUT_MS = 90 * 1000; // max two-way conversation
 const UTTERANCE_SILENCE_MS = 1500; // silence after speech = end of utterance
 const REMOTE_LEVEL_THRESHOLD = 0.02; // RMS above this = staff speaking
@@ -470,7 +470,7 @@ async function dryRun(order, script, orderAudio) {
     // (test fixture audio), peer B receives it through the hooked
     // RTCPeerConnection (so inject.js captures + records it).
     const staffFile = path.join(AUDIO_DIR, 'test-staff-everything.mp3');
-    if (!fs.existsSync(staffFile)) throw new Error('missing test fixture audio/test-staff-everything.mp3');
+    if (!fs.existsSync(staffFile)) throw new Error('missing test fixture test-staff-everything.mp3');
     const staffAudio = fs.readFileSync(staffFile);
     const staffB64 = staffAudio.toString('base64');
     const sim = await page.evaluate(async (staffB64) => {

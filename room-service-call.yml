@@ -45,12 +45,10 @@ jobs:
       - name: Install system deps
         run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng cmake build-essential
       - name: Install Playwright + Chromium
-        working-directory: hailmary-gha
         run: |
           npm ci
           npx playwright install chromium --with-deps
       - name: Install whisper.cpp + tiny model
-        working-directory: hailmary-gha
         run: |
           git clone --depth 1 https://github.com/ggerganov/whisper.cpp.git
           cmake -S whisper.cpp -B whisper.cpp/build -DCMAKE_BUILD_TYPE=Release
@@ -58,7 +56,6 @@ jobs:
           ./whisper.cpp/models/download-ggml-model.sh tiny.en
       - name: Resolve order id
         id: order
-        working-directory: hailmary-gha
         run: |
           if [ -n "${{ inputs.order_id }}" ]; then
             echo "id=${{ inputs.order_id }}" >> "$GITHUB_OUTPUT"
@@ -69,11 +66,10 @@ jobs:
           fi
       - name: Run two-way call
         if: steps.order.outputs.id != '' || inputs.dry_run == true
-        working-directory: hailmary-gha
         env:
           HAILMARY_LIVE: '1'
-          WHISPER_BIN: ${{ github.workspace }}/hailmary-gha/whisper.cpp/build/bin/whisper-cli
-          WHISPER_MODEL: ${{ github.workspace }}/hailmary-gha/whisper.cpp/models/ggml-tiny.en.bin
+          WHISPER_BIN: ${{ github.workspace }}/whisper.cpp/build/bin/whisper-cli
+          WHISPER_MODEL: ${{ github.workspace }}/whisper.cpp/models/ggml-tiny.en.bin
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             node gha-call.js --order-id "${{ steps.order.outputs.id }}" --dry-run --result result.json
@@ -85,5 +81,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: call-result-${{ steps.order.outputs.id }}
-          path: hailmary-gha/result.json
+          path: result.json
           if-no-files-found: ignore

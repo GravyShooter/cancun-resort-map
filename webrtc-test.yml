@@ -14,10 +14,8 @@ jobs:
         with:
           node-version: '20'
       - name: Install Playwright + Chromium
-        working-directory: hailmary-gha
         run: |
           npm ci
           npx playwright install chromium --with-deps
       - name: Run WebRTC host check
-        working-directory: hailmary-gha
         run: node test-host.js
