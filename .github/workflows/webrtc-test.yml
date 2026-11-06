@@ -13,6 +13,10 @@ on:
         description: 'Mic mode: pipe (live/dynamic) or fake-file (Chromium file-as-mic)'
         required: false
         default: 'pipe'
+      browser:
+        description: 'Browser: chromium (Playwright bundled, default) or chrome (Google Chrome stable)'
+        required: false
+        default: 'chromium'
 # Do NOT cancel a running host test when a new run is dispatched: each
 # run is a separate diagnostic and cancelling it loses its results (run
 # #9 was cancelled before its micRecDb was logged). New runs queue
@@ -33,6 +37,15 @@ jobs:
         run: |
           npm ci
           npx playwright install chromium --with-deps
+          if [ "${{ inputs.browser }}" = "chrome" ]; then
+            echo "browser=chrome — installing Google Chrome stable via Playwright"
+            npx playwright install chrome --with-deps
+            CHROME_BIN=$(find ~/.cache/ms-playwright -maxdepth 3 -path '*chrome-linux/chrome' -type f 2>/dev/null | head -1)
+            if [ -z "$CHROME_BIN" ]; then echo "ERROR: google chrome binary not found"; exit 1; fi
+            echo "PLAYWRIGHT_CHROME_PATH=$CHROME_BIN" >> "$GITHUB_ENV"
+            echo "Using Google Chrome: $CHROME_BIN"
+            "$CHROME_BIN" --version
+          fi
       - name: Install virtual audio + display
         # PulseAudio provides the mic; xvfb-run provides a display
         # session for the audio stack. ffmpeg is needed by the host
