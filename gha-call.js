@@ -1660,7 +1660,12 @@ async function main() {
   if (!args.live) {
     result = await dryRun(order, script, orderAudio);
   } else {
-    result = await liveCall(order, script, orderAudio, args.to, args.orderId, idToken, args.code, onWaitingForCode);
+    // Dial target: a Firebase order may carry its own `to` (e.g. a test
+    // call to a buddy's number); otherwise fall back to --to / DEFAULT_TO
+    // (the front desk). Log it so the dialed number is always visible.
+    const dialTo = (order.to && String(order.to).trim()) || args.to;
+    log('dial', 'dial target: ' + dialTo + (order.to ? ' (from order.to)' : ' (default --to)'));
+    result = await liveCall(order, script, orderAudio, dialTo, args.orderId, idToken, args.code, onWaitingForCode);
     // Report the live result back to Firebase so the order page shows it.
     if (args.orderId && idToken) {
       await fb.patchOrder(args.orderId, idToken, {
