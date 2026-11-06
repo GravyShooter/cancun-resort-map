@@ -68,6 +68,15 @@ const PIPE_RATE = 48000; // Hz, mono s16le
 const PIPE_BYTES_PER_SEC = PIPE_RATE * 2; // 96000 bytes/sec
 const PIPE_CHUNK = 9600; // 100 ms of audio
 const SILENCE_CHUNK = Buffer.alloc(PIPE_CHUNK); // zeros
+// Audio feed, chosen by the workflow from `pactl info` (Server Name):
+//  - 'pipe' (default, real PulseAudio): write PCM into the FIFO
+//    /tmp/virtmic (module-pipe-source).
+//  - 'paplay' (PipeWire): the mic is a pw-loopback source (virtmic)
+//    mirroring tts_sink; feed PCM into tts_sink via a paplay process
+//    reading raw PCM from stdin. The workflow sets MIC_FEED in
+//    GITHUB_ENV based on the detected server.
+const MIC_FEED = process.env.MIC_FEED || 'pipe';
+const PAPLAY_SINK = process.env.PULSE_TTS_SINK || 'tts_sink';
 const CONVERSATION_TIMEOUT_MS = 90 * 1000; // max two-way conversation
 const UTTERANCE_SILENCE_MS = 1500; // silence after speech = end of utterance
 const REMOTE_LEVEL_THRESHOLD = 0.02; // RMS above this = staff speaking
@@ -120,7 +129,7 @@ async function serveBlankPage() {
 // and raw s16le 48kHz mono PCM when speaking. Chromium opens virtmic
 // as its real mic (selected explicitly by deviceId). No paplay, no
 // tts_sink, no Web Audio fake mic anywhere.
-const { execFile } = require('child_process');
+const { execFile, spawn } = require('child_process');
 const os = require('os');
 
 function runCmd(cmd, args, timeoutMs) {
@@ -137,7 +146,7 @@ function runCmd(cmd, args, timeoutMs) {
 }
 
 // --- Pipe writer (singleton, kept open for the whole run) ---
-const pipeState = { stream: null, opening: null, keepaliveOn: false, speaking: false, keepaliveBusy: false };
+const pipeState = { stream: null, proc: null, opening: null, keepaliveOn: false, speaking: false, keepaliveBusy: false };
 
 function pipeOpenStream() {
   return new Promise((resolve, reject) => {
@@ -148,14 +157,32 @@ function pipeOpenStream() {
   });
 }
 
-// Open the pipe FIFO for writing (once per process) and start the
-// silence keepalive. Retries while the module creates the FIFO.
-// The writer stays open until the process exits; closing it suspends
-// the source, so never close it mid-run.
+// Open the audio feed for writing (once per process) and start the
+// silence keepalive. Two feeds, chosen by MIC_FEED env (set by the
+// workflow from `pactl info`):
+//  - 'pipe' (default, real PulseAudio): the FIFO /tmp/virtmic, created
+//    by module-pipe-source. Retries while the module creates the FIFO.
+//  - 'paplay' (PipeWire): a paplay process reading raw s16le 48kHz mono
+//    PCM from stdin and playing it into tts_sink, which pw-loopback
+//    mirrors as the virtmic source. Same byte-stream contract as the
+//    FIFO (silence keepalive + speech PCM), so pipeWrite/keepalive/
+//    playPipePcm work unchanged — pipeState.stream is either the FIFO
+//    stream or paplay's stdin. The writer stays open until the process
+//    exits; closing it suspends the source, so never close it mid-run.
 async function ensurePipe() {
   if (pipeState.stream) return pipeState.stream;
   if (pipeState.opening) return pipeState.opening;
   pipeState.opening = (async () => {
+    if (MIC_FEED === 'paplay') {
+      const proc = spawn('paplay', ['--device=' + PAPLAY_SINK, '--raw', '--format=s16le', '--rate=' + String(PIPE_RATE), '--channels=1'], { stdio: ['pipe', 'ignore', 'ignore'] });
+      proc.on('error', (e) => { log('pipe', 'paplay spawn error: ' + e.message); });
+      proc.on('exit', (code) => { log('pipe', 'paplay exited code=' + code + ' (feed is dead)'); });
+      pipeState.stream = proc.stdin;
+      pipeState.proc = proc;
+      log('pipe', 'paplay feed open (stdin -> ' + PAPLAY_SINK + ', s16le 48kHz mono)');
+      startPipeKeepalive();
+      return proc.stdin;
+    }
     let lastErr = null;
     for (let attempt = 0; attempt < 20; attempt++) {
       try {
@@ -184,7 +211,7 @@ function pipeWrite(buf) {
   return new Promise((resolve, reject) => {
     let done = false;
     const to = setTimeout(() => {
-      if (!done) { done = true; reject(new Error('pipe write stalled 10s (is PulseAudio reading ' + PIPE_PATH + '?)')); }
+      if (!done) { done = true; reject(new Error('pipe write stalled 10s (feed=' + MIC_FEED + ': is the reader draining ' + (MIC_FEED === 'paplay' ? 'paplay stdin' : PIPE_PATH) + '?)')); }
     }, 10000);
     const onErr = (e) => { if (!done) { done = true; clearTimeout(to); reject(e); } };
     stream.once('error', onErr);
@@ -267,19 +294,69 @@ async function playTonePipe(freq, seconds) {
   return playPipePcm(pcm);
 }
 
-// Mean volume (dB) of an audio file via ffmpeg volumedetect.
-// Returns { meanDb, linear } — linear = 10^(dB/20); 0 when silent/empty.
-async function measureVolumeDb(file) {
+// ---------- Audio diagnostics (so the next failure is diagnosable) ----------
+// Run a command, return stdout ('' on failure). Used for pactl/parec
+// probes so the CI log shows the sound-server state.
+async function shOut(cmd, args, timeoutMs) {
   try {
-    const { stderr } = await runCmd('ffmpeg', ['-i', file, '-af', 'volumedetect', '-f', 'null', '-'], 60000);
-    const m = /mean_volume:\s*(-?[\d.]+|-\s*inf)\s*dB/.exec(stderr);
-    if (!m) return { meanDb: null, linear: 0 };
-    if (/inf/i.test(m[1])) return { meanDb: -Infinity, linear: 0 };
-    const db = parseFloat(m[1]);
-    return { meanDb: db, linear: Number.isFinite(db) ? Math.pow(10, db / 20) : 0 };
-  } catch (e) {
-    return { meanDb: null, linear: 0 };
+    const { stdout } = await runCmd(cmd, args, timeoutMs || 15000);
+    return stdout || '';
+  } catch (e) { return ''; }
+}
+
+// Condense `pactl list sources` to one line per source: name + state.
+function summarizePactlSources(text) {
+  const lines = [];
+  for (const b of String(text || '').split(/\n\s*\n/)) {
+    const name = (b.match(/Name:\s*(\S+)/) || [])[1];
+    const state = (b.match(/State:\s*(\S+)/) || [])[1];
+    if (name) lines.push(name + ':' + (state || '?'));
   }
+  return lines.join(' | ') || '(none)';
+}
+
+// Condense `pactl list source-outputs` to one line per output: id,
+// source, and the owning application (Chromium when it is recording).
+function summarizeSourceOutputs(text) {
+  const lines = [];
+  for (const b of String(text || '').split(/\n\s*\n/)) {
+    const id = (b.match(/Source Output #(\d+)/) || [])[1];
+    const src = (b.match(/Source:\s*(\S+)/) || [])[1];
+    const app = (b.match(/application\.name\s*=\s*"([^"]*)"/) || [])[1];
+    if (id) lines.push('#' + id + ' src=' + (src || '?') + ' app=' + (app || '?'));
+  }
+  return lines.join(' | ') || '(none)';
+}
+
+// Log the audio state during the call: whether Chromium has a recording
+// stream on virtmic, and whether virtmic is RUNNING (reading) or IDLE
+// (stub — never reads the FIFO). Call before/after the tone.
+async function logAudioState(tag) {
+  const so = await shOut('pactl', ['list', 'source-outputs']);
+  log('host', tag + ' source-outputs: ' + summarizeSourceOutputs(so));
+  const src = await shOut('pactl', ['list', 'sources']);
+  log('host', tag + ' sources: ' + summarizePactlSources(src));
+}
+
+// Record the mic source (virtmic) to a WAV file for N seconds, in the
+// background. Resolves when the recording is done. This proves whether
+// virtmic itself carries audio, independent of Chromium/WebRTC: if the
+// parec WAV has the tone, the feed works and the problem is
+// Chromium/WebRTC; if silent, the feed (FIFO/paplay) -> virtmic is
+// broken. parec attaching also wakes an IDLE source, which is fine —
+// it reads a copy, it does not steal audio from Chromium.
+function recordMicWav(device, seconds, outFile) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; resolve(); } };
+    let child;
+    try {
+      child = spawn('parec', ['--device=' + device, '--file-format=wav', outFile]);
+    } catch (e) { finish(); return; }
+    child.on('error', finish);
+    child.on('exit', finish);
+    setTimeout(() => { try { child.kill('SIGTERM'); } catch (_) {} }, seconds * 1000);
+  });
 }
 
 function parseArgs(argv) {
@@ -325,7 +402,7 @@ function chromiumOpts(extraArgs) {
 // remap-source mic was always silent here (Chromium refuses a .monitor
 // as a mic input).
 async function hostCheck() {
-  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0 };
+  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0, micRecDb: null, micRecRms: 0 };
   // UDP socket send (loopback). EPERM here = the host blocks UDP.
   try {
     await new Promise((resolve, reject) => {
@@ -452,9 +529,37 @@ async function hostCheck() {
       out.micLabel = setup.micInfo ? setup.micInfo.label : '';
       out.twoPeerConnected = !!setup.ok;
       if (setup.ok) {
-        // Write a 6s tone into the pipe while the remote peer records.
-        await playTonePipe(880, 6);
+        // Diagnostics: is Chromium actually recording from virtmic, and
+        // is virtmic RUNNING (reading) or IDLE (stub)? Log before tone.
+        await logAudioState('pre-tone');
+        // Record virtmic directly with parec (proves whether the mic
+        // source itself carries audio, independent of WebRTC). Runs
+        // concurrently with the tone below.
+        const micWav = path.join(os.tmpdir(), 'hostcheck-mic-' + Date.now() + '.wav');
+        const micRecP = recordMicWav('virtmic', 3, micWav);
+        // Write a 6s tone into the feed while the remote peer records.
+        // A stalled write (PulseAudio not reading) must not abort the
+        // diagnostics below — log it and continue to measure.
+        try { await playTonePipe(880, 6); } catch (e) { log('host', 'tone write failed: ' + e.message); }
         await sleep(800); // let the last recorder slice flush
+        await logAudioState('post-tone');
+        await micRecP;
+        // Measure the parec recording: if virtmic has the tone, the feed
+        // works and the problem is Chromium/WebRTC; if silent, the feed
+        // (FIFO/paplay) -> virtmic is broken.
+        try {
+          if (fs.existsSync(micWav) && fs.statSync(micWav).size > 100) {
+            const mvol = await measureVolumeDb(micWav);
+            out.micRecDb = mvol.meanDb;
+            out.micRecRms = +mvol.linear.toFixed(4);
+            log('host', 'mic parec: bytes=' + fs.statSync(micWav).size + ' meanDb=' +
+              (mvol.meanDb === null || mvol.meanDb === undefined ? 'n/a' : (mvol.meanDb === -Infinity ? '-inf' : mvol.meanDb)) +
+              ' rms=' + out.micRecRms.toFixed(4));
+          } else {
+            log('host', 'mic parec: no recording captured (file missing/empty)');
+          }
+        } catch (e) { log('host', 'mic parec measure failed: ' + e.message); }
+        finally { try { fs.unlinkSync(micWav); } catch (_) {} }
         const captured = await page.evaluate(async () => {
           const rec = window.__hostRec;
           if (!rec || !rec.recorder) return { chunksB64: [], totalBytes: 0, chunkCount: 0 };
@@ -488,7 +593,9 @@ async function hostCheck() {
         log('host', 'two-peer: state=' + setup.state + ' mic=' + (out.micLabel || '?') +
           ' recvBytes=' + out.recvBytes + ' meanDb=' +
           (out.recvDb === null || out.recvDb === undefined ? 'n/a' : (out.recvDb === -Infinity ? '-inf' : out.recvDb)) +
-          ' recvRMS=' + out.twoPeerRms.toFixed(4));
+          ' recvRMS=' + out.twoPeerRms.toFixed(4) +
+          ' micRecDb=' + (out.micRecDb === null || out.micRecDb === undefined ? 'n/a' : (out.micRecDb === -Infinity ? '-inf' : out.micRecDb)) +
+          ' micRecRMS=' + out.micRecRms.toFixed(4));
       }
     }
   } finally {
