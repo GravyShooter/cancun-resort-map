@@ -976,7 +976,14 @@ async function hostCheck() {
           let total = 0;
           for (const b of rec.chunks) {
             const ab = await b.arrayBuffer();
-            bufs.push(Buffer.from(ab).toString('base64'));
+            // Browser-native base64 (no Node Buffer inside the page).
+            const bytes = new Uint8Array(ab);
+            let bin = '';
+            const CH = 8192;
+            for (let i = 0; i < bytes.length; i += CH) {
+              bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+            }
+            bufs.push(btoa(bin));
             total += b.size;
           }
           return { chunksB64: bufs, totalBytes: total, chunkCount: rec.chunks.length };
