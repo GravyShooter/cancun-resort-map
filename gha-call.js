@@ -46,6 +46,7 @@ const fs = require('fs');
 const path = require('path');
 const dgram = require('dgram');
 const http = require('http');
+const os = require('os');
 const { chromium } = require('playwright');
 const { buildScript } = require('./script');
 const { respond } = require('./respond');
@@ -77,6 +78,31 @@ const SILENCE_CHUNK = Buffer.alloc(PIPE_CHUNK); // zeros
 //    GITHUB_ENV based on the detected server.
 const MIC_FEED = process.env.MIC_FEED || 'pipe';
 const PAPLAY_SINK = process.env.PULSE_TTS_SINK || 'tts_sink';
+// Mic mode (MIC_MODE env, set by the workflow):
+//  - 'pipe' (default): live/dynamic mic — PulseAudio pipe-source or
+//    pw-loopback, fed by Node writing PCM. ONLY mode that supports
+//    live replies during a call.
+//  - 'fake-file': Chromium's built-in --use-file-for-fake-audio-capture.
+//    A REAL WAV file (mono 48kHz s16) is the mic; Chromium loads it
+//    whole at first capture and loops it (or plays once with %noloop).
+//    Needs NO PulseAudio at all — it bypasses the sound server
+//    entirely. This is the ONLY method with verified end-to-end WebRTC
+//    audio flow in real browsers (Semaphore LiveKit 16/16 E2E).
+//    LIMIT: the file is fixed at Chromium launch — live/dynamic TTS
+//    mid-call is IMPOSSIBLE. For a call, the WAV is the ORDER audio
+//    (one-shot); staff replies cannot be answered with new audio.
+//    A FIFO does NOT work here (Chromium ReadWavFile does GetLength +
+//    one whole-file read; a FIFO has length -1 -> silence). The file
+//    MUST be a real file on disk.
+const MIC_MODE = process.env.MIC_MODE || 'pipe';
+const FAKE_MIC_WAV = process.env.FAKE_MIC_WAV || path.join(os.tmpdir(), 'fake-mic.wav');
+// Set FAKE_MIC_NOLOOP=1 (env, read at Chromium launch) to append
+// %noloop to the fake-file flag (play once, then silence) — used for
+// the live one-shot order call. Tests loop the file (default) so audio
+// is always present.
+// Duration (seconds) of the fake-file mic WAV, set when it is generated
+// (used by playAudio in fake-file mode to report how long the order is).
+let fakeMicWavSeconds = 0;
 const CONVERSATION_TIMEOUT_MS = 90 * 1000; // max two-way conversation
 const UTTERANCE_SILENCE_MS = 1500; // silence after speech = end of utterance
 const REMOTE_LEVEL_THRESHOLD = 0.02; // RMS above this = staff speaking
@@ -130,7 +156,6 @@ async function serveBlankPage() {
 // as its real mic (selected explicitly by deviceId). No paplay, no
 // tts_sink, no Web Audio fake mic anywhere.
 const { execFile, spawn } = require('child_process');
-const os = require('os');
 
 function runCmd(cmd, args, timeoutMs) {
   return new Promise((resolve, reject) => {
@@ -294,6 +319,55 @@ async function playTonePipe(freq, seconds) {
   return playPipePcm(pcm);
 }
 
+// ---------- Fake-file mic (MIC_MODE=fake-file) ----------
+// Generate a REAL WAV file (mono 48kHz s16) containing a sine tone, at
+// outPath. Used by MIC_MODE=fake-file as Chromium's mic (host test).
+// Must be a REAL file on disk — Chromium reads the whole file into
+// memory at first capture; a FIFO has no length and yields silence.
+// Returns { path, seconds } and records the duration in
+// fakeMicWavSeconds.
+async function makeFakeMicToneWav(freq, seconds, outPath) {
+  await runCmd('ffmpeg', ['-y', '-v', 'error', '-f', 'lavfi', '-i',
+    'sine=frequency=' + freq + ':sample_rate=48000:duration=' + seconds,
+    '-ac', '1', '-ar', '48000', outPath], 60000);
+  if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 100) throw new Error('ffmpeg produced no usable fake-mic WAV');
+  const secs = Math.max(0, (fs.statSync(outPath).size - 44) / (48000 * 2));
+  fakeMicWavSeconds = secs;
+  log('fake-file', 'tone WAV ' + outPath + ' (' + secs.toFixed(1) + 's, mono 48kHz s16)');
+  return { path: outPath, seconds: secs };
+}
+
+// Convert an MP3 buffer to a REAL WAV file (mono 48kHz s16) at outPath.
+// Used by MIC_MODE=fake-file call mode: the ORDER audio becomes the mic
+// WAV. Returns { path, seconds } and records the duration in
+// fakeMicWavSeconds. The WAV is the whole order (greeting + items +
+// closing); Chromium plays it (once with %noloop, else looping).
+async function mp3ToWavFile(mp3Buf, outPath) {
+  const tag = 'hailmary-fake-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
+  const tmpMp3 = path.join(os.tmpdir(), tag + '.mp3');
+  fs.writeFileSync(tmpMp3, mp3Buf);
+  try {
+    await runCmd('ffmpeg', ['-y', '-v', 'error', '-i', tmpMp3, '-ac', '1', '-ar', '48000', outPath], 60000);
+    if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 100) throw new Error('ffmpeg produced no usable WAV');
+    const secs = Math.max(0, (fs.statSync(outPath).size - 44) / (48000 * 2));
+    fakeMicWavSeconds = secs;
+    log('fake-file', 'order WAV ' + outPath + ' (' + secs.toFixed(1) + 's, mono 48kHz s16)');
+    return { path: outPath, seconds: secs };
+  } finally {
+    try { fs.unlinkSync(tmpMp3); } catch (_) {}
+  }
+}
+
+// The --use-file-for-fake-audio-capture flag value for the current mode:
+// the WAV path, plus %noloop when FAKE_MIC_NOLOOP=1 (live one-shot
+// order: play once, then silence). Reads process.env at call time so
+// liveCall can enable %noloop just before launching Chromium. Empty
+// string when not fake-file mode.
+function fakeFileFlagValue() {
+  if (MIC_MODE !== 'fake-file') return '';
+  return FAKE_MIC_WAV + (process.env.FAKE_MIC_NOLOOP === '1' ? '%noloop' : '');
+}
+
 // ---------- Audio diagnostics (so the next failure is diagnosable) ----------
 // Run a command, return stdout ('' on failure). Used for pactl/parec
 // probes so the CI log shows the sound-server state.
@@ -400,12 +474,24 @@ function chromiumOpts(extraArgs) {
   const opts = {
     headless: true,
     // --use-fake-ui-for-media-stream auto-accepts the mic permission
-    // prompt. NEVER add --use-fake-device-for-media-stream (it bypasses
-    // PulseAudio entirely, so the pipe-source mic is never used) or
-    // --use-file-for-fake-audio-capture (forces silence as mic input).
-    // Those two flags break the pipe-source mic (see inject.js).
+    // prompt. In MIC_MODE=fake-file, Chromium's built-in file-as-mic is
+    // used: --use-fake-device-for-media-stream + --use-file-for-fake-
+    // audio-capture=<wav> (+ --disable-audio-input). Those three flags
+    // are REQUIRED for the fake-file mic and are the ONLY method with
+    // verified end-to-end WebRTC audio flow. In MIC_MODE=pipe they must
+    // NOT be present — --use-fake-device-for-media-stream bypasses
+    // PulseAudio entirely (so the pipe-source mic is never used) and
+    // --use-file-for-fake-audio-capture forces silence as mic input.
+    // So the fake-file flags are added ONLY in fake-file mode.
     args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--no-sandbox', '--disable-dev-shm-usage'].concat(extraArgs || []),
   };
+  if (MIC_MODE === 'fake-file') {
+    const flagVal = fakeFileFlagValue();
+    opts.args.push('--use-fake-device-for-media-stream');
+    opts.args.push('--use-file-for-fake-audio-capture=' + flagVal);
+    opts.args.push('--disable-audio-input');
+    log('fake-file', 'Chromium mic = file ' + flagVal);
+  }
   // On GitHub Actions Playwright installs its own Chromium; on this VM
   // the path is fixed. Honour an explicit path when set.
   if (process.env.PLAYWRIGHT_CHROME_PATH) opts.executablePath = process.env.PLAYWRIGHT_CHROME_PATH;
@@ -413,17 +499,19 @@ function chromiumOpts(extraArgs) {
 }
 
 // ---------- WebRTC host check (dry-run phase 1) ----------
-// Returns { udpOk, turnRelay, twoPeerConnected, twoPeerRms, micLabel, recvDb, recvBytes }.
+// Returns { udpOk, turnRelay, twoPeerConnected, twoPeerRms, micLabel, recvDb, recvBytes, micMode }.
 // UDP: direct socket send to loopback + to a public STUN host.
 // TURN: ICE gathering against openrelay.metered.ca (TCP/TLS).
-// Two-peer: two RTCPeerConnections in-page; peer A uses the REAL
-// pipe-source mic (virtmic), a tone is written into the pipe, and peer
-// B's received audio is measured with MediaRecorder (decoded + ffmpeg
-// volumedetect). This tests the pipe-source mic path — the old Vexa
-// remap-source mic was always silent here (Chromium refuses a .monitor
-// as a mic input).
+// Two-peer: two RTCPeerConnections in-page; peer A uses the mic and
+// peer B's received audio is measured with MediaRecorder (decoded +
+// ffmpeg volumedetect).
+//  - MIC_MODE=pipe (default): peer A uses the REAL pipe-source mic
+//    (virtmic); a tone is written into the pipe.
+//  - MIC_MODE=fake-file: peer A uses Chromium's built-in file-as-mic
+//    (the tone WAV loops automatically); no PulseAudio at all. This is
+//    the ONLY method with verified end-to-end WebRTC audio flow.
 async function hostCheck() {
-  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0, micRecDb: null, micRecRms: 0 };
+  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0, micRecDb: null, micRecRms: 0, micMode: MIC_MODE };
   // UDP socket send (loopback). EPERM here = the host blocks UDP.
   try {
     await new Promise((resolve, reject) => {
@@ -437,9 +525,16 @@ async function hostCheck() {
     log('host', 'UDP socket send to loopback: FAIL (' + e.message + ')');
   }
 
-  // Open the pipe BEFORE launching Chromium so the pipe-source is live
-  // (fed with silence) when Chromium opens the mic.
-  try { await ensurePipe(); } catch (e) { log('host', 'pipe open failed: ' + e.message); }
+  // Fake-file mode: generate the tone WAV BEFORE launching Chromium
+  // (the flag needs the real file to exist at launch; it is loaded
+  // whole at first capture). No pipe, no PulseAudio needed.
+  // Pipe mode: open the pipe BEFORE launching Chromium so the
+  // pipe-source is live (fed with silence) when Chromium opens the mic.
+  if (MIC_MODE === 'fake-file') {
+    try { await makeFakeMicToneWav(880, 10, FAKE_MIC_WAV); } catch (e) { log('host', 'fake-mic WAV failed: ' + e.message); }
+  } else {
+    try { await ensurePipe(); } catch (e) { log('host', 'pipe open failed: ' + e.message); }
+  }
 
   const browser = await chromium.launch(chromiumOpts(['--disable-features=WebRtcHideLocalIpsWithMdns']));
   let blank = null;
@@ -476,37 +571,47 @@ async function hostCheck() {
     log('host', 'ICE candidates: host=' + host.length + ' srflx=' + srflx.length + ' relay=' + relay.length + ' (gathering ' + cands.gathering + ')');
     out.turnRelay = relay.length > 0;
     if (out.udpOk && (host.length > 0 || srflx.length > 0)) {
-      // UDP path exists — try two peers over host/srflx, using the REAL
-      // pipe-source mic (virtmic). A tone is written into the pipe and
-      // must arrive at the remote peer; the remote side is measured
-      // with MediaRecorder (not a Web Audio Analyser).
-      const setup = await page.evaluate(async () => {
+      // UDP path exists — try two peers over host/srflx. Fake-file mode:
+      // the mic is Chromium's built-in file-as-mic (the tone WAV loops
+      // automatically); no pipe, no virtmic. Pipe mode: the REAL
+      // pipe-source mic (virtmic). The remote side is measured with
+      // MediaRecorder (not a Web Audio Analyser).
+      const setup = await page.evaluate(async (isFakeFile) => {
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         let micInfo = null;
         let micStream = null;
-        // Labels are only revealed after permission, so get a temp
-        // stream first, enumerate, then open virtmic EXPLICITLY by
-        // deviceId (the default device has an empty label by design and
-        // may not be virtmic). APM off: it can gate non-speech audio.
+        // APM off: it can gate non-speech audio (the tone is non-speech).
         const apmOff = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
         try {
-          const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
-          let virtId = '';
-          let devList = [];
-          try {
-            const devs = await navigator.mediaDevices.enumerateDevices();
-            devList = devs.filter((d) => d.kind === 'audioinput').map((d) => ({ label: d.label || '', deviceId: (d.deviceId || '').slice(0, 12) }));
-            const virt = devs.find((d) => d.kind === 'audioinput' && /virtmic/i.test(d.label || ''));
-            if (virt) virtId = virt.deviceId;
-          } catch (e) { /* enumerate failed; fall back to default */ }
-          tmp.getTracks().forEach((t) => t.stop());
-          if (virtId) {
-            micStream = await navigator.mediaDevices.getUserMedia({ audio: Object.assign({ deviceId: { exact: virtId } }, apmOff) });
-          } else {
+          if (isFakeFile) {
+            // Fake-file mic: the fake device is the only audio input —
+            // no virtmic selection needed. Just open it with APM off.
             micStream = await navigator.mediaDevices.getUserMedia({ audio: apmOff });
+            const track = micStream.getAudioTracks()[0];
+            micInfo = { label: track.label || '', readyState: track.readyState, enabled: track.enabled, virtmicFound: false, fakeFile: true, devices: [] };
+          } else {
+            // Labels are only revealed after permission, so get a temp
+            // stream first, enumerate, then open virtmic EXPLICITLY by
+            // deviceId (the default device has an empty label by design
+            // and may not be virtmic). APM off: it can gate non-speech audio.
+            const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
+            let virtId = '';
+            let devList = [];
+            try {
+              const devs = await navigator.mediaDevices.enumerateDevices();
+              devList = devs.filter((d) => d.kind === 'audioinput').map((d) => ({ label: d.label || '', deviceId: (d.deviceId || '').slice(0, 12) }));
+              const virt = devs.find((d) => d.kind === 'audioinput' && /virtmic/i.test(d.label || ''));
+              if (virt) virtId = virt.deviceId;
+            } catch (e) { /* enumerate failed; fall back to default */ }
+            tmp.getTracks().forEach((t) => t.stop());
+            if (virtId) {
+              micStream = await navigator.mediaDevices.getUserMedia({ audio: Object.assign({ deviceId: { exact: virtId } }, apmOff) });
+            } else {
+              micStream = await navigator.mediaDevices.getUserMedia({ audio: apmOff });
+            }
+            const track = micStream.getAudioTracks()[0];
+            micInfo = { label: track.label || '', deviceId: (track.getSettings().deviceId || '').slice(0, 12), readyState: track.readyState, enabled: track.enabled, virtmicFound: !!virtId, devices: devList };
           }
-          const track = micStream.getAudioTracks()[0];
-          micInfo = { label: track.label || '', deviceId: (track.getSettings().deviceId || '').slice(0, 12), readyState: track.readyState, enabled: track.enabled, virtmicFound: !!virtId, devices: devList };
         } catch (e) {
           return { ok: false, micError: String(e), micInfo: null };
         }
@@ -543,44 +648,52 @@ async function hostCheck() {
           await sleep(250);
         }
         return { ok: pcA.connectionState === 'connected', state, micInfo };
-      });
+      }, MIC_MODE === 'fake-file');
       log('host', 'two-peer setup: connected=' + setup.ok + ' state=' + (setup.state || '?') +
         ' mic=' + (setup.micInfo ? JSON.stringify(setup.micInfo) : 'none') +
         (setup.micError ? ' micError=' + setup.micError : ''));
       out.micLabel = setup.micInfo ? setup.micInfo.label : '';
       out.twoPeerConnected = !!setup.ok;
       if (setup.ok) {
-        // Diagnostics: is Chromium actually recording from virtmic, and
-        // is virtmic RUNNING (reading) or IDLE (stub)? Log before tone.
-        await logAudioState('pre-tone');
-        // Record virtmic directly with parec (proves whether the mic
-        // source itself carries audio, independent of WebRTC). Runs
-        // concurrently with the tone below.
-        const micWav = path.join(os.tmpdir(), 'hostcheck-mic-' + Date.now() + '.wav');
-        const micRecP = recordMicWav('virtmic', 3, micWav);
-        // Write a 6s tone into the feed while the remote peer records.
-        // A stalled write (PulseAudio not reading) must not abort the
-        // diagnostics below — log it and continue to measure.
-        try { await playTonePipe(880, 6); } catch (e) { log('host', 'tone write failed: ' + e.message); }
-        await sleep(800); // let the last recorder slice flush
-        await logAudioState('post-tone');
-        await micRecP;
-        // Measure the parec recording: if virtmic has the tone, the feed
-        // works and the problem is Chromium/WebRTC; if silent, the feed
-        // (FIFO/paplay) -> virtmic is broken.
-        try {
-          if (fs.existsSync(micWav) && fs.statSync(micWav).size > 100) {
-            const mvol = await measureVolumeDb(micWav);
-            out.micRecDb = mvol.meanDb;
-            out.micRecRms = +mvol.linear.toFixed(4);
-            log('host', 'mic parec: bytes=' + fs.statSync(micWav).size + ' meanDb=' +
-              (mvol.meanDb === null || mvol.meanDb === undefined ? 'n/a' : (mvol.meanDb === -Infinity ? '-inf' : mvol.meanDb)) +
-              ' rms=' + out.micRecRms.toFixed(4));
-          } else {
-            log('host', 'mic parec: no recording captured (file missing/empty)');
-          }
-        } catch (e) { log('host', 'mic parec measure failed: ' + e.message); }
-        finally { try { fs.unlinkSync(micWav); } catch (_) {} }
+        if (MIC_MODE === 'fake-file') {
+          // Fake-file mic: the tone WAV is already looping as the mic —
+          // no pipe tone, no PulseAudio diagnostics (there is no sound
+          // server). Just let the remote peer record the looping tone.
+          log('host', 'fake-file mic looping; letting the remote peer record ~6s');
+          await sleep(6000);
+        } else {
+          // Diagnostics: is Chromium actually recording from virtmic, and
+          // is virtmic RUNNING (reading) or IDLE (stub)? Log before tone.
+          await logAudioState('pre-tone');
+          // Record virtmic directly with parec (proves whether the mic
+          // source itself carries audio, independent of WebRTC). Runs
+          // concurrently with the tone below.
+          const micWav = path.join(os.tmpdir(), 'hostcheck-mic-' + Date.now() + '.wav');
+          const micRecP = recordMicWav('virtmic', 3, micWav);
+          // Write a 6s tone into the feed while the remote peer records.
+          // A stalled write (PulseAudio not reading) must not abort the
+          // diagnostics below — log it and continue to measure.
+          try { await playTonePipe(880, 6); } catch (e) { log('host', 'tone write failed: ' + e.message); }
+          await sleep(800); // let the last recorder slice flush
+          await logAudioState('post-tone');
+          await micRecP;
+          // Measure the parec recording: if virtmic has the tone, the feed
+          // works and the problem is Chromium/WebRTC; if silent, the feed
+          // (FIFO/paplay) -> virtmic is broken.
+          try {
+            if (fs.existsSync(micWav) && fs.statSync(micWav).size > 100) {
+              const mvol = await measureVolumeDb(micWav);
+              out.micRecDb = mvol.meanDb;
+              out.micRecRms = +mvol.linear.toFixed(4);
+              log('host', 'mic parec: bytes=' + fs.statSync(micWav).size + ' meanDb=' +
+                (mvol.meanDb === null || mvol.meanDb === undefined ? 'n/a' : (mvol.meanDb === -Infinity ? '-inf' : mvol.meanDb)) +
+                ' rms=' + out.micRecRms.toFixed(4));
+            } else {
+              log('host', 'mic parec: no recording captured (file missing/empty)');
+            }
+          } catch (e) { log('host', 'mic parec measure failed: ' + e.message); }
+          finally { try { fs.unlinkSync(micWav); } catch (_) {} }
+        }
         const captured = await page.evaluate(async () => {
           const rec = window.__hostRec;
           if (!rec || !rec.recorder) return { chunksB64: [], totalBytes: 0, chunkCount: 0 };
@@ -627,12 +740,23 @@ async function hostCheck() {
 }
 
 // ---------- Audio helpers ----------
-// Play an MP3 buffer through the pipe-source mic (the mic hears it).
-// Returns duration in seconds. The page argument is unused — playback
-// is Node-side pipe writes, not Web Audio — but the signature is kept
-// so callers don't change.
+// Play an MP3 buffer through the mic. Returns duration in seconds.
+// Pipe mode: decodes to PCM and writes it into the pipe-source mic
+// (the mic hears it). The page argument is unused — playback is
+// Node-side pipe writes, not Web Audio — but the signature is kept so
+// callers don't change.
+// Fake-file mode: NO-OP for playback — the mic is a FIXED WAV loaded
+// at Chromium launch, so new audio cannot be written into it. The
+// duration is still returned (decoded) so callers log sensibly, but
+// nothing is heard. This is the one-shot limit of the fake-file mic:
+// the ORDER audio (already the mic WAV) is what the far end hears;
+// replies picked by the responder cannot be spoken in this mode.
 async function playAudio(page, audioBuf) {
   const { pcm, seconds } = await mp3ToPcm(audioBuf);
+  if (MIC_MODE === 'fake-file') {
+    log('speak', 'fake-file mode: audio NOT played into mic (fixed WAV; order already delivered via mic)');
+    return seconds;
+  }
   await playPipePcm(pcm);
   return seconds;
 }
@@ -714,11 +838,19 @@ async function converse(page, order, orderAudio, script, remoteState) {
   }
 
   async function speakReply(key) {
+    // Fake-file mode: the mic is a FIXED WAV — a reply picked now
+    // cannot be spoken (the order WAV already played / is looping).
+    // Log it and skip; the pipe path is the only live/dynamic mic.
+    if (MIC_MODE === 'fake-file') {
+      log('speak', 'fake-file mode: reply "' + key + '" NOT spoken (fixed WAV mic — cannot play new audio)');
+      return 0;
+    }
     const file = path.join(AUDIO_DIR, key + '.mp3');
     const buf = fs.readFileSync(file);
     const dur = await playAudio(page, buf);
     log('speak', 'reply "' + key + '" played (' + dur.toFixed(1) + 's)');
     await sleep(Math.min(dur * 1000 + 400, 6000));
+    return dur;
   }
 
   const t0 = Date.now();
@@ -756,6 +888,12 @@ async function converse(page, order, orderAudio, script, remoteState) {
       }
       if (res.action === 'repeat') {
         transcript.push({ at: new Date().toISOString(), speaker: 'us', text: '(replaying order) ' + script.text });
+        // Fake-file mode: the order WAV already played (once with
+        // %noloop) — it cannot be replayed into a fixed WAV mic.
+        if (MIC_MODE === 'fake-file') {
+          log('respond', 'staff asked to repeat — fake-file mode: cannot replay (fixed WAV mic)');
+          continue;
+        }
         log('respond', 'staff asked to repeat — replaying the order');
         const dur = await playAudio(page, orderAudio);
         await sleep(Math.min(dur * 1000 + 400, 6000));
@@ -860,6 +998,100 @@ async function ensureLoggedIn(page, email, orderId, idToken, directCode, onWaiti
 // utterance through the pipe-source mic, peer B captures it,
 // Whisper transcribes, the responder picks a reply, the reply plays
 // back through the mic). No TextNow.
+// MIC_MODE=fake-file: phase 2 is instead a ONE-SHOT order verification
+// (the order WAV is the mic; the peer must capture it). No two-way
+// loop — live replies are impossible with a fixed WAV mic.
+
+// Fake-file mode, phase 2: one-shot ORDER verification. The order WAV
+// is the mic (looping, so audio is always present). Two peers connect;
+// the remote peer (pcB) must capture the order audio. This proves the
+// order would be heard on a real call. There is NO two-way loop here —
+// live replies are impossible with a fixed WAV mic, so the responder
+// is not exercised in this mode (it is a pure function, already
+// covered by the pipe-mode dry run). Returns the dry-run result.
+async function dryRunFakeFile(order, script, orderAudio, host) {
+  const result = { ok: false, mode: 'dry-run', micMode: 'fake-file', host, transcript: [], turns: 0 };
+  log('dry-run', 'phase 2 (fake-file) — one-shot order playback to a peer');
+  // The ORDER audio is the mic WAV (looping, not %noloop, so audio is
+  // present for the whole verification).
+  await mp3ToWavFile(orderAudio, FAKE_MIC_WAV);
+  const browser = await chromium.launch(chromiumOpts());
+  let blank = null;
+  try {
+    const page = await browser.newPage();
+    await page.addInitScript(INJECT);
+    blank = await serveBlankPage();
+    await page.goto(blank.url);
+    const chunks = [];
+    await page.exposeFunction('__sendAudioChunk', (dataUrl) => {
+      try {
+        const b64 = String(dataUrl).split(',')[1] || '';
+        const buf = Buffer.from(b64, 'base64');
+        if (buf.length) chunks.push(buf);
+      } catch (_) {}
+    });
+    const sim = await page.evaluate(async () => {
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      const apmOff = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+      let micLabel = '';
+      let micStream = null;
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: apmOff });
+        micLabel = micStream.getAudioTracks()[0].label || '';
+      } catch (e) {
+        return { connected: false, state: 'gum-failed: ' + e, micLabel };
+      }
+      const pcA = new RTCPeerConnection();
+      const pcB = new RTCPeerConnection();
+      pcA.onicecandidate = (e) => { if (e.candidate) pcB.addIceCandidate(e.candidate).catch(() => {}); };
+      pcB.onicecandidate = (e) => { if (e.candidate) pcA.addIceCandidate(e.candidate).catch(() => {}); };
+      pcA.addTrack(micStream.getAudioTracks()[0], micStream);
+      const offer = await pcA.createOffer();
+      await pcA.setLocalDescription(offer);
+      await pcB.setRemoteDescription(offer);
+      const answer = await pcB.createAnswer();
+      await pcB.setLocalDescription(answer);
+      await pcA.setRemoteDescription(answer);
+      const t0 = Date.now();
+      let state = '';
+      while (Date.now() - t0 < 30000) {
+        state = pcA.connectionState + '/' + pcA.iceConnectionState;
+        if (pcA.connectionState === 'connected') break;
+        await sleep(250);
+      }
+      return { connected: pcA.connectionState === 'connected', state, micLabel };
+    });
+    log('dry-run', 'sim peer: connected=' + sim.connected + ' state=' + sim.state + ' mic=' + (sim.micLabel || '?'));
+    if (!sim.connected) {
+      result.error = 'simulated peer did not connect (state=' + sim.state + ')';
+      return result;
+    }
+    // Let the looping order WAV flow to the peer, then check capture.
+    await sleep(8000);
+    const bytes = chunks.reduce((n, b) => n + b.length, 0);
+    log('dry-run', 'order WAV captured by peer: chunks=' + chunks.length + ' bytes=' + bytes);
+    if (!(chunks.length > 0 && bytes > 1000)) {
+      result.error = 'order audio was not captured by the peer (chunks=' + chunks.length + ', bytes=' + bytes + ')';
+      return result;
+    }
+    // Transcribe the captured order audio to confirm it is the order.
+    const webm = Buffer.concat(chunks);
+    const tmp = path.join(__dirname, 'dryrun-fake-remote.webm');
+    fs.writeFileSync(tmp, webm);
+    let text = '';
+    try { text = await transcribe(tmp); } finally { try { fs.unlinkSync(tmp); } catch (_) {} }
+    log('dry-run', 'Whisper transcribed captured order audio as: "' + text + '"');
+    result.transcript.push({ speaker: 'us', text: '(order via fake-file mic) ' + script.text });
+    if (text) result.transcript.push({ speaker: 'peer-heard', text });
+    result.ok = true;
+    result.note = 'fake-file one-shot: order audio flows to the peer. Live replies are NOT possible in this mode (fixed WAV mic); use MIC_MODE=pipe for a two-way conversation.';
+    return result;
+  } finally {
+    if (blank) blank.close();
+    await browser.close();
+  }
+}
+
 async function dryRun(order, script, orderAudio) {
   log('dry-run', 'phase 1 — WebRTC host check');
   const host = await hostCheck();
@@ -868,6 +1100,13 @@ async function dryRun(order, script, orderAudio) {
     ' twoPeer=' + host.twoPeerConnected + ' rms=' + host.twoPeerRms + ' -> ' + (hostOk ? 'PASS' : 'FAIL'));
   if (!hostOk) {
     return { ok: false, mode: 'dry-run', host, error: 'host WebRTC check failed (udp=' + host.udpOk + ', twoPeer=' + host.twoPeerConnected + ')' };
+  }
+
+  // Fake-file mode: phase 2 is a one-shot order verification (the
+  // order WAV is the mic). No two-way loop — live replies are
+  // impossible with a fixed WAV mic.
+  if (MIC_MODE === 'fake-file') {
+    return dryRunFakeFile(order, script, orderAudio, host);
   }
 
   log('dry-run', 'phase 2 — simulated staff conversation (two-peer loop)');
@@ -989,9 +1228,22 @@ async function dryRun(order, script, orderAudio) {
 // ---------- Live call ----------
 async function liveCall(order, script, orderAudio, to, orderId, idToken, directCode, onWaitingForCode) {
   const email = process.env.TEXTNOW_EMAIL || DEFAULT_EMAIL;
-  // Open the pipe BEFORE launching Chromium so the pipe-source is live
-  // (fed with silence) when TextNow opens the mic.
-  await ensurePipe();
+  // Fake-file mode: the ORDER audio IS the mic. Convert the order MP3
+  // to a real WAV (mono 48kHz s16) BEFORE launching Chromium — the
+  // flag needs the file to exist at launch, and it is loaded whole at
+  // first capture. %noloop so the order plays ONCE, then silence
+  // (looping would repeat the order to the staff). ONE-SHOT: live
+  // replies to staff questions are NOT possible in this mode — the
+  // pipe path is the only live/dynamic mic. See converse().
+  // Pipe mode: open the pipe BEFORE launching Chromium so the
+  // pipe-source is live (fed with silence) when TextNow opens the mic.
+  if (MIC_MODE === 'fake-file') {
+    await mp3ToWavFile(orderAudio, FAKE_MIC_WAV);
+    process.env.FAKE_MIC_NOLOOP = '1';
+    log('fake-file', 'live call: order is the mic WAV (one-shot, %noloop); replies cannot be spoken in this mode');
+  } else {
+    await ensurePipe();
+  }
   const context = await chromium.launchPersistentContext(PROFILE_DIR, chromiumOpts());
   await context.addInitScript(INJECT);
   const page = context.pages()[0] || await context.newPage();
