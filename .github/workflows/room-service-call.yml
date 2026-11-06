@@ -44,22 +44,25 @@ jobs:
           node-version: '20'
       - name: Install system deps
         run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng cmake build-essential pulseaudio xvfb pulseaudio-utils
-      - name: Start PulseAudio (Vexa virtual mic)
-        # Vexa pattern: TTS audio plays into tts_sink; virtual_mic is a
-        # remap source of tts_sink.monitor and is Chromium's mic.
-        # Chromium output goes to spk_sink so it never feeds back into
-        # the mic. Do NOT use --use-fake-device-for-media-stream (it
-        # bypasses PulseAudio) or --use-file-for-fake-audio-capture
-        # (forces silence as mic input).
+      - name: Start PulseAudio (pipe-source mic)
+        # NEW method: module-pipe-source creates a REAL source (virtmic)
+        # fed live by the FIFO /tmp/virtmic. The module creates the FIFO
+        # itself — do NOT mkfifo it. Node writes raw s16le 48kHz mono PCM
+        # into the FIFO; Chromium opens virtmic as its mic. This replaces
+        # the Vexa remap-source approach (Chromium refuses a .monitor as
+        # a mic input). Chromium output goes to spk_sink so it never
+        # feeds back into the mic. Fail fast if the module does not load.
         run: |
           pulseaudio --start --exit-idle-time=-1
-          pactl load-module module-null-sink sink_name=tts_sink sink_properties=device.description=tts_sink
           pactl load-module module-null-sink sink_name=spk_sink sink_properties=device.description=spk_sink
-          pactl load-module module-remap-source master=tts_sink.monitor source_name=virtual_mic source_properties=device.description=virtual_mic
+          pactl load-module module-pipe-source source_name=virtmic file=/tmp/virtmic format=s16le rate=48000 channels=1
           pactl set-default-sink spk_sink
-          pactl set-default-source virtual_mic
+          pactl set-default-source virtmic
           pactl list sinks short
           pactl list sources short
+          pactl get-default-source
+          pactl list sources short | grep -q virtmic || { echo "ERROR: virtmic source missing (module-pipe-source did not load)"; exit 1; }
+          ls -l /tmp/virtmic
       - name: Install Playwright + Chromium
         run: |
           npm ci
@@ -84,6 +87,7 @@ jobs:
         if: steps.order.outputs.id != '' || inputs.dry_run == true
         env:
           HAILMARY_LIVE: '1'
+          PULSE_SOURCE: virtmic
           WHISPER_BIN: ${{ github.workspace }}/whisper.cpp/build/bin/whisper-cli
           WHISPER_MODEL: ${{ github.workspace }}/whisper.cpp/models/ggml-tiny.en.bin
         run: |
