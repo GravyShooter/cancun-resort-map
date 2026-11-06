@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-06-no-snap-gps-approximation · v132.1.110 -->
+<!-- build-2026-11-06-hand-set-calibration · v133.1.111 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -1030,11 +1030,53 @@
       .liveblip:disabled { opacity: 0.55; cursor: default; }
       .liveblip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
       .liveblip-hint { margin-top: 7px; }
+      /* Set by hand: the second action button in the Who's here card,
+         directly under Blip. Outlined rather than filled — GPS stays
+         the primary way a dot is placed; this is the deliberate
+         override for when GPS and the drawing disagree (pool decks
+         and walkways have no venue pins to convert through). */
+      .livehand {
+        appearance: none; cursor: pointer; width: 100%;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        margin-top: 10px; min-height: 54px; padding: 13px 18px;
+        border: 2px solid var(--accent); border-radius: 999px;
+        background: var(--panel); color: var(--accent);
+        font: inherit; font-size: 1.05rem; font-weight: 700; line-height: 1.2;
+      }
+      .livehand[hidden] { display: none; }
+      .livehand svg { width: 19px; height: 19px; display: block; flex: none; }
+      .livehand:disabled { opacity: 0.55; cursor: default; }
+      .livehand:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .livehand-hint { margin-top: 7px; }
+      /* Placement banner: shown over the top of the map while hand-set
+         mode is armed. The next genuine tap on the drawing places the
+         dot; drags still pan, and Cancel backs out cleanly. */
+      .handbanner {
+        position: absolute; left: 50%; top: 62px; transform: translateX(-50%);
+        z-index: 9; display: flex; align-items: center; gap: 10px;
+        max-width: calc(100% - 24px);
+        background: rgba(14, 22, 18, 0.92); color: #fffdf8;
+        border: 1px solid rgba(255, 253, 248, 0.4); border-radius: 999px;
+        padding: 7px 8px 7px 16px;
+        font-size: 0.88rem; font-weight: 700; line-height: 1.3;
+        box-shadow: 0 4px 14px rgba(30, 40, 20, 0.45);
+      }
+      .handbanner[hidden] { display: none; }
+      .handbanner .handcancel {
+        appearance: none; cursor: pointer; flex: none;
+        border: 1px solid rgba(255, 253, 248, 0.55); border-radius: 999px;
+        background: transparent; color: #fffdf8;
+        font: inherit; font-size: 0.85rem; font-weight: 700;
+        min-height: 38px; padding: 7px 14px;
+      }
+      .handbanner .handcancel:focus-visible { outline: 3px solid var(--gold, #d9a441); outline-offset: 2px; }
+      .scene.hand-setting { cursor: crosshair; }
       /* GPS-only status: lives in the Who's here card under Blip.
-         There is no hand placement — a dot only ever comes from a
-         real satellite GPS fix, and this panel says plainly what the
-         phone's GPS is doing (good fix, or guesses being ignored) and
-         whether anyone is currently showing as near this phone. */
+         GPS dots only ever come from a real satellite GPS fix, and
+         this panel says plainly what the phone's GPS is doing (good
+         fix, or guesses being ignored) and whether anyone is
+         currently showing as near this phone. A hand-set dot is the
+         one deliberate exception, and it is always labeled as such. */
       .livegps { margin-top: 12px; border-top: 1px dashed var(--ink-soft); padding-top: 11px; }
       .livegps[hidden] { display: none; }
       .livegps-title { margin: 0 0 4px; font-size: 0.98rem; font-weight: 800; }
@@ -1101,6 +1143,31 @@
         font-weight: 600;
         max-width: 210px;
       }
+      /* Hand-set dot: placed by its owner's tap, not by GPS, and it
+         must never be mistaken for a GPS dot — dashed ring instead of
+         the solid one, no pulse, a small pencil badge at the rim, and
+         "set by hand" in its name label (added by liveRender). The
+         member's color still rings it, so it stays identifiable. */
+      .livedot.handset {
+        animation: none;
+        border-style: dashed;
+        box-shadow: 0 0 0 2px rgba(255, 253, 248, 0.9), 0 2px 6px rgba(25, 35, 20, 0.5);
+      }
+      .livedot .hflag {
+        position: absolute; right: -7px; top: -7px; z-index: 2;
+        width: 16px; height: 16px; border-radius: 50%;
+        background: #22303a; color: #fffdf8;
+        border: 1.5px solid #fffdf8;
+        display: none; align-items: center; justify-content: center;
+        pointer-events: none;
+      }
+      .livedot .hflag svg { width: 9px; height: 9px; display: block; }
+      .livedot.handset .hflag { display: flex; }
+      @media (prefers-color-scheme: dark) {
+        .livedot .hflag { background: #ece5d5; color: #10181d; border-color: #10181d; }
+      }
+      /* "Set by hand" tag in the Who's here list and group dialog */
+      .liveuser .uhand { font-size: 0.78rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
       @keyframes livepulse {
         0% { box-shadow: 0 0 0 2.5px #ffffff, 0 0 0 5px rgba(255, 255, 255, 0.55), 0 2px 6px rgba(25, 35, 20, 0.5); }
         70% { box-shadow: 0 0 0 2.5px #ffffff, 0 0 0 14px rgba(255, 255, 255, 0), 0 2px 6px rgba(25, 35, 20, 0.5); }
@@ -3850,7 +3917,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v132.1.110</p>
+        <p class="version-stamp">v133.1.111</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -4726,41 +4793,64 @@
       // GPS calibration (Nov 5, 2026): the lat/lng below were re-based
       // against three on-the-ground phone fixes — Games Area
       // (20.874677, -86.866723), Martini Bar (20.875188, -86.866171) and
-      // the Excellence Club Lounge (20.875324, -86.865947). Every
-      // on-resort anchor shifted by (-0.00128, +0.00002) so the Live
-      // group's GPS-to-map conversion (liveXY) lands dots on the right
-      // pins; the Club Lounge anchor is the measured fix itself, and
-      // its pin sits at official #55 (beach-ward cell of the NE row,
-      // against the Kitchen Table block's north edge), not on the
-      // Lobby roof where it used to be drawn. Town anchors unchanged.
-      // Second fix (Nov 5, 15:43 ET): the EC Lounge Bar anchor is now
+      // the Excellence Club Lounge (20.875324, -86.865947). The Club
+      // Lounge anchor is the measured fix itself, and its pin sits at
+      // official #55 (beach-ward cell of the NE row, against the
+      // Kitchen Table block's north edge), not on the Lobby roof where
+      // it used to be drawn. Town anchors unchanged.
+      // Second fix (Nov 5, 15:43 ET): the EC Lounge Bar anchor is
       // Chris's measured phone fix inside the bar itself
-      // (20.875672, -86.865826). The old anchor sat ~160 m north of
-      // where a phone in the bar actually reads, so a bar fix blended
-      // toward the Flavor Market / Gift Shop anchors and landed on the
-      // Gift Shop pin. Dots are never snapped onto a venue (Nov 6,
-      // 2026) — liveXY always returns the raw GPS approximation.
+      // (20.875672, -86.865826).
+      // Third fix (Nov 6, 2026): the EC Pool 2 anchor carried a GPS
+      // ~386 m south of the pool itself, so a phone sitting poolside
+      // at EC Pool 2 (Chris's measured fix: 20.873866, -86.866680,
+      // ±4 m) converted through the central-resort anchors and landed
+      // up by the Stone Gazebo. The anchor is now that measured fix,
+      // paired with the pin's drawn position on the official map —
+      // the pool directly south of Building 9. The same pair is the
+      // first hand-set calibration anchor (see liveCalibSeed in the
+      // Live section): hand-set spots pair a real GPS fix with a
+      // tapped map position and join the anchor table, which is how
+      // pool decks and walkways — stretches with no venue pins — get
+      // accurate conversion.
+      // Fourth fix (Nov 6, 2026, v133): the rest of the on-resort
+      // lattice was synthetic, and parts of it contradicted the
+      // drawing outright — the Prelude Terrace / Food Shark GPS sat
+      // on top of the EC Pool 2 deck in GPS space while their pins
+      // sit mid-resort, so a 25 m step north from poolside teleported
+      // the dot ~180 map units. Every non-measured on-resort anchor's
+      // lat/lng below is now DERIVED FROM ITS DRAWN POSITION: an
+      // affine fit (drawn position → GPS) over the five measured
+      // ground-truth anchors — Games Area, Martini Bar, Excellence
+      // Club Lounge, EC Lounge Bar, EC Pool 2, all five held at their
+      // exact measured fixes — plus the fit's residuals blended back
+      // in by drawn distance, so the lattice is consistent with the
+      // official map's own geometry and the conversion (liveXY)
+      // moves smoothly instead of cliff-jumping between mismatched
+      // anchors. Dots are never snapped onto a venue — liveXY always
+      // returns the raw GPS approximation. Town anchors unchanged
+      // (real GPS, off-property).
       var PLACES = [
         // Sights & landmarks
-        { name: "Lobby & Concierge", cat: "sights", lat: 20.87702, lng: -86.86758,
+        { name: "Lobby & Concierge", cat: "sights", lat: 20.875640, lng: -86.866310,
           meta: "North entrance · arrival court",
           desc: "Check-in, the concierge desk, and the top of the main walking spine that runs the length of the resort. Aroma Café and the Sports Bar are right here, and the Excellence Club corner is a short walk east." },
-        { name: "Garibaldi Square", cat: "sights", lat: 20.87607, lng: -86.86743,
+        { name: "Garibaldi Square", cat: "sights", lat: 20.875699, lng: -86.866851,
           meta: "Center-north · west of the restaurants",
           desc: "The resort's central plaza and natural meeting point. The restaurant cluster is immediately east, the theater just south — if you're meeting up, meet here." },
-        { name: "Theater", cat: "sights", lat: 20.87487, lng: -86.86733,
+        { name: "Theater", cat: "sights", lat: 20.875185, lng: -86.866796,
           meta: "Center · south of Garibaldi Square",
           desc: "Outdoor theater with live shows and theme nights most evenings, plus the piano bar and comedy nights nearby. Stars Bar sits at its south edge for a pre-show drink." },
-        { name: "Stone Gazebo", cat: "sights", lat: 20.87562, lng: -86.86388,
+        { name: "Stone Gazebo", cat: "sights", lat: 20.874775, lng: -86.866304,
           meta: "Gardens at mid-resort · west of Main Pool 1",
           desc: "The stone ceremony gazebo in the gardens at mid-resort, just west of Main Pool 1 — across the pool and the beach path from the sand — where the official resort map places it. The resort's other ceremony gazebo is the Beach Gazebo, at the far south end of the sand.",
           note: "From the lobby it's roughly a 5-minute walk: south down the spine, then east toward Main Pool 1 — the gazebo is in the gardens west of the pool." },
-        { name: "Beach Gazebo", cat: "sights", wed: true, lat: 20.87027, lng: -86.86413,
+        { name: "Beach Gazebo", cat: "sights", wed: true, lat: 20.873199, lng: -86.865883,
           meta: "South end of the beach · Club zone · Wedding ceremony Sun Nov 8, 5 PM",
           desc: "The wedding ceremony site — Katherine & Shane marry here Sunday Nov 8 at 5:00 PM. A quieter ceremony gazebo at the far south end of the beach, past the Excellence Club pools.",
           note: "Ceremony: Sunday Nov 8, 5:00 PM. Afterwards: drinks & pupus 6–7 PM at Oregano (pin 14), then the reception 7–11 PM at Agave (pin 10). Dress code: tropical cocktail attire." },
         // Restaurants
-        { name: "Magna", cat: "dining", club: true, lat: 20.87667, lng: -86.86493,
+        { name: "Magna", cat: "dining", club: true, lat: 20.875763, lng: -86.865951,
           meta: "Breakfast 7–11 AM · Dinner 6–10 PM · Casual Elegance at dinner",
           desc: "The Excellence Club restaurant, up in the northeast corner by the Club lounge — and the best breakfast on property. Sea views from the terrace.",
           menuLabel: "Full menu — breakfast & dinner",
@@ -4822,7 +4912,7 @@
           note: "Excellence Club guests only — your upgraded Club status applies here.",
           url: PAGE + "flavors-and-spirits-magna/",
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/magna/dinner" },
-        { name: "Chez Isabelle", cat: "dining", lat: 20.87632, lng: -86.86543,
+        { name: "Chez Isabelle", cat: "dining", lat: 20.875310, lng: -86.866403,
           meta: "Dinner 5:30–10 PM · Casual Elegance",
           desc: "The signature French restaurant — in the restaurant row, with live music nightly.",
           menuLabel: "Full dinner menu",
@@ -4865,14 +4955,14 @@
           note: "Temporarily served at Flavor Market (pin 13) while the Chez Isabelle room is refreshed — same menu, same service.",
           url: PAGE + "flavors-and-spirits-chez-isabelle/",
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/chez-isabelle-at-flavor-market/dinner" },
-        { name: "The Grill", cat: "dining", lat: 20.87614, lng: -86.86483,
+        { name: "The Grill", cat: "dining", lat: 20.875439, lng: -86.865970,
           meta: "Dinner only, 6–10 PM · Regular Casual · Currently hosting The Lobster House",
           desc: "The steakhouse, in the heart of the restaurant row between The Kitchen Table and Spice — prime cuts seared over an open flame.",
           dishesLabel: "Steakhouse signatures (from its last published menu)",
           dishes: [["Ribeye & NY Striploin", "straight from the grill"], ["Braised Short Rib", "red wine sauce, garlic mashed potatoes"], ["Mixed Grill for Two", "tenderloin, Italian sausage, garlic shrimp"], ["Oscar Burger", "beef and crab burger, asparagus au gratin, buttered brioche"]],
           note: "Right now The Lobster House (pin 9) is serving in this room while the restaurants rotate, and The Grill's own menu isn't on the current schedule — check the app on arrival for which room is running it.",
           url: PAGE + "flavors-and-spirits-the-grill/" },
-        { name: "The Lobster House", cat: "dining", lat: 20.87582, lng: -86.86416,
+        { name: "The Lobster House", cat: "dining", lat: 20.874925, lng: -86.865768,
           meta: "Breakfast 8–11:30 AM · Lunch 12:30–3 PM · Dinner 6–10 PM",
           desc: "Open-air palapa fronting the main pool's north lobe at the beach's north end. Easygoing at breakfast and lunch; at dinner it's all about the lobster, by lantern light beside the water.",
           menuLabel: "Full menu — breakfast, lunch & dinner",
@@ -4968,7 +5058,7 @@
           ],
           url: PAGE + "flavors-and-spirits-the-lobster-house/",
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/the-lobster-house-at-the-grill-restaurant/dinner" },
-        { name: "Agave", cat: "dining", lat: 20.87602, lng: -86.86618,
+        { name: "Agave", cat: "dining", lat: 20.875617, lng: -86.867067,
           meta: "Dinner 5:30–10 PM · Regular Casual",
           desc: "Authentic Mexican in a hacienda-style courtyard, with tableside mariachi some evenings.",
           menuLabel: "Full dinner menu",
@@ -5008,7 +5098,7 @@
           note: "When Agave's room is closed, its menu is served at Oregano (pin 14).",
           url: PAGE + "flavors-and-spirits-agave/",
           menuSrc: "https://f0dca1de7d385119e393-28032ec2b4f75a4bef4ab11f7bf536b1.ssl.cf1.rackcdn.com/u/_fb/menus/Excellence-Punta-Cana-Agave-Menu-Oct-2026.pdf" },
-        { name: "Spice", cat: "dining", lat: 20.87607, lng: -86.86523,
+        { name: "Spice", cat: "dining", lat: 20.875406, lng: -86.866209,
           meta: "Dinner 6–10 PM · Teppanyaki 5:30–10 PM · Casual Elegance",
           desc: "Pan-Asian — sushi bar, yakiniku tables, and the interactive teppanyaki rooms where the chef cooks in front of you.",
           menuLabel: "Full dinner menu",
@@ -5081,7 +5171,7 @@
           note: "The teppanyaki tables are the one reservation on property — book at the concierge. Sushi is served with soy sauce, pickled ginger and wasabi.",
           url: PAGE + "flavors-and-spirits-spice/",
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/spice/dinner" },
-        { name: "Basmati", cat: "dining", lat: 20.87627, lng: -86.86643,
+        { name: "Basmati", cat: "dining", lat: 20.875574, lng: -86.867136,
           meta: "Dinner 5:30–10 PM · Regular Casual",
           desc: "Indian, specializing in the dishes of the North-West frontier — tangy, spiced, and mostly set for two.",
           menuLabel: "Full dinner menu",
@@ -5134,7 +5224,7 @@
           ],
           url: PAGE + "flavors-and-spirits-basmati/",
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/basmati/dinner" },
-        { name: "Flavor Market", cat: "dining", lat: 20.87577, lng: -86.86593,
+        { name: "Flavor Market", cat: "dining", lat: 20.875678, lng: -86.867001,
           meta: "Dinner · tapas & wine",
           desc: "Cozy small-plates restaurant — order a spread of tapas for the table and let the sommelier pair the wines.",
           menuLabel: "Full tapas menu",
@@ -5194,7 +5284,7 @@
           note: "Currently hosting Chez Isabelle's menu and service (pin 7) in this room.",
           url: PAGE + "flavors-and-spirits/",
           menuSrc: "https://76a7b323da8554ec22e0-d946e249d9a895ced1092e3c543d8d1e.ssl.cf1.rackcdn.com/u/_baresrestaurantes/menus/ExcellenceCarmen-PuntaCana-FlavorMarket-Dinner-Jul-2026.pdf" },
-        { name: "Oregano", cat: "dining", lat: 20.87457, lng: -86.86433,
+        { name: "Oregano", cat: "dining", lat: 20.874794, lng: -86.865830,
           meta: "Lunch 12–4 PM · Dinner 6–10 PM · Regular Casual at dinner",
           desc: "Trattoria-style Italian sharing the palapa fronting Main Pool 1's north lobe with the Lobster House — the block's south half — hand-stretched pizzas, calzones, and hearty classics.",
           menuLabel: "Full menu — lunch & dinner",
@@ -5297,7 +5387,7 @@
           note: "Currently also hosting Agave's menu on nights when that room is closed.",
           url: PAGE + "flavors-and-spirits-oregano/",
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/oregano/dinner" },
-        { name: "The Kitchen Table", cat: "dining", lat: 20.87580, lng: -86.86508,
+        { name: "The Kitchen Table", cat: "dining", lat: 20.875508, lng: -86.865860,
           meta: "Buffet breakfast 7–11 AM · À la carte lunch 12–4 PM · Casual",
           desc: "The international buffet — the default breakfast, with omelette stations and fresh juices, in the heart of the restaurant row.",
           menuLabel: "Full lunch menu",
@@ -5334,7 +5424,7 @@
           ],
           url: PAGE + "flavors-and-spirits-kitchen-table/",
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/the-kitchen-table/lunch" },
-        { name: "Las Olas", cat: "dining", lat: 20.87357, lng: -86.86393,
+        { name: "Las Olas", cat: "dining", lat: 20.874058, lng: -86.865771,
           meta: "Lunch 11 AM–5 PM · Casual",
           desc: "The beach grill, right on the sand mid-beach with its own bar next door (Las Olas Bar, pin 56) — the no-need-to-change lunch.",
           menuLabel: "Full lunch menu",
@@ -5390,7 +5480,7 @@
           ],
           url: PAGE + "flavors-and-spirits-las-olas/",
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/las-olas/lunch" },
-        { name: "Food Shark", cat: "dining", lat: 20.87432, lng: -86.86683,
+        { name: "Food Shark", cat: "dining", lat: 20.874538, lng: -86.866488,
           meta: "Food truck · Open 3–11 PM",
           desc: "The resort's food truck by the games area — Tex-Mex street food and American classics under the stars, and a beloved late-night stop after the show.",
           menuLabel: "Full menu",
@@ -5411,14 +5501,14 @@
           ],
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/food-shark/dinner" },
         // Bars & cafés
-        { name: "Martini Bar", cat: "bars", lat: 20.87517, lng: -86.86608,
+        { name: "Martini Bar", cat: "bars", lat: 20.875188, lng: -86.866171,
           meta: "Lobby bar · 9 AM–11 PM",
           desc: "The pre-dinner cocktail stop — a dramatic lounge devoted to the martini, classic to fruit-infused. Handy while you wait for a dinner buzzer.",
           note: "The resort calls it an extensive “tini” menu but doesn't publish the list — it's classic to fruit-infused, ordered at the bar." },
-        { name: "Stars Bar", cat: "bars", lat: 20.87452, lng: -86.86743,
+        { name: "Stars Bar", cat: "bars", lat: 20.875004, lng: -86.866900,
           meta: "At the theater · 6–11 PM",
           desc: "The theater bar — premium top-shelf pours while the nightly show runs. Grab a drink and settle in before it starts." },
-        { name: "Sports Bar", cat: "bars", lat: 20.87722, lng: -86.86798,
+        { name: "Sports Bar", cat: "bars", lat: 20.875740, lng: -86.866658,
           meta: "Up by the entrance · food 6 PM–12 AM",
           desc: "Big screens, ice-cold craft beer, and a full pub-food menu — the place to watch the game. Aroma Café's coffee menu is temporarily served here while the café is renovated.",
           menuLabel: "Full food menu",
@@ -5444,60 +5534,60 @@
               ["Apple Pie", ""]] }
           ],
           menuSrc: "https://myalitravels.com/excellence/dining/erc/menu/sports-bar/dinner" },
-        { name: "Aroma Café", cat: "bars", lat: 20.87677, lng: -86.86703,
+        { name: "Aroma Café", cat: "bars", lat: 20.875908, lng: -86.866499,
           meta: "Off the lobby · 7 AM–10 PM",
           desc: "Coffee done properly — small-batch roasted beans and artisanal espresso drinks alongside fresh pastries, éclairs, cakes, waffles, crêpes, and ice cream.",
           note: "Aroma is being renovated — its menu is temporarily available at the Sports Bar (pin 20)." },
-        { name: "Prelude Terrace Bar", cat: "bars", lat: 20.87417, lng: -86.86688,
+        { name: "Prelude Terrace Bar", cat: "bars", lat: 20.874669, lng: -86.866540,
           meta: "Terrace by the games area · 3–11 PM",
           desc: "Terrace cocktails in the center of things, between the theater and the pools — expertly crafted drinks in a cozy spot." },
-        { name: "Revive Bar", cat: "bars", lat: 20.87270, lng: -86.86758,
+        { name: "Revive Bar", cat: "bars", lat: 20.875054, lng: -86.867599,
           meta: "By the spa · 8 AM–5 PM",
           desc: "The healthy stop by Miilé Spa — revitalizing smoothies, cold-pressed juices, and nutrient-packed elixirs from organic, locally grown produce, plus classic and tropical cocktails. No itemized list is published; ask what's blending." },
-        { name: "Sol Bar", cat: "bars", lat: 20.87492, lng: -86.86448,
+        { name: "Sol Bar", cat: "bars", lat: 20.874300, lng: -86.865786,
           meta: "Deck bar · Main Pool 1 south bulb · 9 AM–5 PM",
           desc: "The bar on the deck at Main Pool 1's south bulb — drinks all day, plus wood-fired oven pizzas and gourmet salads served throughout the day. (Blue Bar, at the pool's north lobe, pours 10 AM–6 PM.)" },
-        { name: "Cielo Bar", cat: "bars", club: true, lat: 20.87277, lng: -86.86478,
+        { name: "Cielo Bar", cat: "bars", club: true, lat: 20.873695, lng: -86.865968,
           meta: "At EC Pool 1 · by Building 7 · 9 AM–5 PM",
           desc: "The Excellence Club pool bar, set in the waist of EC Pool 1 by Building 7 — light refreshing fare served alongside tropical cocktails." },
         // Pools & beach
-        { name: "Main Pool 1", cat: "pools", lat: 20.87522, lng: -86.86483,
+        { name: "Main Pool 1", cat: "pools", lat: 20.874458, lng: -86.865893,
           meta: "Beachside · Lobster House to Building 7",
           desc: "The winding pool that wraps the north and east sides of the Lobster House/Oregano block along the beach — Blue Bar sits at its north lobe, the Sol bar on the deck at its south bulb, and the Lobster House palapa fronts it at the north end." },
-        { name: "Main Pool 2", cat: "pools", lat: 20.87417, lng: -86.86553,
+        { name: "Main Pool 2", cat: "pools", lat: 20.874398, lng: -86.866432,
           meta: "Outside Building 6 · center-east",
           desc: "One continuous W of water wrapping Building 6: the rounded west arm by the games area is the handicap pool, with the accessible entry; from there the water runs east along the building's full north side and wraps its northwest corner, lobes up toward Building 7, then turns down the channel on Building 6's east side to a lobe at the south end. Room 6131's balcony overlooks it from the building's northwest corner." },
-        { name: "Main Pool 3 & Lazy River", cat: "pools", lat: 20.87337, lng: -86.86683,
+        { name: "Main Pool 3 & Lazy River", cat: "pools", lat: 20.875094, lng: -86.867159,
           meta: "The big loop · around the spa island",
           desc: "The lazy-river loop that encircles the spa island — grab a float and ride the full circuit, right past the spa." },
-        { name: "EC Pool 1", cat: "pools", club: true, lat: 20.87288, lng: -86.86510,
+        { name: "EC Pool 1", cat: "pools", club: true, lat: 20.873852, lng: -86.865988,
           meta: "By Building 7 · east side",
           desc: "The quieter Club pool on the east side, tucked against Building 7's oceanfront complex just off the beach, with its own pool concierge (pin 72) — Cielo Bar (pin 25) stands in its waist." },
-        { name: "EC Pool 2", cat: "pools", club: true, lat: 20.87052, lng: -86.86568,
+        { name: "EC Pool 2", cat: "pools", club: true, lat: 20.873866, lng: -86.866680,
           meta: "South of Building 9 · Club zone",
           desc: "Second Club pool, directly south of Building 9, its south end running off the bottom of the grounds — the quiet southern Club pool." },
-        { name: "Dive Center & Water Sports", cat: "pools", lat: 20.87702, lng: -86.86388,
+        { name: "Dive Center & Water Sports", cat: "pools", lat: 20.874889, lng: -86.865508,
           meta: "North end of the beach",
           desc: "Kayaks, snorkeling gear, sailing, windsurfing, and the free intro scuba lesson. The Puerto Morelos reef — part of the Mesoamerican Barrier Reef — is right offshore; it's a national park, so a small daily marine-park fee applies to ocean activities. The official map also marks a second Dive Center point inland, just east of Food Shark." },
-        { name: "X-Lounge", cat: "pools", lat: 20.87617, lng: -86.86398,
+        { name: "X-Lounge", cat: "pools", lat: 20.874169, lng: -86.865767,
           meta: "On the beach · north-central, north of Las Olas",
           desc: "Beach lounge on the north-central sand, just north of Las Olas — the quieter stretch north of the piers." },
-        { name: "The Beach", cat: "pools", lat: 20.87452, lng: -86.86388,
+        { name: "The Beach", cat: "pools", lat: 20.873891, lng: -86.865824,
           meta: "Runs the full east side of the resort",
           desc: "The sand strip that borders the whole resort on the east — shown as the pale band on the map, with palapas and loungers the whole way down. The Stone Gazebo sits in the gardens just inland at mid-resort, Las Olas fronts it at the pier, the Dive Center is up at its north end, and the Puerto Morelos reef is right offshore. The beach walk path runs along its west edge, past every pool." },
         // Spa & fitness
-        { name: "Miilé Spa", cat: "wellness", lat: 20.87336, lng: -86.86758,
+        { name: "Miilé Spa", cat: "wellness", lat: 20.875281, lng: -86.867669,
           meta: "Center · on its own island",
           desc: "The spa sits on an island inside the lazy-river loop, reached by four small bridges — north, east, west-southwest, and south at the Revive Bar. Your included hydrotherapy circuit runs about an hour: hydro pool with swan and waterfall hoses, bubble loungers, contrast plunge pools, steam and ice, and the specialty showers.",
           note: "Book it early in the stay — Friday or Saturday — so the relaxed payoff lasts more of the trip, and you still have days to rebook if a slot falls through." },
-        { name: "Temazcal", cat: "wellness", lat: 20.87377, lng: -86.86758,
+        { name: "Temazcal", cat: "wellness", lat: 20.875307, lng: -86.867527,
           meta: "North end of the spa island",
           desc: "An ancient Mesoamerican sweat-lodge ceremony — heated volcanic stones, steam, and chanting, usually in a small group. The one session you can't get at a spa back home; ask at the spa desk when it's offered." },
-        { name: "Fitness Center", cat: "wellness", lat: 20.87717, lng: -86.86653,
+        { name: "Fitness Center", cat: "wellness", lat: 20.876113, lng: -86.866924,
           meta: "NW courts apron · by the tennis courts",
           desc: "Full gym plus the class schedule — yoga, pilates, aerobics — out at the northwest courts apron by the tennis and pickleball courts, with the functional training center (pin 71) back by the entrance." },
         // Excellence Club
-        { name: "Excellence Club Lounge", cat: "club", club: true, lat: 20.87532, lng: -86.86595,
+        { name: "Excellence Club Lounge", cat: "club", club: true, lat: 20.875324, lng: -86.865947,
           meta: "Northeast corner · next to Magna",
           desc: "Your Club base in the north of the resort: lounge, private bar, and concierge, steps from Magna and a short stroll from the beach's north end. The Club pools and Cielo Bar are down in the southeast zone (pins 29, 30, 25)." },
         // Off-property — Puerto Morelos town, down the beach (verified against the
@@ -5557,108 +5647,108 @@
         // Lodging — the nine numbered accommodation buildings (zones and room
         // categories per the resort's official map). Pins show the building
         // number, not the list position.
-        { name: "Building 1", cat: "lodging", bnum: 1, lat: 20.87737, lng: -86.86768,
+        { name: "Building 1", cat: "lodging", bnum: 1, lat: 20.875749, lng: -86.867472,
           rooms: "1001–1306",
           meta: "North wing · Junior Suite Spa View / Pool View",
           desc: "The northernmost room building, in the quiet north wing — gardens and the lazy river around it, at the quiet north end of the room buildings. Junior Suite Spa View and Junior Suite Pool View rooms; the calmest corner of the property, with the lobby a short walk north-east up the spine." },
-        { name: "Building 2", cat: "lodging", bnum: 2, lat: 20.87563, lng: -86.86870,
+        { name: "Building 2", cat: "lodging", bnum: 2, lat: 20.876032, lng: -86.867924,
           rooms: "2001–2308",
           meta: "North wing · Junior Suite Spa View / Pool View",
           desc: "Middle of the north wing — still the quiet end of the resort, wrapped in gardens with the outer pools close by. Junior Suite Spa View and Junior Suite Pool View rooms." },
-        { name: "Building 3", cat: "lodging", bnum: 3, lat: 20.87447, lng: -86.86870,
+        { name: "Building 3", cat: "lodging", bnum: 3, lat: 20.875717, lng: -86.868237,
           rooms: "3001–3308",
           meta: "North wing · Junior Suite Spa View / Pool View",
           desc: "The southernmost of the north-wing buildings — the quiet wing's rooms, but a step closer to Garibaldi Square and the restaurant row. Junior Suite Spa View and Junior Suite Pool View rooms, around gardens and the outer pools." },
-        { name: "Building 4", cat: "lodging", bnum: 4, lat: 20.87110, lng: -86.86786,
+        { name: "Building 4", cat: "lodging", bnum: 4, lat: 20.875188, lng: -86.868102,
           rooms: "4001–4308",
           meta: "Bottom row, south-west · Junior Suite Pool View · rooftop terrace suites",
           desc: "A horizontal block on the bottom row at the south-west end of the grounds, below the lazy-river loop — the spa island and theater are a short walk north, and the main pools just east. Junior Suite Pool View rooms, plus some rooftop terrace suites." },
-        { name: "Building 5", cat: "lodging", bnum: 5, lat: 20.87110, lng: -86.86686,
+        { name: "Building 5", cat: "lodging", bnum: 5, lat: 20.874753, lng: -86.867582,
           rooms: "5001–5308",
           meta: "Bottom row, south · Junior Suite Pool View · rooftop terrace suites",
           desc: "The second horizontal block on the bottom row, beside Building 4 at the south end of the grounds below the lazy-river loop — the Excellence Club pools and Building 9 are a few minutes' walk east. Junior Suite Pool View rooms, plus some rooftop terrace suites." },
-        { name: "Building 6", cat: "lodging", bnum: 6, lat: 20.87477, lng: -86.86598,
+        { name: "Building 6", cat: "lodging", bnum: 6, lat: 20.874501, lng: -86.866937,
           rooms: "6001–6336",
           meta: "Central · Junior Suite Pool View · rooftop terrace suites",
           desc: "The big central complex — four blocks around a central courtyard, with Main Pool 2 running along their north side, exactly as the official map draws it: one wavy stretch of water hugging the full length of the north face and wrapping the northwest corner (corner room 6131 overlooks the pool from that corner), its east end lobing up toward Building 7, and a wavy channel running down the east side to a lobe at the south end. The lazy river winds past their west side toward the Miilé Spa island. Still an easy walk to the lobby, Garibaldi Square, and the theater. Junior Suite Pool View rooms, plus some rooftop terrace suites." },
-        { name: "Building 7", cat: "lodging", bnum: 7, club: true, lat: 20.87334, lng: -86.86435,
+        { name: "Building 7", cat: "lodging", bnum: 7, club: true, lat: 20.874136, lng: -86.866263,
           rooms: "7051–7369",
           meta: "Excellence Club Ocean View zone · Oceanfront",
           desc: "One of the two Excellence Club oceanfront buildings — Buildings 7–8 hold most of the resort's oceanfront Club suites: EC Junior Suite Ocean View, EC Junior Suite Ocean Front, Honeymoon Suites, and Imperial Suites. It faces the beach and the pier head-on, with the quickest beach access on the property; higher floors see out over the palms.",
           note: "Buildings 7–8 are the Excellence Club Ocean View zone — the oceanfront Club buildings, marked in wine on the map." },
-        { name: "Building 8", cat: "lodging", bnum: 8, club: true, lat: 20.87108, lng: -86.86472,
+        { name: "Building 8", cat: "lodging", bnum: 8, club: true, lat: 20.873596, lng: -86.866201,
           rooms: "8051–8359",
           meta: "Excellence Club Ocean View zone · Oceanfront",
           desc: "The Excellence Club oceanfront building at the bottom-right of the grounds — a long, narrow block at the south-east corner, its long side facing the beach, with EC Pool 2 and Building 9 just west of it. EC Junior Suite Ocean View and Ocean Front suites, Honeymoon Suites, and Imperial Suites; higher floors clear the palms for the full ocean view.",
           note: "Buildings 7–8 are the Excellence Club Ocean View zone — the oceanfront Club buildings, marked in wine on the map." },
-        { name: "Building 9", cat: "lodging", bnum: 9, club: true, lat: 20.87119, lng: -86.86584,
+        { name: "Building 9", cat: "lodging", bnum: 9, club: true, lat: 20.874071, lng: -86.866713,
           rooms: "9051–9357",
           meta: "Excellence Club · Pool View · EC pool zone",
           desc: "The Excellence Club pool-zone building — a horizontal block on the bottom row at the center-right, set right beside the dedicated EC pool (EC Pool 2, pin 30) on its south side, so the outlook is over the club pool courtyard and ocean views are limited. A quick path east reaches the beach; Magna and the EC lounge are up at the north end of the resort." },
-        { name: "Kakao", cat: "bars", lat: 20.87614, lng: -86.86565,
+        { name: "Kakao", cat: "bars", lat: 20.875470, lng: -86.866503,
           meta: "Lobby retail cluster · south of Functional Training",
           desc: "The chocolate spot in the lobby retail cluster, south of the Functional Training Center — cacao drinks and sweets between the lobby and the restaurant row." },
-        { name: "Blue Bar", cat: "bars", lat: 20.87523, lng: -86.86465,
+        { name: "Blue Bar", cat: "bars", lat: 20.874666, lng: -86.865861,
           meta: "Main Pool 1 · north lobe · 10 AM–6 PM",
           desc: "The bar at the south edge of Main Pool 1's north lobe, directly south of Oregano — the pool's north-end bar, right at the water's edge." },
-        { name: "Las Olas Bar", cat: "bars", lat: 20.87353, lng: -86.86424,
+        { name: "Las Olas Bar", cat: "bars", lat: 20.873916, lng: -86.865768,
           meta: "On the beach · south of Las Olas",
           desc: "The beach bar immediately south of the Las Olas grill, right on the sand — drinks without leaving the beach." },
-        { name: "EC Lounge Bar", cat: "bars", club: true, lat: 20.87567, lng: -86.86583,
+        { name: "EC Lounge Bar", cat: "bars", club: true, lat: 20.875672, lng: -86.865826,
           meta: "Excellence Club · NE corner cluster",
           desc: "The Club lounge's own bar, in the northeast-corner stack between Magna above and the Excellence Club Lounge below." },
-        { name: "Games Area", cat: "sights", lat: 20.87460, lng: -86.86587,
+        { name: "Games Area", cat: "sights", lat: 20.874677, lng: -86.866723,
           meta: "East of the Theater · running south to Main Pool 2",
           desc: "The long games strip along the Theater's east side, running south toward Main Pool 2 — lawn games and activities through the day." },
-        { name: "Kiosk", cat: "sights", lat: 20.87518, lng: -86.86551,
+        { name: "Kiosk", cat: "sights", lat: 20.874940, lng: -86.866300,
           meta: "Gardens west of Main Pool 1",
           desc: "The small kiosk in the gardens south of the Martini Bar, west of Main Pool 1 and just north of the Stone Gazebo." },
-        { name: "Archery Area", cat: "sights", lat: 20.87773, lng: -86.86947,
+        { name: "Archery Area", cat: "sights", lat: 20.877339, lng: -86.868169,
           meta: "Northwest corner · north of the tennis courts",
           desc: "The archery range at the northwest corner of the grounds, north of the tennis courts." },
-        { name: "ATM", cat: "sights", lat: 20.87728, lng: -86.86662,
+        { name: "ATM", cat: "sights", lat: 20.875933, lng: -86.866317,
           meta: "Entrance cluster · west of Functional Training",
           desc: "Cash machine in the entrance cluster, west of the Functional Training Center." },
-        { name: "Medical Health Center", cat: "sights", lat: 20.87753, lng: -86.86645,
+        { name: "Medical Health Center", cat: "sights", lat: 20.875757, lng: -86.866314,
           meta: "Entrance cluster",
           desc: "The resort's medical health center, in the entrance cluster at the top of the grounds — the first stop for anything urgent." },
-        { name: "Yucatan Ballroom", cat: "sights", lat: 20.87736, lng: -86.86580,
+        { name: "Yucatan Ballroom", cat: "sights", lat: 20.875705, lng: -86.865953,
           meta: "NE of the Functional Training Center · west of Magna",
           desc: "The Yucatan Ballroom — the resort's big indoor event space, northeast of the Functional Training Center and west of Magna." },
-        { name: "Gift Shop", cat: "sights", lat: 20.87605, lng: -86.86582,
+        { name: "Gift Shop", cat: "sights", lat: 20.875522, lng: -86.866687,
           meta: "Lobby retail cluster",
           desc: "The gift shop in the lobby retail cluster south of the Functional Training Center — sundries, souvenirs, and anything you forgot to pack." },
-        { name: "Jewellery Store", cat: "sights", lat: 20.87581, lng: -86.86574,
+        { name: "Jewellery Store", cat: "sights", lat: 20.875179, lng: -86.866409,
           meta: "Lobby retail cluster · south of Kakao",
           desc: "The jewellery store in the lobby retail cluster, south of Kakao." },
-        { name: "Smoking Area", cat: "sights", lat: 20.87446, lng: -86.86566,
+        { name: "Smoking Area", cat: "sights", lat: 20.874733, lng: -86.866827,
           meta: "South of Prelude Terrace · west of Food Shark",
           desc: "The designated smoking area, south of the Prelude Terrace Bar and west of the Food Shark truck." },
-        { name: "Tennis Courts", cat: "sights", lat: 20.87725, lng: -86.86921,
+        { name: "Tennis Courts", cat: "sights", lat: 20.876931, lng: -86.867909,
           meta: "NW courts apron",
           desc: "The tennis courts on the northwest apron — the west court of the pair drawn at the top-left of the grounds." },
-        { name: "Pickleball", cat: "sights", lat: 20.87690, lng: -86.86835,
+        { name: "Pickleball", cat: "sights", lat: 20.876516, lng: -86.867515,
           meta: "NW courts apron",
           desc: "The pickleball courts on the northwest apron, east of the tennis courts." },
-        { name: "Parking", cat: "sights", lat: 20.87431, lng: -86.86936,
+        { name: "Parking", cat: "sights", lat: 20.876371, lng: -86.868164,
           meta: "West edge · northwest of Building 2",
           desc: "The two parking strips along the west edge of the grounds, northwest of Building 2." },
-        { name: "Miilé Spa Beach Palapa", cat: "wellness", lat: 20.87608, lng: -86.86403,
+        { name: "Miilé Spa Beach Palapa", cat: "wellness", lat: 20.874711, lng: -86.865495,
           meta: "North beach · south of the Dive Center",
           desc: "The spa's beach palapa on the north beach, just south of the Dive Center — treatments with the sea in earshot." },
-        { name: "Functional Training Center", cat: "wellness", lat: 20.87727, lng: -86.86647,
+        { name: "Functional Training Center", cat: "wellness", lat: 20.875752, lng: -86.866529,
           meta: "Center-north · south of the entrance",
           desc: "The functional training center south of the entrance — strength and conditioning kit, a short walk from the Fitness Center out at the courts apron." },
-        { name: "EC Pool Concierge · Building 7", cat: "club", club: true, lat: 20.87317, lng: -86.86429,
+        { name: "EC Pool Concierge · Building 7", cat: "club", club: true, lat: 20.873999, lng: -86.865978,
           meta: "On the beach · east of Building 7",
           desc: "The Excellence Club pool concierge for the Building 7 pool — towels and service on the beach at pier level, east of Building 7." },
-        { name: "EC Pool Concierge · Building 9", cat: "club", club: true, lat: 20.87197, lng: -86.86605,
+        { name: "EC Pool Concierge · Building 9", cat: "club", club: true, lat: 20.873856, lng: -86.866532,
           meta: "North of Building 9 · EC pool zone",
           desc: "The Excellence Club pool concierge by Building 9, serving EC Pool 2 and the Club pool zone." },
-        { name: "Seasons Tours", cat: "sights", lat: 20.87700, lng: -86.86736,
+        { name: "Seasons Tours", cat: "sights", lat: 20.875535, lng: -86.866238,
           meta: "In the lobby · excursions desk",
           desc: "The resort's own tour desk, inside the lobby block at the east end — the place to book excursions off property, from Chichén Itzá and Isla Mujeres trips to private tours and transfers." },
-        { name: "Seasons Photo Studio", cat: "sights", lat: 20.87688, lng: -86.86745,
+        { name: "Seasons Photo Studio", cat: "sights", lat: 20.875515, lng: -86.866368,
           meta: "In the lobby · photo studio",
           desc: "The resort's photo studio, inside the lobby block at the south-east end — book a beach or garden photo session, and view or order prints from shoots around the resort, weddings included." }
       ];
@@ -7398,6 +7488,9 @@
         blipPos: null,    // { x, y, near } from the latest one-time Blip ping (not the watch)
         blipAt: 0,        // local time of that ping — its last-seen stamp while this page is open
         blipping: false,  // a Blip tap is mid-flight (read or write pending)
+        handPos: null,    // { x, y, near } placed by the owner's own tap (Set by hand), or null
+        handAt: 0,        // local time of that placement — its last-seen stamp while this page is open
+        handMode: false,  // placement mode is armed: the next tap on the drawing sets the dot
         lastFix: null,    // { lat, lng } of the latest local GPS fix
         lastWrite: null,  // { lat, lng } of the last position written
         lastWriteTime: 0,
@@ -7406,7 +7499,7 @@
       };
       var liveDb = null, liveAuth = null, liveUid = null, liveStorage = null;
       var liveReady = false, liveAuthFailed = false;
-      var livePresenceRef = null, liveMyRef = null, liveProximityRef = null;
+      var livePresenceRef = null, liveMyRef = null, liveProximityRef = null, liveCalibRef = null;
       var liveProfile = null;
       var liveAnchors = null;
 
@@ -7444,9 +7537,89 @@
       function liveValidIcon(id) {
         return (typeof id === "string" && LIVE_ICON_MAP[id]) ? id : LIVE_DEFAULT_ICON;
       }
+      // ----- Calibration anchors: hand-set spots teach the conversion --
+      // A venue pin anchors its own spot, but pool decks, swim-up
+      // terraces and walkways have no pins — and a person standing
+      // there converts through whatever pins happen to be nearest in
+      // GPS space, which is how a poolside dot ended up by the Stone
+      // Gazebo. When someone sets their dot by hand, the page pairs
+      // the GPS fix from that moment with the tapped map position and
+      // stores the pair (the shared `calib` node, plus this device's
+      // own list below). Those pairs join the same anchor table the
+      // place pins feed, so GPS fixes near a hand-set spot convert
+      // through it too — for everyone, not just the person who set it.
+      // The seed is the first hand-set, baked in so it works before
+      // any shared record loads: Chris poolside at Excellence Club
+      // Pool 2, Nov 6, 2026 — GPS (20.873866, -86.866680), ±4 m,
+      // paired with the pool's drawn position on the official map
+      // (the EC Pool 2 pin, directly south of Building 9).
+      var liveCalibSeed = [
+        { lat: 20.873866, lng: -86.86668, x: 444, y: 536 }
+      ];
+      var liveCalibLocal = liveCalibSeed.slice(); // this device's pairs (seed + own hand-sets)
+      var liveCalibRemote = [];                   // pairs shared by the group (the `calib` node)
+      // One pair per spot: a candidate within ~3 m in GPS space of an
+      // anchor already in the table is the same spot, not a new one —
+      // this keeps the corrected EC Pool 2 pin and its seed pair from
+      // double-weighting one place.
+      function liveCalibIsDupe(list, c) {
+        for (var i = 0; i < list.length; i++) {
+          if (liveHav(c.lat, c.lng, list[i].lat, list[i].lng) < 3) return true;
+        }
+        return false;
+      }
+      // Records a hand-set pair: helps this device immediately and is
+      // shared to the `calib` node so it helps everyone. The pair is
+      // calibration data (a GPS fix + a map position someone chose),
+      // written under the same anonymous session as presence.
+      function liveAddCalibAnchor(lat, lng, x, y) {
+        if (IS_SPUDMAPS_APP) return; // app mode: the page never writes
+        if (typeof lat !== "number" || typeof lng !== "number" || !isFinite(lat) || !isFinite(lng)) return;
+        if (typeof x !== "number" || typeof y !== "number" || !isFinite(x) || !isFinite(y)) return;
+        var c = { lat: lat, lng: lng, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+        var all = liveCalibLocal.concat(liveCalibRemote);
+        if (liveAnchors) {
+          for (var i = 0; i < liveAnchors.length; i++) all.push(liveAnchors[i]);
+        }
+        if (liveCalibIsDupe(all, c)) return;
+        liveCalibLocal.push(c);
+        liveAnchors = null; // rebuild with the new pair on next use
+        if (liveDb && liveUid) {
+          try {
+            if (!liveCalibRef) liveCalibRef = liveDb.ref("calib");
+            liveCalibRef.push({ lat: c.lat, lng: c.lng, x: c.x, y: c.y, by: liveUid, ts: firebase.database.ServerValue.TIMESTAMP });
+          } catch (e) { /* the local pair still helps this device */ }
+        }
+      }
+      function liveOnCalib(snap) {
+        var v = null;
+        try { v = snap.val(); } catch (e) { v = null; }
+        var out = [];
+        if (v && typeof v === "object") {
+          for (var k in v) {
+            if (!Object.prototype.hasOwnProperty.call(v, k)) continue;
+            var c = v[k];
+            if (!c || typeof c.lat !== "number" || typeof c.lng !== "number" ||
+                typeof c.x !== "number" || typeof c.y !== "number") continue;
+            if (!isFinite(c.lat) || !isFinite(c.lng) || !isFinite(c.x) || !isFinite(c.y)) continue;
+            out.push({ lat: c.lat, lng: c.lng, x: c.x, y: c.y });
+          }
+        }
+        liveCalibRemote = out;
+        liveAnchors = null; // rebuild with the shared pairs on next use
+        // A sharing viewer's own dot re-converts through the improved
+        // table right away; everyone else's dots arrive already
+        // converted on their own phones and are untouched.
+        if (liveState.sharing && liveState.lastFix && !liveState.handPos) {
+          liveState.mePos = liveXY(liveState.lastFix.lat, liveState.lastFix.lng, liveState.lastFixAcc);
+        }
+        liveRender();
+      }
       // Anchor table: every place's real lat/lng paired with its drawn
       // position — PINXY for on-resort pins, the TX/TY town-strip
-      // projection (un-nudged) for off-property ones.
+      // projection (un-nudged) for off-property ones — plus every
+      // calibration pair (hand-set spots: the baked-in seed, this
+      // device's own, and the group's shared ones).
       function liveBuildAnchors() {
         liveAnchors = [];
         for (var i = 0; i < PLACES.length; i++) {
@@ -7460,21 +7633,31 @@
             liveAnchors.push({ lat: p.lat, lng: p.lng, x: xy[0], y: xy[1] });
           }
         }
+        var calib = liveCalibLocal.concat(liveCalibRemote);
+        for (var j = 0; j < calib.length; j++) {
+          if (!liveCalibIsDupe(liveAnchors, calib[j])) {
+            liveAnchors.push({ lat: calib[j].lat, lng: calib[j].lng, x: calib[j].x, y: calib[j].y });
+          }
+        }
       }
-      // Inverse-distance-squared weighting over the 4 nearest anchors:
-      // exact when standing at a known place, smooth in between. `near`
-      // is the distance to the closest anchor, so fixes far off the
-      // mapped area can stay off the drawing. The distance floor is
-      // small (5 m) so the closest anchor genuinely dominates: with a
-      // 10 m floor, anchors 15 m away in GPS space pulled nearly as
-      // hard as the venue being stood in.
-      // No snapping (Nov 6, 2026): people are never snapped onto a
-      // venue. Earlier builds parked the dot exactly on a pin when a
-      // fix landed close to it, which claimed a certainty GPS doesn't
-      // have — standing at the pool between Cielo and Las Olas, a dot
-      // could sit on a venue the person wasn't at. The dot now always
-      // shows the raw blended GPS approximation, with an accuracy
-      // halo sized by the fix's own accuracy (see layoutDots).
+      // The GPS-to-map conversion: inverse-distance-squared weighting
+      // over the 4 nearest anchors (venue pins + hand-set calibration
+      // pairs). `near` is the distance to the closest anchor, so fixes
+      // far off the mapped area can stay off the drawing. The distance
+      // floor is small (5 m) so the closest anchor genuinely
+      // dominates: with a 10 m floor, anchors 15 m away in GPS space
+      // pulled nearly as hard as the venue being stood in.
+      // No latching, ever (Nov 6, 2026): a dot is placed by the GPS
+      // position through this conversion and is NEVER snapped onto,
+      // parked on, or pulled onto a venue pin — nobody is standing
+      // on a pin. Earlier builds parked the dot exactly on a pin when
+      // a fix landed close to it, which claimed a certainty GPS
+      // doesn't have and put people at venues they weren't at. The
+      // dot always shows where the fix converts to, with an accuracy
+      // halo sized by the fix's own accuracy (see layoutDots). Where
+      // the conversion used to go wrong — pool decks and walkways
+      // with no pins of their own — hand-set calibration pairs now
+      // anchor the spot itself (see liveCalibSeed above).
       function liveXY(lat, lng, acc) {
         if (!liveAnchors) liveBuildAnchors();
         var accOut = (typeof acc === "number" && isFinite(acc) && acc > 0) ? acc : null;
@@ -7669,24 +7852,217 @@
       liveHereEl.insertBefore(liveBlipHint, liveHereNote);
       liveBlipBtn.addEventListener("click", liveBlip);
 
-      // ----- GPS only: no Wi-Fi location, no hand placement -----
-      // A dot on this map only ever comes from the phone's satellite
-      // GPS. Browsers hand back whatever the phone's fused location
-      // stack produces, and indoors that stack quietly substitutes
-      // Wi-Fi positioning or reuses an old fix — the Building 6 dot
-      // while its owner sat at the Stone Gazebo. The page can't reach
-      // into the phone and switch that off, so it does the next thing:
-      // it refuses to use any reading that carries the Wi-Fi/stale
-      // signature (accuracy worse than \u00b150 m, no accuracy at all, or a
-      // fix timestamp over a minute old), and any reading from a
-      // stream that has gone stuck — bit-identical coordinates
-      // re-delivered for 45 s+, however good the accuracy claimed
-      // (see liveStuckCheck). Such readings never move a
-      // dot and are never written to presence; the last real GPS fix
-      // stands and fades to last-seen on the normal clock. There is
-      // deliberately NO hand placement anymore: the owner asked for
-      // GPS only, so when GPS can't fix, the honest states are the
-      // last real fix or nothing.
+      // ----- Set by hand: tap-to-place your own dot -----
+      // The deliberate override for when GPS and the drawing disagree
+      // (a pool deck has no pin to convert through, and nobody stands
+      // on a pin anyway). Tapping the button arms placement mode: a
+      // banner appears over the map, the map unlocks for moving, and
+      // the next genuine tap on the drawing — not a drag, not a pin —
+      // becomes the dot. The placement is written to presence with
+      // manual: true, so every viewer renders it dashed, badged and
+      // labeled "set by hand" — never mistaken for a GPS fix. While
+      // Live is on, the next accepted GPS fix replaces it; with Live
+      // off it stands (fading to last-seen on the normal clock) until
+      // "Use GPS for my spot" replaces it with a fresh GPS ping. The
+      // GPS fix from the moment of placement is paired with the
+      // tapped position as a calibration anchor (liveAddCalibAnchor),
+      // so the spot gets accurate GPS conversion for everyone.
+      // Hidden in app mode, where the page never writes presence.
+      var liveHandBtn = document.createElement("button");
+      liveHandBtn.type = "button";
+      liveHandBtn.className = "livehand";
+      liveHandBtn.id = "liveHand";
+      liveHandBtn.setAttribute("aria-label", "Set my spot by hand — tap the map where you are");
+      var liveHandIcon = document.createElement("span");
+      liveHandIcon.setAttribute("aria-hidden", "true");
+      liveHandIcon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>';
+      var liveHandTxt = document.createElement("span");
+      liveHandTxt.textContent = "Set my spot by hand";
+      liveHandBtn.appendChild(liveHandIcon);
+      liveHandBtn.appendChild(liveHandTxt);
+      var liveHandHint = document.createElement("p");
+      liveHandHint.className = "livehere-note livehand-hint";
+      liveHandHint.textContent = "GPS putting you somewhere you're not? Tap this, then tap the map where you really are. Your dot shows there, labeled “set by hand”, and the spot you pick teaches the map — GPS dots near it land better for everyone.";
+      if (IS_SPUDMAPS_APP) { liveHandBtn.hidden = true; liveHandHint.hidden = true; }
+      liveHereEl.insertBefore(liveHandBtn, liveHereNote);
+      liveHereEl.insertBefore(liveHandHint, liveHereNote);
+
+      var liveHandBanner = document.createElement("div");
+      liveHandBanner.className = "handbanner";
+      liveHandBanner.id = "handBanner";
+      liveHandBanner.hidden = true;
+      liveHandBanner.setAttribute("role", "status");
+      var liveHandBannerTxt = document.createElement("span");
+      liveHandBannerTxt.textContent = "Tap the map where you actually are";
+      var liveHandCancel = document.createElement("button");
+      liveHandCancel.type = "button";
+      liveHandCancel.className = "handcancel";
+      liveHandCancel.textContent = "Cancel";
+      liveHandBanner.appendChild(liveHandBannerTxt);
+      liveHandBanner.appendChild(liveHandCancel);
+      sceneEl.appendChild(liveHandBanner);
+      liveHandCancel.addEventListener("click", function () {
+        liveSetHandMode(false);
+        liveSyncHandBtn();
+      });
+
+      function liveSyncHandBtn() {
+        if (!liveHandBtn) return;
+        if (liveState.handPos) {
+          liveHandTxt.textContent = "Use GPS for my spot";
+          liveHandBtn.setAttribute("aria-label", "Use GPS for my spot — stop showing the spot you set by hand");
+        } else if (liveState.handMode) {
+          liveHandTxt.textContent = "Cancel setting my spot";
+          liveHandBtn.setAttribute("aria-label", "Cancel setting my spot by hand");
+        } else {
+          liveHandTxt.textContent = "Set my spot by hand";
+          liveHandBtn.setAttribute("aria-label", "Set my spot by hand — tap the map where you are");
+        }
+      }
+      function liveSetHandMode(on) {
+        liveState.handMode = !!on;
+        sceneEl.classList.toggle("hand-setting", liveState.handMode);
+        liveHandBanner.hidden = !liveState.handMode;
+        if (liveState.handMode) {
+          // Placement taps need the map unlocked on touch screens:
+          // activating hands every touch to the map, and a tap (not a
+          // drag) is what places the dot.
+          setMapActive(true);
+          try {
+            var reduceH = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            sceneEl.scrollIntoView({ behavior: reduceH ? "auto" : "smooth", block: "start" });
+          } catch (e) { /* scrolling to the map is a nicety */ }
+        }
+      }
+      function liveEnterHandMode() {
+        if (IS_SPUDMAPS_APP) return; // app mode: the page never writes presence
+        if (!liveReady) {
+          liveNote("Live group couldn't load just now — the rest of the map works as usual.", true);
+          return;
+        }
+        if (!liveProfile) { liveOpenDlg("hand"); return; }
+        liveSetHandMode(true);
+        liveSyncHandBtn();
+        liveNote("Tap the map where you actually are — that tap is your spot. Drag to move the map first if you need to; only a tap places it.");
+      }
+      // Presence ref for one-off writes (Blip does the same dance
+      // inline): attaches the read listeners viewing uses and points
+      // liveMyRef at this visitor's entry, without starting the watch.
+      function liveEnsureMyRef(cb) {
+        if (IS_SPUDMAPS_APP || !liveReady) { cb(false); return; }
+        if (liveMyRef) { cb(true); return; }
+        liveEnsureAuth(function (ok) {
+          if (!ok) { cb(false); return; }
+          liveAttachListeners();
+          if (!liveListening || !livePresenceRef) { cb(false); return; }
+          if (!liveState.viewing) {
+            liveState.viewing = true;
+            liveLegendEl.hidden = false;
+            if (!liveState.staleTimer) liveState.staleTimer = setInterval(liveRender, 15000);
+          }
+          try { liveMyRef = livePresenceRef.child(liveUid); } catch (e) { liveMyRef = null; }
+          cb(!!liveMyRef);
+        });
+      }
+      // Pairs the placement with a GPS fix for calibration: the watch's
+      // latest accepted fix when it's fresh, otherwise one fresh read.
+      // Only a real satellite fix pairs — a Wi-Fi/stale/stuck reading
+      // would teach the map a wrong spot, so it pairs nothing.
+      function liveHandPairGps(x, y) {
+        if (liveState.lastFix && liveState.lastFixAt && (Date.now() - liveState.lastFixAt) <= 120000) {
+          liveAddCalibAnchor(liveState.lastFix.lat, liveState.lastFix.lng, x, y);
+          return;
+        }
+        if (!("geolocation" in navigator)) return;
+        try {
+          navigator.geolocation.getCurrentPosition(function (pos) {
+            if (!pos || !pos.coords) return;
+            var acc = (typeof pos.coords.accuracy === "number" && isFinite(pos.coords.accuracy) && pos.coords.accuracy > 0) ? pos.coords.accuracy : null;
+            var age = (typeof pos.timestamp === "number" && isFinite(pos.timestamp)) ? (Date.now() - pos.timestamp) : 0;
+            if (acc === null || acc > 50 || age > 60000) return;
+            if (liveStuckCheck(pos.coords.latitude, pos.coords.longitude)) return;
+            liveAddCalibAnchor(pos.coords.latitude, pos.coords.longitude, x, y);
+          }, function () { /* no fix, no pair — the placement still stands */ }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+        } catch (e) { /* no fix, no pair */ }
+      }
+      function livePlaceHand(x, y) {
+        liveSetHandMode(false);
+        liveState.handPos = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, near: 0, acc: null };
+        liveState.handAt = Date.now();
+        // The hand placement supersedes the last Blip locally — the
+        // presence entry is about to say the same thing.
+        liveState.blipPos = null;
+        liveState.blipAt = 0;
+        liveHandPairGps(x, y);
+        liveEnsureMyRef(function (ok) {
+          if (ok) liveWriteNow();
+          liveRender();
+          liveSyncHandBtn();
+          liveNote(ok
+            ? "Your spot is set — your dot shows where you put it, labeled “set by hand” so nobody mistakes it for GPS. The spot also teaches the map: GPS dots near here land better now."
+            : "Your spot is set on this phone, but it couldn't be sent to the group — check your connection, then set it again.");
+        });
+      }
+      function liveClearHand() {
+        liveState.handPos = null;
+        liveState.handAt = 0;
+        liveSetHandMode(false);
+        if (liveState.sharing) {
+          // Back to GPS: rewrite the current satellite position (if a
+          // fix has landed) at once; the next fix takes over anyway.
+          if (liveState.mePos) liveWriteNow();
+          liveRender();
+          liveSyncHandBtn();
+          liveNote("Back to GPS — your dot follows your phone's satellite fix again.");
+        } else {
+          // Not sharing: a fresh GPS ping replaces the hand-set entry.
+          liveSyncHandBtn();
+          liveBlip();
+        }
+      }
+      liveHandBtn.addEventListener("click", function () {
+        if (liveState.handPos) { liveClearHand(); return; }
+        if (liveState.handMode) { liveSetHandMode(false); liveSyncHandBtn(); return; }
+        liveEnterHandMode();
+      });
+      // The placement tap itself. Capture phase on the scene, and
+      // only while placement mode is armed: drags (which set the
+      // suppress window), pins, bubbles and map controls never place.
+      sceneEl.addEventListener("click", function (e) {
+        if (!liveState.handMode) return;
+        if (Date.now() < suppressUntil) return; // that was a drag, not a tap
+        if (e.target.closest && e.target.closest(".pin, .pincluster, .livebubble, .maptools, .mapgate, .wxoverlay, .wxpop, .liveprompt, .handbanner")) return;
+        var r = sceneEl.getBoundingClientRect();
+        var u = unit();
+        var x = (e.clientX - r.left - view.tx) / (u * view.k);
+        var y = (e.clientY - r.top - view.ty) / (u * view.k);
+        if (!isFinite(x) || !isFinite(y)) return;
+        x = Math.max(0, Math.min(VBW, x));
+        y = Math.max(0, Math.min(VBH, y));
+        livePlaceHand(x, y);
+      }, true);
+
+      // ----- GPS only: no Wi-Fi location -----
+      // A GPS dot on this map only ever comes from the phone's
+      // satellite GPS. Browsers hand back whatever the phone's fused
+      // location stack produces, and indoors that stack quietly
+      // substitutes Wi-Fi positioning or reuses an old fix — the
+      // Building 6 dot while its owner sat at the Stone Gazebo. The
+      // page can't reach into the phone and switch that off, so it
+      // does the next thing: it refuses to use any reading that
+      // carries the Wi-Fi/stale signature (accuracy worse than
+      // \u00b150 m, no accuracy at all, or a fix timestamp over a minute
+      // old), and any reading from a stream that has gone stuck —
+      // bit-identical coordinates re-delivered for 45 s+, however
+      // good the accuracy claimed (see liveStuckCheck). Such readings
+      // never move a dot and are never written to presence; the last
+      // real GPS fix stands and fades to last-seen on the normal
+      // clock.
+      // Hand-setting (restored Nov 6, 2026) is the one deliberate
+      // exception, and it never pretends to be GPS: a hand-set dot is
+      // dashed, badged and labeled "set by hand" everywhere it shows,
+      // the next accepted GPS fix replaces it, and the placement
+      // doubles as a calibration pair (see liveAddCalibAnchor).
       // The panel also reports the phone-as-node side: this phone's
       // own Bluetooth proximity records (written by the companion
       // app) let friends with no GPS fix of their own show up as
@@ -7699,7 +8075,7 @@
       liveGpsTitle.textContent = "GPS only — no Wi-Fi location";
       var liveGpsWhy = document.createElement("p");
       liveGpsWhy.className = "livegps-why";
-      liveGpsWhy.textContent = "Your dot only ever comes from your phone's satellite GPS — never from Wi-Fi, and never set by hand. A reading that looks like a Wi-Fi guess (promising worse than \u00b150 m, or over a minute old) is thrown away, and so is a stuck one: if your phone keeps re-sending the exact same spot, that's a cached fix being re-reported, not live GPS, and it stops being trusted until the spot actually changes. Your dot stays at your last real GPS spot instead of jumping to a guess. One honest limit: if a phone's very first answer is a confident re-send of an old fix, no web page can tell it apart from real GPS — toggling Location off and on in the phone's settings forces the phone itself to drop it. Under a roof, GPS may not reach you at all — step into the open and Blip, or turn Live on and walk out.";
+      liveGpsWhy.textContent = "Your dot comes from your phone's satellite GPS — never from Wi-Fi. A reading that looks like a Wi-Fi guess (promising worse than \u00b150 m, or over a minute old) is thrown away, and so is a stuck one: if your phone keeps re-sending the exact same spot, that's a cached fix being re-reported, not live GPS, and it stops being trusted until the spot actually changes. Your dot stays at your last real GPS spot instead of jumping to a guess. One honest limit: if a phone's very first answer is a confident re-send of an old fix, no web page can tell it apart from real GPS — toggling Location off and on in the phone's settings forces the phone itself to drop it. Under a roof, GPS may not reach you at all — step into the open and Blip, or turn Live on and walk out. If GPS and the drawing still disagree about where you are, set your spot by hand instead (the button above) — a hand-set dot is always labeled as one, and where you put it teaches the map that spot for everyone's GPS.";
       var liveGpsStatus = document.createElement("p");
       liveGpsStatus.className = "livegps-status";
       liveGpsStatus.id = "liveGpsStatus";
@@ -7723,7 +8099,11 @@
       // sharing starts/stops, and on every render (proximity records
       // arrive on their own listener).
       function liveGpsSync() {
-        if (liveState.gpsStuck) {
+        if (liveState.handPos) {
+          liveGpsStatus.hidden = false;
+          liveGpsStatus.classList.add("ok");
+          liveGpsStatus.textContent = "Your dot is set by hand right now — it stays where you put it until a real GPS fix lands or you tap “Use GPS for my spot”.";
+        } else if (liveState.gpsStuck) {
           liveGpsStatus.hidden = false;
           liveGpsStatus.classList.remove("ok");
           liveGpsStatus.textContent = "Your phone keeps re-sending the exact same spot, to the last decimal — that's a stuck fix, not live GPS, so it stopped being trusted. Toggle Location off and on in your phone settings to force the phone to drop the old fix, then step into the open.";
@@ -7937,7 +8317,7 @@
           proxRows.push({ uid: uid, name: nm, badge: bg.text });
         });
         proxRows.sort(function (a, b) { return a.name < b.name ? -1 : 1; });
-        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon + "|" + (want[k].stale ? "stale:" + want[k].updatedAt : "live") + "|" + (badges[k] || ""); }).join(";") +
+        var sig = keys.map(function (k) { return k + "|" + want[k].name + "|" + want[k].color + "|" + want[k].icon + "|" + (want[k].stale ? "stale:" + want[k].updatedAt : "live") + "|" + (want[k].manual ? "hand" : "") + "|" + (badges[k] || ""); }).join(";") +
           "|prox" + proxRows.map(function (r) { return r.uid + "|" + r.name + "|" + r.badge; }).join(";") +
           "|potato" + potatoStage() +
           "|share" + (liveState.sharing ? "1" : "0");
@@ -7970,7 +8350,7 @@
           b.type = "button";
           b.className = "liveuser" + (w.stale ? " stale" : "");
           var seenTxt = w.stale ? liveLastSeenText(w.updatedAt) : "";
-          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name) + (seenTxt ? " (" + seenTxt + ")" : "") + (badges[k] ? " (" + badges[k] + ")" : ""));
+          b.setAttribute("aria-label", "Center the map on " + (w.me ? "you" : w.name) + (w.manual ? " (spot set by hand)" : "") + (seenTxt ? " (" + seenTxt + ")" : "") + (badges[k] ? " (" + badges[k] + ")" : ""));
           var d = document.createElement("span");
           d.className = "uicon";
           d.style.borderColor = w.color;
@@ -7981,6 +8361,12 @@
           t.textContent = w.me && liveProfile ? liveProfile.name : w.name;
           b.appendChild(d);
           b.appendChild(t);
+          if (w.manual) {
+            var hd = document.createElement("span");
+            hd.className = "uhand";
+            hd.textContent = "· set by hand";
+            b.appendChild(hd);
+          }
           if (seenTxt) {
             var s = document.createElement("span");
             s.className = "useen";
@@ -8111,7 +8497,7 @@
           b.type = "button";
           b.className = "liveuser" + (r.stale ? " stale" : "");
           var seenTxtG = r.stale ? liveLastSeenText(r.updatedAt) : "";
-          b.setAttribute("aria-label", "Center the map on " + (r.me ? "you" : liveDisplayName(r)) + (seenTxtG ? " (" + seenTxtG + ")" : ""));
+          b.setAttribute("aria-label", "Center the map on " + (r.me ? "you" : liveDisplayName(r)) + (r.manual ? " (spot set by hand)" : "") + (seenTxtG ? " (" + seenTxtG + ")" : ""));
           var d = document.createElement("span");
           d.className = "uicon";
           d.style.borderColor = r.color;
@@ -8122,6 +8508,12 @@
           t.textContent = liveDisplayName(r) + (r.me ? " (you)" : "");
           b.appendChild(d);
           b.appendChild(t);
+          if (r.manual) {
+            var hdG = document.createElement("span");
+            hdG.className = "uhand";
+            hdG.textContent = "· set by hand";
+            b.appendChild(hdG);
+          }
           if (seenTxtG) {
             var sg = document.createElement("span");
             sg.className = "useen";
@@ -8192,7 +8584,7 @@
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
-      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once. Every dot is satellite GPS only: a reading that looks like a Wi-Fi guess is thrown away rather than shown, so under a roof a dot may hold at its last real GPS spot and fade — it will never jump to a guess, and there is no setting a spot by hand. A dot is never snapped onto a place, either — it stays at the raw GPS approximation, so it can sit a few steps off the building you're actually in; the soft ring around it shows how sure the fix is. A friend whose GPS can't fix can still show as “near” someone whose phone sees them over Bluetooth — they bounce off that phone.";
+      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once. GPS dots are satellite GPS only: a reading that looks like a Wi-Fi guess is thrown away rather than shown, so under a roof a dot may hold at its last real GPS spot and fade — it will never jump to a guess. A dot is never latched onto a place, either — nobody is standing on a pin; it sits where the GPS position converts to, so it can sit a few steps off the building you're actually in, and the soft ring around it shows how sure the fix is. If GPS keeps putting you somewhere you're not, tap Set my spot by hand in Who's here and tap where you really are: a hand-set dot has a dashed ring and says “set by hand” so nobody mistakes it for GPS, the next real GPS fix replaces it, and the spot you pick teaches the map — GPS dots near it land better for everyone. A friend whose GPS can't fix can still show as “near” someone whose phone sees them over Bluetooth — they bounce off that phone.";
       liveLegendEl.hidden = true;
       groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
@@ -8472,6 +8864,13 @@
           liveDlgTitle.textContent = "Blip your location";
           liveDlgIntro.textContent = "First pick your name and a color — that's what friends will see. Then tap Save and your spot shows on the map, just this once.";
           liveDlgNote.textContent = "This shows you once. It does not keep following you, and it doesn't turn Live on.";
+        } else if (mode === "hand") {
+          // Set-by-hand with no saved name: the profile comes first,
+          // and the save arms placement mode (see the save handler) —
+          // the tap that follows is the placement.
+          liveDlgTitle.textContent = "Set your spot by hand";
+          liveDlgIntro.textContent = "First pick your name and a color — that's what friends will see. Then tap Save and tap the map where you actually are.";
+          liveDlgNote.textContent = "A hand-set dot is labeled “set by hand” — nobody will mistake it for GPS — and the next real GPS fix replaces it.";
         } else if (mode === "app") {
           // App mode (SpudMaps Live app only): the same dialog as the
           // single profile editor, but save-only — saving never starts
@@ -8529,6 +8928,7 @@
           try { window.SpudMapsLive?.onProfileSaved?.(); } catch (e) {}
         } else if (mode === "join") liveStartSharing();
         else if (mode === "blip") liveBlip();
+        else if (mode === "hand") liveEnterHandMode();
         else if (liveState.sharing) liveWriteNow();
         // The Wedding Wall keys off the same saved profile: refresh its
         // "posting as" line, and release a note that was held for a name.
@@ -8608,22 +9008,25 @@
       }
 
       // ----- Writing own position (throttled by the caller) -----
+      // Writes the hand-set spot while one is set (flagged manual, so
+      // every viewer renders it as a hand-set dot), otherwise the
+      // latest GPS position with manual cleared — a GPS write always
+      // un-flags the entry, including one an older build hand-set.
       function liveWriteNow() {
         if (IS_SPUDMAPS_APP) return; // app mode: the page never writes presence
-        if (!liveMyRef || !liveProfile || !liveState.mePos) return;
+        if (!liveMyRef || !liveProfile) return;
+        var pos = liveState.handPos || liveState.mePos;
+        if (!pos) return;
         try {
           liveMyRef.set({
             name: liveProfile.name,
             color: liveProfile.color,
             icon: liveValidIcon(liveProfile.icon),
-            x: Math.round(liveState.mePos.x * 10) / 10,
-            y: Math.round(liveState.mePos.y * 10) / 10,
-            near: Math.round(liveState.mePos.near),
-            acc: (typeof liveState.mePos.acc === "number" && isFinite(liveState.mePos.acc)) ? Math.round(liveState.mePos.acc) : null,
-            // GPS only: there is no hand placement anymore, so these
-            // are always null — which also clears the manual flag and
-            // building name off any entry an older build wrote.
-            manual: null,
+            x: Math.round(pos.x * 10) / 10,
+            y: Math.round(pos.y * 10) / 10,
+            near: Math.round(pos.near),
+            acc: (typeof pos.acc === "number" && isFinite(pos.acc)) ? Math.round(pos.acc) : null,
+            manual: liveState.handPos ? true : null,
             place: null,
             updatedAt: firebase.database.ServerValue.TIMESTAMP
           });
@@ -8726,6 +9129,10 @@
               liveState.lastFix = { lat: lat, lng: lng };
               liveState.lastFixAcc = bAcc;
               liveState.lastFixAt = Date.now();
+              // A fresh GPS ping replaces any hand-set spot — the
+              // write below is a GPS write and un-flags the entry.
+              liveState.handPos = null;
+              liveState.handAt = 0;
               liveState.mePos = xy;
               liveState.blipPos = xy;
               liveState.blipAt = Date.now();
@@ -8810,6 +9217,10 @@
         liveState.lastFixAcc = accNow;
         liveState.lastFixAt = Date.now();
         if (liveState.gpsWeak) { liveState.gpsWeak = false; }
+        // A real GPS fix replaces a hand-set spot: from here the dot
+        // is the satellite position again, and the next write
+        // un-flags the entry.
+        if (liveState.handPos) { liveState.handPos = null; liveState.handAt = 0; liveSyncHandBtn(); }
         liveGpsSync();
         liveState.mePos = liveXY(lat, lng, pos.coords.accuracy);
         liveRender();
@@ -8848,15 +9259,28 @@
       // by both viewing (auto-started at sign-in) and sharing; stopping
       // sharing never detaches them, so the group stays visible.
       var liveListening = false;
+      var liveCalibListening = false;
       function liveAttachListeners() {
-        if (liveListening || !liveDb) return;
-        try {
-          livePresenceRef = liveDb.ref("presence");
-          liveProximityRef = liveDb.ref("proximity");
-          livePresenceRef.on("value", liveOnSnapshot, function () { /* a failed read keeps the last snapshot */ });
-          liveProximityRef.on("value", liveOnProximity, function () { /* a failed read keeps the last snapshot */ });
-          liveListening = true;
-        } catch (e) { /* listener attach failed — dots simply won't update */ }
+        if (!liveDb) return;
+        if (!liveListening) {
+          try {
+            livePresenceRef = liveDb.ref("presence");
+            liveProximityRef = liveDb.ref("proximity");
+            livePresenceRef.on("value", liveOnSnapshot, function () { /* a failed read keeps the last snapshot */ });
+            liveProximityRef.on("value", liveOnProximity, function () { /* a failed read keeps the last snapshot */ });
+            liveListening = true;
+          } catch (e) { /* listener attach failed — dots simply won't update */ }
+        }
+        // Calibration pairs ride their own listener + flag: Blip and
+        // hand-set call this for the presence refs even when viewing
+        // already attached them, and the shared anchors must still land.
+        if (!liveCalibListening) {
+          try {
+            liveCalibRef = liveDb.ref("calib");
+            liveCalibRef.on("value", liveOnCalib, function () { /* a failed read keeps the last pairs */ });
+            liveCalibListening = true;
+          } catch (e) { /* shared anchors simply won't load — the seed + local pairs still apply */ }
+        }
       }
       function liveStartViewing() {
         if (!liveReady || liveState.viewing) return;
@@ -8991,6 +9415,11 @@
         liveMyRef = null;
         liveState.sharing = false;
         liveState.mePos = null;
+        // Stopping sharing removes the entry entirely, hand-set or
+        // not — the hand state goes with it, placement mode included.
+        liveState.handPos = null;
+        liveState.handAt = 0;
+        liveSetHandMode(false);
         liveState.gpsWeak = false;
         liveState.gpsStuck = false;
         liveState.stuckSince = 0;
@@ -9045,6 +9474,13 @@
         iconEl.className = "licon";
         iconEl.setAttribute("aria-hidden", "true");
         el.appendChild(iconEl);
+        // Hand-set badge: a pencil glyph at the dot's rim, shown only
+        // while the dot carries the .handset class (see the CSS).
+        var hflagEl = document.createElement("span");
+        hflagEl.className = "hflag";
+        hflagEl.setAttribute("aria-hidden", "true");
+        hflagEl.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>';
+        el.appendChild(hflagEl);
         var label = document.createElement("span");
         label.className = "lname";
         el.appendChild(label);
@@ -9059,28 +9495,28 @@
         var uid, e, key;
         for (uid in entries) {
           if (!Object.prototype.hasOwnProperty.call(entries, uid)) continue;
-          // Own entry: while sharing — or just after a Blip, whose
-          // local dot below stands in for it — it is skipped so the
-          // viewer never gets two dots. Otherwise (a fresh visit after
-          // an earlier blip, say) it renders like anyone else's entry,
-          // faded last-seen included, exactly as the group sees it.
-          if (uid === liveUid && (liveState.sharing || liveState.blipPos)) continue;
+          // Own entry: while sharing — or just after a Blip or a
+          // hand-set, whose local dots below stand in for it — it is
+          // skipped so the viewer never gets two dots. Otherwise (a
+          // fresh visit after an earlier blip, say) it renders like
+          // anyone else's entry, faded last-seen included, exactly as
+          // the group sees it.
+          if (uid === liveUid && (liveState.sharing || liveState.blipPos || liveState.handPos)) continue;
           e = entries[uid];
           if (!e || typeof e.x !== "number" || typeof e.y !== "number") continue;
           // Entries older than 120s are NOT dropped: they render faded
           // with a last-seen label (see the stale branch below).
           if (typeof e.near === "number" && e.near > 800) continue;
-          // GPS only: an entry an older build wrote as hand-set is not
-          // a position this map shows at all — no dot, no row. It
-          // clears itself the next time that phone sends a real GPS
-          // fix (every current writer sends manual: null).
-          if (e.manual === true) continue;
+          // A hand-set entry (manual: true) renders like any other —
+          // but flagged, so its dot is dashed and badged and its
+          // label says "set by hand": it is never passed off as GPS.
           want[uid] = {
             x: e.x, y: e.y, me: false,
             name: typeof e.name === "string" && e.name ? e.name : "Guest",
             color: liveValidColor(e.color),
             icon: liveValidIcon(e.icon),
             stale: liveIsStale(e.updatedAt, now),
+            manual: e.manual === true,
             acc: (typeof e.acc === "number" && e.acc > 0 && e.acc <= 300) ? e.acc : null,
             updatedAt: typeof e.updatedAt === "number" ? e.updatedAt : null
           };
@@ -9105,6 +9541,20 @@
             updatedAt: liveState.blipAt || null
           };
         }
+        // My hand-set dot stands in for my entry in both modes (the
+        // entries loop above skips it): while sharing it holds until
+        // the next accepted GPS fix; with Live off it fades to
+        // last-seen on the same 120s clock as a Blip. Applied last so
+        // it wins over the GPS/Blip dots above while it is set.
+        if (liveState.handPos && liveProfile) {
+          want.__me = {
+            x: liveState.handPos.x, y: liveState.handPos.y, me: true,
+            name: "you", color: liveProfile.color, icon: liveValidIcon(liveProfile.icon),
+            acc: null, manual: true,
+            stale: liveState.sharing ? false : liveIsStale(liveState.handAt, now),
+            updatedAt: liveState.sharing ? null : (liveState.handAt || null)
+          };
+        }
         for (key in liveState.dotEls) {
           if (!Object.prototype.hasOwnProperty.call(liveState.dotEls, key)) continue;
           if (!want[key]) {
@@ -9123,13 +9573,16 @@
           rec.x = w.x; rec.y = w.y; rec.uid = key;
           rec.name = w.name; rec.color = w.color; rec.icon = w.icon; rec.me = w.me;
           rec.stale = !!w.stale; rec.updatedAt = w.updatedAt;
+          rec.manual = !!w.manual;
           rec.acc = (typeof w.acc === "number") ? w.acc : null;
           rec.el.classList.toggle("stale", !!w.stale);
+          rec.el.classList.toggle("handset", !!w.manual);
           rec.el.style.background = "#fffdf8";
           rec.el.style.borderColor = w.color;
           rec.el.style.color = w.color;
           if (rec.iconEl) rec.iconEl.innerHTML = liveIconSvg(w.icon);
           var lbl = w.name;
+          if (w.manual) lbl += " · set by hand";
           if (w.stale) lbl += " · " + liveLastSeenText(w.updatedAt);
           rec.label.textContent = lbl;
           rec.label.style.borderLeftColor = w.color;
@@ -9137,6 +9590,7 @@
         layoutDots();
         liveCountEl.textContent = (liveState.viewing || liveState.sharing) && count > 0 ? "· " + count : "";
         liveRenderUsers(want);
+        liveSyncHandBtn();
         liveGpsSync();
       }
 
