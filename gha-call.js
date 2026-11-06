@@ -45,6 +45,7 @@
 const fs = require('fs');
 const path = require('path');
 const dgram = require('dgram');
+const http = require('http');
 const { chromium } = require('playwright');
 const { buildScript } = require('./script');
 const { respond } = require('./respond');
@@ -88,6 +89,21 @@ function log(step, msg) {
 }
 function event(obj) { console.log('EVENT ' + JSON.stringify(obj)); }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+// Serves a blank page over HTTP on 127.0.0.1 and returns { url, close }.
+// Needed because navigator.mediaDevices only exists in a secure context,
+// and about:blank is NOT one (localhost is). Both hostCheck and the
+// dry-run two-peer sim need a real getUserMedia mic, so they must load
+// from this local page instead of about:blank.
+async function serveBlankPage() {
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end('<!doctype html><html><head><meta charset="utf-8"><title>blank</title></head><body></body></html>');
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const url = 'http://127.0.0.1:' + server.address().port + '/';
+  return { url, close: () => { try { server.close(); } catch (_) {} } };
+}
 
 // ---------- PulseAudio helpers (Vexa pattern) ----------
 // Audio is played into the tts_sink with paplay; the PulseAudio
@@ -229,10 +245,14 @@ async function hostCheck() {
   }
 
   const browser = await chromium.launch(chromiumOpts(['--disable-features=WebRtcHideLocalIpsWithMdns']));
+  let blank = null;
   try {
     const page = await browser.newPage();
     await page.addInitScript(INJECT);
-    await page.goto('about:blank');
+    // about:blank is not a secure context (no navigator.mediaDevices),
+    // so serve a blank page from localhost instead.
+    blank = await serveBlankPage();
+    await page.goto(blank.url);
     const iceServers = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'turn:openrelay.metered.ca:80?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
@@ -355,6 +375,7 @@ async function hostCheck() {
       }
     }
   } finally {
+    if (blank) blank.close();
     await browser.close();
   }
   return out;
@@ -605,10 +626,14 @@ async function dryRun(order, script, orderAudio) {
   log('dry-run', 'phase 2 — simulated staff conversation (two-peer loop)');
   const browser = await chromium.launch(chromiumOpts());
   const result = { ok: false, mode: 'dry-run', host, transcript: [], turns: 0 };
+  let blank = null;
   try {
     const page = await browser.newPage();
     await page.addInitScript(INJECT);
-    await page.goto('about:blank');
+    // about:blank is not a secure context (no navigator.mediaDevices),
+    // so serve a blank page from localhost instead.
+    blank = await serveBlankPage();
+    await page.goto(blank.url);
     // Expose the chunk receiver (same as the live loop).
     const chunks = [];
     await page.exposeFunction('__sendAudioChunk', (dataUrl) => {
@@ -696,6 +721,7 @@ async function dryRun(order, script, orderAudio) {
     if (!result.ok) result.error = 'reply was not captured by the peer (chunks=' + chunks.length + ', bytes=' + replyBytes + ')';
     return result;
   } finally {
+    if (blank) blank.close();
     await browser.close();
   }
 }
