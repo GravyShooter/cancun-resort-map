@@ -765,6 +765,10 @@ async function hostCheck() {
         // Keep the peer connections reachable from later evaluates so
         // getStats can be read after the recording window.
         window.__hostPCs = { pcA, pcB };
+        // Expose the mic stream so later evaluates can measure the LOCAL
+        // track RMS (distinguishes "fake device delivers silence" from
+        // "encoder/transport eats the tone").
+        window.__hostMicStream = micStream;
         pcA.addTrack(micStream.getAudioTracks()[0], micStream);
         const offer = await pcA.createOffer();
         await pcA.setLocalDescription(offer);
@@ -791,9 +795,44 @@ async function hostCheck() {
           // Fake-file mic: the 60s tone WAV is the mic — it covers the
           // whole test even if it plays once and never loops. No pipe
           // tone, no PulseAudio diagnostics (there is no sound server).
-          // Just let the remote peer record the tone.
-          log('host', 'fake-file mic (60s tone); letting the remote peer record ~6s');
-          await sleep(6000);
+          // DECISIVE diagnostic first: measure the LOCAL mic track RMS
+          // in-page (Web Audio Analyser on window.__hostMicStream).
+          // If local RMS ~0.7 the fake device works and the failure is
+          // in the encoder/transport; if ~0 the fake device itself
+          // delivers silence on this host. Then let the remote peer
+          // record the tone for the remaining ~4s.
+          try {
+            const localMic = await page.evaluate(async () => {
+              const stream = window.__hostMicStream;
+              if (!stream) return { error: 'no mic stream on window' };
+              const track = stream.getAudioTracks()[0];
+              if (!track) return { error: 'no audio track' };
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              await ctx.resume();
+              const src = ctx.createMediaStreamSource(stream);
+              const analyser = ctx.createAnalyser();
+              analyser.fftSize = 2048;
+              src.connect(analyser);
+              const buf = new Float32Array(analyser.fftSize);
+              let max = 0;
+              for (let i = 0; i < 4; i++) {
+                await new Promise((r) => setTimeout(r, 500));
+                analyser.getFloatTimeDomainData(buf);
+                let sum = 0;
+                for (let j = 0; j < buf.length; j++) sum += buf[j] * buf[j];
+                max = Math.max(max, Math.sqrt(sum / buf.length));
+              }
+              return { rms: +max.toFixed(4), muted: track.muted, enabled: track.enabled, readyState: track.readyState, label: track.label || '' };
+            });
+            if (localMic.error) {
+              log('host', 'local mic track: ' + localMic.error);
+            } else {
+              out.localMicRms = localMic.rms;
+              log('host', 'local mic track rms=' + localMic.rms.toFixed(4) + ' muted=' + localMic.muted + ' enabled=' + localMic.enabled + ' state=' + localMic.readyState + ' label=' + localMic.label);
+            }
+          } catch (e) { log('host', 'local mic track measure failed: ' + e.message); }
+          log('host', 'fake-file mic (60s tone); letting the remote peer record ~4s');
+          await sleep(4000);
         } else {
           // Diagnostics: is Chromium actually recording from virtmic, and
           // is virtmic RUNNING (reading) or IDLE (stub)? Log before tone.
