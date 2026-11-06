@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- build-2026-11-05-gps-only-no-wifi-no-handset · v131.1.110 -->
+<!-- build-2026-11-06-no-snap-gps-approximation · v132.1.110 -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -1064,7 +1064,7 @@
       }
       /* Accuracy halo: a soft disc behind the dot sized by the fix's
          own GPS accuracy (metres, converted in layoutDots), so an
-         unsnapped indoor fix reads as "somewhere in here" instead of
+         indoor fix reads as "somewhere in here" instead of
          a certain point. Hidden when the accuracy is tighter than
          the dot itself or unknown (e.g. app-written entries). */
       .livedot .halo {
@@ -3850,7 +3850,7 @@
       </section>
 
       <footer class="src">
-        <p class="version-stamp">v131.1.110</p>
+        <p class="version-stamp">v132.1.110</p>
         <button type="button" class="potato-door" id="potatoDoor" aria-label="Potato"><svg viewBox="0 0 48 36" aria-hidden="true" focusable="false"><path d="M24 3.5c11.2 0 20 6.6 20 14.3S35.4 32.5 24 32.5 4 25.7 4 17.8 12.8 3.5 24 3.5Z" fill="#c08a3e" stroke="#7a4a21" stroke-width="2"/><circle cx="17" cy="13" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="29" cy="10.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="33" cy="20" r="1.7" fill="#7a4a21" opacity="0.55"/><circle cx="21" cy="23.5" r="1.4" fill="#7a4a21" opacity="0.55"/><circle cx="12.5" cy="20.5" r="1.2" fill="#7a4a21" opacity="0.55"/></svg></button>
       </footer>
     </div>
@@ -4738,8 +4738,8 @@
       // (20.875672, -86.865826). The old anchor sat ~160 m north of
       // where a phone in the bar actually reads, so a bar fix blended
       // toward the Flavor Market / Gift Shop anchors and landed on the
-      // Gift Shop pin. See liveXY for the snap discipline that goes
-      // with this: a fix only snaps onto a venue it is genuinely at.
+      // Gift Shop pin. Dots are never snapped onto a venue (Nov 6,
+      // 2026) — liveXY always returns the raw GPS approximation.
       var PLACES = [
         // Sights & landmarks
         { name: "Lobby & Concierge", cat: "sights", lat: 20.87702, lng: -86.86758,
@@ -7468,21 +7468,13 @@
       // small (5 m) so the closest anchor genuinely dominates: with a
       // 10 m floor, anchors 15 m away in GPS space pulled nearly as
       // hard as the venue being stood in.
-      // Snap discipline (Nov 5, 2026, second fix): a snap is a claim of
-      // certainty, so it has to earn it. A fix snaps onto a venue only
-      // when ALL of these hold: (a) it is within 12 m of that venue's
-      // anchor; (b) the phone's own accuracy reading, when we have
-      // one, is decent (<= 25 m — an indoor fix that admits to ±40 m
-      // never snaps); and (c) snapping would barely move the dot —
-      // the unsnapped blend already lands within 40 viewBox units
-      // (~65 m) of the pin. The Gift Shop incident: standing in the
-      // Excellence Club bar, the fix blended toward anchors that sit
-      // close to the bar in GPS space but far away on the drawing,
-      // and the old unconditional 15 m snap then parked the dot on a
-      // wrong pin as if it were sure. When any check fails, the dot
-      // shows the raw blended position, with an accuracy halo sized
-      // by the fix's own accuracy (see layoutDots) instead of a
-      // snapped pin's false certainty.
+      // No snapping (Nov 6, 2026): people are never snapped onto a
+      // venue. Earlier builds parked the dot exactly on a pin when a
+      // fix landed close to it, which claimed a certainty GPS doesn't
+      // have — standing at the pool between Cielo and Las Olas, a dot
+      // could sit on a venue the person wasn't at. The dot now always
+      // shows the raw blended GPS approximation, with an accuracy
+      // halo sized by the fix's own accuracy (see layoutDots).
       function liveXY(lat, lng, acc) {
         if (!liveAnchors) liveBuildAnchors();
         var accOut = (typeof acc === "number" && isFinite(acc) && acc > 0) ? acc : null;
@@ -7501,12 +7493,6 @@
           sw += w; sx += w * ds[j].x; sy += w * ds[j].y;
         }
         var out = { x: sx / sw, y: sy / sw, near: near, acc: accOut };
-        if (near <= 12 && (accOut === null || accOut <= 25)) {
-          var sdx = out.x - ds[0].x, sdy = out.y - ds[0].y;
-          if (Math.sqrt(sdx * sdx + sdy * sdy) <= 40) {
-            out.x = ds[0].x; out.y = ds[0].y; out.snapped = true;
-          }
-        }
         return out;
       }
       // Positions the live dots with the same transform layoutPins uses
@@ -8206,7 +8192,7 @@
       var liveLegendEl = document.createElement("p");
       liveLegendEl.className = "livelegend";
       liveLegendEl.id = "liveLegend";
-      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once. Every dot is satellite GPS only: a reading that looks like a Wi-Fi guess is thrown away rather than shown, so under a roof a dot may hold at its last real GPS spot and fade — it will never jump to a guess, and there is no setting a spot by hand. A friend whose GPS can't fix can still show as “near” someone whose phone sees them over Bluetooth — they bounce off that phone.";
+      liveLegendEl.textContent = "The colored dots on the map are your group. A bright dot is someone sharing right now. A pale dot is where someone was earlier — the time beside it says when. If people are together, one bubble shows how many — tap it to see who. Tap Live group to add your own dot, and tap it again to stop and disappear. Or tap Blip my location in Who's here to show your spot just once. Every dot is satellite GPS only: a reading that looks like a Wi-Fi guess is thrown away rather than shown, so under a roof a dot may hold at its last real GPS spot and fade — it will never jump to a guess, and there is no setting a spot by hand. A dot is never snapped onto a place, either — it stays at the raw GPS approximation, so it can sit a few steps off the building you're actually in; the soft ring around it shows how sure the fix is. A friend whose GPS can't fix can still show as “near” someone whose phone sees them over Bluetooth — they bounce off that phone.";
       liveLegendEl.hidden = true;
       groupToolsEl.insertAdjacentElement("afterend", liveLegendEl);
       var liveNoteEl = document.createElement("p");
