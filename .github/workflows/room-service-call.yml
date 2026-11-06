@@ -3,6 +3,14 @@ name: Room service call (two-way)
 # Listens to the front desk, transcribes with whisper.cpp (offline),
 # and answers back with rule-based Chatty Porch replies.
 #
+# Browser (workflow_dispatch input browser, default 'firefox'):
+#  - firefox: the PROVEN call path. Host checks #20 (fake-file) and
+#    #22 (pipe) both PASSED with Firefox 159 — real audio both ways.
+#  - chromium: DO NOT use for live calls. Runs #10-#16 proved the
+#    Chromium-family encoder/decoder path yields silence at the remote
+#    peer on this host (mic track carries audio, bytes flow, remote
+#    decodes nothing). Firefox is the call browser.
+#
 # Mic modes (workflow_dispatch input mic_mode, default 'pipe'):
 #  - pipe: live/dynamic mic (PulseAudio pipe-source or pw-loopback).
 #    The ONLY mode that supports live replies during a call.
@@ -42,6 +50,10 @@ on:
         description: 'Mic mode: pipe (live/dynamic, default) or fake-file (Chromium file-as-mic, one-shot order)'
         required: false
         default: 'pipe'
+      browser:
+        description: 'Browser: firefox (default — the proven call path; runs #20/#22 passed) or chromium (receive decodes silence on this host, do not use for live calls)'
+        required: false
+        default: 'firefox'
   schedule:
     - cron: '*/5 * * * *'
 jobs:
@@ -105,10 +117,22 @@ jobs:
           pactl list sources short
           pactl get-default-source
           pactl list sources short | grep -q virtmic || { echo "ERROR: virtmic source missing"; exit 1; }
-      - name: Install Playwright + Chromium
+      - name: Install Playwright + browser
+        # Default browser is Firefox (host checks #20/#22 passed with
+        # Firefox; Chromium-family runs decode silence at the remote
+        # peer). Scheduled runs have no inputs, so an empty browser
+        # input also means Firefox. BROWSER is passed to Node via
+        # GITHUB_ENV so gha-call.js launches the right browser.
         run: |
           npm ci
           npx playwright install chromium --with-deps
+          if [ "${{ inputs.browser }}" = "firefox" ] || [ -z "${{ inputs.browser }}" ]; then
+            echo "browser=firefox — installing Playwright Firefox"
+            npx playwright install firefox --with-deps
+            echo "BROWSER=firefox" >> "$GITHUB_ENV"
+          else
+            echo "BROWSER=chromium" >> "$GITHUB_ENV"
+          fi
       - name: Install whisper.cpp + tiny model
         run: |
           git clone --depth 1 https://github.com/ggerganov/whisper.cpp.git
@@ -131,11 +155,19 @@ jobs:
           HAILMARY_LIVE: '1'
           PULSE_SOURCE: virtmic
           MIC_MODE: ${{ inputs.mic_mode || 'pipe' }}
+          BROWSER: ${{ inputs.browser || 'firefox' }}
           WHISPER_BIN: ${{ github.workspace }}/whisper.cpp/build/bin/whisper-cli
           WHISPER_MODEL: ${{ github.workspace }}/whisper.cpp/models/ggml-tiny.en.bin
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            xvfb-run -a node gha-call.js --order-id "${{ steps.order.outputs.id }}" --dry-run --result result.json
+            if [ -n "${{ steps.order.outputs.id }}" ]; then
+              xvfb-run -a node gha-call.js --order-id "${{ steps.order.outputs.id }}" --dry-run --result result.json
+            else
+              # No order id: verify the browser+mic loop against the sample
+              # order (no TextNow, no dial). Order audio falls back to
+              # espeak-ng — the loop is what's under test, not the voice.
+              xvfb-run -a node gha-call.js --order sample-order.json --dry-run --result result.json
+            fi
           else
             xvfb-run -a node gha-call.js --order-id "${{ steps.order.outputs.id }}" --live --code "${{ inputs.code }}" --result result.json
           fi
