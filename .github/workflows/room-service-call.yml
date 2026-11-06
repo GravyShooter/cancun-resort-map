@@ -44,15 +44,22 @@ jobs:
           node-version: '20'
       - name: Install system deps
         run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng cmake build-essential pulseaudio xvfb pulseaudio-utils
-      - name: Start PulseAudio (null sink)
-        # Headless Chromium renders Web Audio as silence with no audio
-        # device, so the fake mic is empty and no voice can flow.
-        # PulseAudio + a null sink gives it an output to render to.
+      - name: Start PulseAudio (Vexa virtual mic)
+        # Vexa pattern: TTS audio plays into tts_sink; virtual_mic is a
+        # remap source of tts_sink.monitor and is Chromium's mic.
+        # Chromium output goes to spk_sink so it never feeds back into
+        # the mic. Do NOT use --use-fake-device-for-media-stream (it
+        # bypasses PulseAudio) or --use-file-for-fake-audio-capture
+        # (forces silence as mic input).
         run: |
           pulseaudio --start --exit-idle-time=-1
-          pactl load-module module-null-sink sink_name=virt
-          pactl set-default-sink virt
+          pactl load-module module-null-sink sink_name=tts_sink sink_properties=device.description=tts_sink
+          pactl load-module module-null-sink sink_name=spk_sink sink_properties=device.description=spk_sink
+          pactl load-module module-remap-source master=tts_sink.monitor source_name=virtual_mic source_properties=device.description=virtual_mic
+          pactl set-default-sink spk_sink
+          pactl set-default-source virtual_mic
           pactl list sinks short
+          pactl list sources short
       - name: Install Playwright + Chromium
         run: |
           npm ci
