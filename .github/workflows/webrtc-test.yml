@@ -13,6 +13,13 @@ on:
         description: 'Mic mode: pipe (live/dynamic) or fake-file (Chromium file-as-mic)'
         required: false
         default: 'pipe'
+# Do NOT cancel a running host test when a new run is dispatched: each
+# run is a separate diagnostic and cancelling it loses its results (run
+# #9 was cancelled before its micRecDb was logged). New runs queue
+# behind a running run instead of cancelling it.
+concurrency:
+  group: webrtc-host-test
+  cancel-in-progress: false
 jobs:
   test:
     runs-on: ubuntu-latest
