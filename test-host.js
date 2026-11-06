@@ -20,6 +20,8 @@ const { hostCheck } = require('./gha-call');
   console.log('micMode=' + (h.micMode || '?') + ' mic=' + (h.micLabel || '?') + ' recvBytes=' + (h.recvBytes || 0) +
     ' meanDb=' + (h.recvDb === null || h.recvDb === undefined ? 'n/a' : (h.recvDb === -Infinity ? '-inf' : h.recvDb)) +
     ' recvRMS=' + (h.twoPeerRms || 0) +
+    ' bytesSent=' + (h.bytesSent === null || h.bytesSent === undefined ? 'n/a' : h.bytesSent) +
+    ' bytesReceived=' + (h.bytesReceived === null || h.bytesReceived === undefined ? 'n/a' : h.bytesReceived) +
     ' micRecDb=' + (h.micRecDb === null || h.micRecDb === undefined ? 'n/a' : (h.micRecDb === -Infinity ? '-inf' : h.micRecDb)) +
     ' micRecRMS=' + (h.micRecRms || 0));
   console.log(ok ? 'HOST CHECK: PASS — WebRTC media can flow on this host (micMode=' + (h.micMode || '?') + ').'

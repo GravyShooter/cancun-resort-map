@@ -511,7 +511,7 @@ function chromiumOpts(extraArgs) {
 //    (the tone WAV loops automatically); no PulseAudio at all. This is
 //    the ONLY method with verified end-to-end WebRTC audio flow.
 async function hostCheck() {
-  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0, micRecDb: null, micRecRms: 0, micMode: MIC_MODE };
+  const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0, micRecDb: null, micRecRms: 0, micMode: MIC_MODE, bytesSent: null, bytesReceived: null, packetsSent: null, packetsReceived: null, ontrackFired: null, remoteTrack: null, recorderState: null };
   // UDP socket send (loopback). EPERM here = the host blocks UDP.
   try {
     await new Promise((resolve, reject) => {
@@ -624,6 +624,8 @@ async function hostCheck() {
         const rec = { chunks: [], recorder: null, done: recDone, resolve: recResolve };
         pcB.ontrack = (ev) => {
           const rtrack = ev.track;
+          window.__hostOntrack = true;
+          window.__hostRemoteTrack = rtrack;
           try {
             const r = new MediaRecorder(new MediaStream([rtrack]));
             r.ondataavailable = (e2) => { if (e2.data && e2.data.size) rec.chunks.push(e2.data); };
@@ -633,6 +635,9 @@ async function hostCheck() {
           } catch (e) { rec.resolve(); }
         };
         window.__hostRec = rec;
+        // Keep the peer connections reachable from later evaluates so
+        // getStats can be read after the recording window.
+        window.__hostPCs = { pcA, pcB };
         pcA.addTrack(micStream.getAudioTracks()[0], micStream);
         const offer = await pcA.createOffer();
         await pcA.setLocalDescription(offer);
@@ -694,6 +699,58 @@ async function hostCheck() {
           } catch (e) { log('host', 'mic parec measure failed: ' + e.message); }
           finally { try { fs.unlinkSync(micWav); } catch (_) {} }
         }
+        // DEFINITIVE audio-flow diagnostic: getStats on BOTH peer
+        // connections, read BEFORE stopping the recorder. MediaRecorder
+        // can be blind (0 chunks) even when RTP flows. If A bytesSent > 0
+        // the sender IS sending audio (mic works; the measurement is
+        // blind). If bytesSent = 0 the sender genuinely sends nothing
+        // (the mic/track produces no audio into the peer). Also captures
+        // the remote track + MediaRecorder state so a 0-chunk capture is
+        // diagnosable. PASS criterion unchanged (RMS > 0.005).
+        try {
+          const stats = await page.evaluate(async () => {
+            const pcs = window.__hostPCs;
+            if (!pcs) return { error: 'no peer connections on window' };
+            const summarize = async (pc) => {
+              const rep = await pc.getStats();
+              let outbound = null, inbound = null;
+              rep.forEach((s) => {
+                if (s.type === 'outbound-rtp' && s.kind === 'audio') outbound = { bytesSent: s.bytesSent || 0, packetsSent: s.packetsSent || 0, audioLevel: (typeof s.audioLevel === 'number' ? s.audioLevel : null) };
+                if (s.type === 'inbound-rtp' && s.kind === 'audio') inbound = { bytesReceived: s.bytesReceived || 0, packetsReceived: s.packetsReceived || 0, audioLevel: (typeof s.audioLevel === 'number' ? s.audioLevel : null) };
+              });
+              return { outbound, inbound, connectionState: pc.connectionState, iceConnectionState: pc.iceConnectionState };
+            };
+            const a = await summarize(pcs.pcA);
+            const b = await summarize(pcs.pcB);
+            const rec = window.__hostRec;
+            const rtrack = window.__hostRemoteTrack;
+            return {
+              pcA: a, pcB: b,
+              ontrackFired: !!window.__hostOntrack,
+              remoteTrack: rtrack ? { readyState: rtrack.readyState, muted: rtrack.muted, enabled: rtrack.enabled } : null,
+              recorder: rec && rec.recorder ? { state: rec.recorder.state, chunks: rec.chunks.length } : null,
+            };
+          });
+          if (stats.error) {
+            log('host', 'stats: ' + stats.error);
+          } else {
+            const aOut = stats.pcA.outbound, bIn = stats.pcB.inbound;
+            out.bytesSent = aOut ? aOut.bytesSent : null;
+            out.packetsSent = aOut ? aOut.packetsSent : null;
+            out.bytesReceived = bIn ? bIn.bytesReceived : null;
+            out.packetsReceived = bIn ? bIn.packetsReceived : null;
+            out.ontrackFired = stats.ontrackFired;
+            out.remoteTrack = stats.remoteTrack;
+            out.recorderState = stats.recorder ? stats.recorder.state : null;
+            log('host', 'stats: A bytesSent=' + (out.bytesSent === null ? 'n/a' : out.bytesSent) + ' packetsSent=' + (out.packetsSent === null ? 'n/a' : out.packetsSent) +
+              ' audioLevel=' + (aOut && aOut.audioLevel !== null && aOut.audioLevel !== undefined ? aOut.audioLevel : 'n/a') +
+              ' | B bytesReceived=' + (out.bytesReceived === null ? 'n/a' : out.bytesReceived) + ' packetsReceived=' + (out.packetsReceived === null ? 'n/a' : out.packetsReceived) +
+              ' audioLevel=' + (bIn && bIn.audioLevel !== null && bIn.audioLevel !== undefined ? bIn.audioLevel : 'n/a') +
+              ' | ontrack=' + stats.ontrackFired +
+              ' remoteTrack=' + (stats.remoteTrack ? stats.remoteTrack.readyState + '/muted=' + stats.remoteTrack.muted + '/enabled=' + stats.remoteTrack.enabled : 'none') +
+              ' recorder=' + (stats.recorder ? stats.recorder.state + ' chunks=' + stats.recorder.chunks : 'none'));
+          }
+        } catch (e) { log('host', 'stats failed: ' + e.message); }
         const captured = await page.evaluate(async () => {
           const rec = window.__hostRec;
           if (!rec || !rec.recorder) return { chunksB64: [], totalBytes: 0, chunkCount: 0 };
@@ -729,7 +786,9 @@ async function hostCheck() {
           (out.recvDb === null || out.recvDb === undefined ? 'n/a' : (out.recvDb === -Infinity ? '-inf' : out.recvDb)) +
           ' recvRMS=' + out.twoPeerRms.toFixed(4) +
           ' micRecDb=' + (out.micRecDb === null || out.micRecDb === undefined ? 'n/a' : (out.micRecDb === -Infinity ? '-inf' : out.micRecDb)) +
-          ' micRecRMS=' + out.micRecRms.toFixed(4));
+          ' micRecRMS=' + out.micRecRms.toFixed(4) +
+          ' bytesSent=' + (out.bytesSent === null || out.bytesSent === undefined ? 'n/a' : out.bytesSent) +
+          ' bytesReceived=' + (out.bytesReceived === null || out.bytesReceived === undefined ? 'n/a' : out.bytesReceived));
       }
     }
   } finally {
