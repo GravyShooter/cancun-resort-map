@@ -6,15 +6,16 @@
 //   forwarded to Node for STT), and kept in a combined remote stream.
 //
 // The MICROPHONE is NOT faked here. TextNow gets Chromium's real default
-// mic, which on the GitHub Actions runner is the PulseAudio virtual_mic
-// (a remap source of the tts_sink.monitor — see the workflow YAML).
-// TTS audio is played into tts_sink with paplay from Node, so it flows
-// through the real mic into the call. This is the Vexa pattern
-// (github.com/Vexa-ai/vexa, issue #120): the old Web Audio fake mic
-// (OscillatorNode -> MediaStreamDestination) does NOT render in headless
-// Chromium on the runner — it is always silent (micLevel 0) — so it was
-// removed entirely. Do NOT re-add a Web Audio fake mic or a
-// getUserMedia override. Chromium must be launched WITHOUT
+// mic, which on the GitHub Actions runner is the PulseAudio pipe-source
+// virtmic (module-pipe-source, fed live by the FIFO /tmp/virtmic — see
+// the workflow YAML). Node writes raw s16le 48kHz mono PCM (Chatty Porch
+// audio, decoded from MP3) into the FIFO, so it flows through the real
+// mic into the call. This replaces the Vexa remap-source approach, which
+// failed because Chromium refuses a .monitor as a mic input. The old Web
+// Audio fake mic (OscillatorNode -> MediaStreamDestination) does NOT
+// render in headless Chromium on the runner — it is always silent
+// (micLevel 0) — so it was removed entirely. Do NOT re-add a Web Audio
+// fake mic or a getUserMedia override. Chromium must be launched WITHOUT
 // --use-fake-device-for-media-stream (bypasses PulseAudio) and WITHOUT
 // --use-file-for-fake-audio-capture (forces silence as mic input).
 //

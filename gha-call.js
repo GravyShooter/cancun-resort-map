@@ -57,10 +57,17 @@ const DEFAULT_TO = '+529988728500'; // Excellence Riviera Cancun front desk
 const DEFAULT_EMAIL = 'cgd2049+textnow@gmail.com';
 const PROFILE_DIR = path.join(__dirname, '.browser-profile');
 const AUDIO_DIR = __dirname; // flat repo-root layout: reply MP3s sit next to this file
-// Vexa pattern: the mic is Chromium's real default mic (PulseAudio
-// virtual_mic, a remap source of tts_sink.monitor). TTS audio is played
-// into tts_sink with paplay. Override with PULSE_TTS_SINK if needed.
-const TTS_SINK = process.env.PULSE_TTS_SINK || 'tts_sink';
+// Pipe-source mic (NEW method): the mic is a REAL PulseAudio source
+// (module-pipe-source, source_name=virtmic, fed live by the FIFO
+// /tmp/virtmic). Node writes raw s16le 48kHz mono PCM into the FIFO;
+// Chromium opens virtmic as its mic. This replaces the Vexa remap-source
+// approach, which failed because Chromium refuses a .monitor as a mic
+// input. Override the FIFO path with PULSE_PIPE_FILE if needed.
+const PIPE_PATH = process.env.PULSE_PIPE_FILE || '/tmp/virtmic';
+const PIPE_RATE = 48000; // Hz, mono s16le
+const PIPE_BYTES_PER_SEC = PIPE_RATE * 2; // 96000 bytes/sec
+const PIPE_CHUNK = 9600; // 100 ms of audio
+const SILENCE_CHUNK = Buffer.alloc(PIPE_CHUNK); // zeros
 const CONVERSATION_TIMEOUT_MS = 90 * 1000; // max two-way conversation
 const UTTERANCE_SILENCE_MS = 1500; // silence after speech = end of utterance
 const REMOTE_LEVEL_THRESHOLD = 0.02; // RMS above this = staff speaking
@@ -105,11 +112,15 @@ async function serveBlankPage() {
   return { url, close: () => { try { server.close(); } catch (_) {} } };
 }
 
-// ---------- PulseAudio helpers (Vexa pattern) ----------
-// Audio is played into the tts_sink with paplay; the PulseAudio
-// virtual_mic (remap source of tts_sink.monitor) feeds it to Chromium
-// as the real mic. No Web Audio fake mic is used anywhere.
-const { spawn, execFile } = require('child_process');
+// ---------- PulseAudio pipe-source mic (NEW method) ----------
+// The mic is a REAL PulseAudio source: module-pipe-source creates the
+// FIFO /tmp/virtmic (the module creates it — do NOT mkfifo it first).
+// Node opens the FIFO for writing ONCE and keeps it open for the whole
+// run, writing silence when idle (a closed writer suspends the source)
+// and raw s16le 48kHz mono PCM when speaking. Chromium opens virtmic
+// as its real mic (selected explicitly by deviceId). No paplay, no
+// tts_sink, no Web Audio fake mic anywhere.
+const { execFile } = require('child_process');
 const os = require('os');
 
 function runCmd(cmd, args, timeoutMs) {
@@ -125,52 +136,135 @@ function runCmd(cmd, args, timeoutMs) {
   });
 }
 
-// Decode an MP3 buffer to a 44.1kHz WAV file. Returns the WAV path.
-async function mp3ToWav(mp3Buf) {
+// --- Pipe writer (singleton, kept open for the whole run) ---
+const pipeState = { stream: null, opening: null, keepaliveOn: false, speaking: false, keepaliveBusy: false };
+
+function pipeOpenStream() {
+  return new Promise((resolve, reject) => {
+    const stream = fs.createWriteStream(PIPE_PATH, { flags: 'w' });
+    const to = setTimeout(() => { try { stream.destroy(); } catch (_) {} reject(new Error('timed out opening ' + PIPE_PATH + ' (is module-pipe-source loaded?)')); }, 15000);
+    stream.once('open', () => { clearTimeout(to); resolve(stream); });
+    stream.once('error', (e) => { clearTimeout(to); reject(e); });
+  });
+}
+
+// Open the pipe FIFO for writing (once per process) and start the
+// silence keepalive. Retries while the module creates the FIFO.
+// The writer stays open until the process exits; closing it suspends
+// the source, so never close it mid-run.
+async function ensurePipe() {
+  if (pipeState.stream) return pipeState.stream;
+  if (pipeState.opening) return pipeState.opening;
+  pipeState.opening = (async () => {
+    let lastErr = null;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      try {
+        const stream = await pipeOpenStream();
+        pipeState.stream = stream;
+        stream.on('error', (e) => { log('pipe', 'write stream error: ' + e.message); });
+        log('pipe', 'opened ' + PIPE_PATH + ' for writing (s16le 48kHz mono)');
+        startPipeKeepalive();
+        return stream;
+      } catch (e) {
+        lastErr = e;
+        if (/ENOENT/.test(e.message || '')) { await sleep(500); continue; }
+        throw e;
+      }
+    }
+    throw new Error('could not open pipe ' + PIPE_PATH + ': ' + (lastErr && lastErr.message));
+  })();
+  return pipeState.opening;
+}
+
+// Write a buffer to the pipe. Rejects on a 10 s stall so a dead reader
+// fails fast instead of hanging the call.
+function pipeWrite(buf) {
+  const stream = pipeState.stream;
+  if (!stream) return Promise.reject(new Error('pipe not open'));
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const to = setTimeout(() => {
+      if (!done) { done = true; reject(new Error('pipe write stalled 10s (is PulseAudio reading ' + PIPE_PATH + '?)')); }
+    }, 10000);
+    const onErr = (e) => { if (!done) { done = true; clearTimeout(to); reject(e); } };
+    stream.once('error', onErr);
+    stream.write(buf, (err) => {
+      if (done) return;
+      done = true;
+      clearTimeout(to);
+      stream.removeListener('error', onErr);
+      err ? reject(err) : resolve();
+    });
+  });
+}
+
+// Background loop: while idle, feed 100 ms silence chunks at ~real-time
+// rate so the pipe-source never starves or suspends. Skips while
+// speaking (speech writes its own chunks) and while a write is in flight.
+async function pipeKeepaliveLoop() {
+  while (pipeState.keepaliveOn) {
+    if (!pipeState.speaking && !pipeState.keepaliveBusy && pipeState.stream) {
+      pipeState.keepaliveBusy = true;
+      try { await pipeWrite(SILENCE_CHUNK); } catch (e) { log('pipe', 'keepalive write failed: ' + e.message); }
+      pipeState.keepaliveBusy = false;
+    }
+    await sleep(90);
+  }
+}
+
+function startPipeKeepalive() {
+  if (pipeState.keepaliveOn) return;
+  pipeState.keepaliveOn = true;
+  pipeKeepaliveLoop().catch(() => {});
+}
+
+// Decode an MP3 buffer to raw s16le 48kHz mono PCM. Returns { pcm, seconds }.
+async function mp3ToPcm(mp3Buf) {
   const tag = 'hailmary-play-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
   const tmpMp3 = path.join(os.tmpdir(), tag + '.mp3');
-  const tmpWav = path.join(os.tmpdir(), tag + '.wav');
+  const tmpRaw = path.join(os.tmpdir(), tag + '.raw');
   fs.writeFileSync(tmpMp3, mp3Buf);
   try {
-    await runCmd('ffmpeg', ['-y', '-v', 'error', '-i', tmpMp3, '-ac', '1', '-ar', '44100', '-f', 'wav', tmpWav], 60000);
-    if (!fs.existsSync(tmpWav) || fs.statSync(tmpWav).size < 100) throw new Error('ffmpeg produced no usable WAV');
-    return { wav: tmpWav, mp3: tmpMp3 };
-  } catch (e) {
-    try { fs.unlinkSync(tmpMp3); } catch (_) {}
-    try { fs.unlinkSync(tmpWav); } catch (_) {}
-    throw e;
-  }
-}
-
-// Duration of an audio file in seconds (ffprobe).
-async function audioDuration(file) {
-  const { stdout } = await runCmd('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], 30000);
-  const d = parseFloat(String(stdout).trim());
-  return Number.isFinite(d) ? d : 0;
-}
-
-// Play an MP3 buffer into the PulseAudio tts_sink (the mic hears it).
-// Awaits playback completion. Returns the duration in seconds.
-async function playToSink(mp3Buf, sink) {
-  const { wav, mp3 } = await mp3ToWav(mp3Buf);
-  try {
-    const dur = await audioDuration(wav);
-    await runCmd('paplay', ['--device=' + sink, wav], Math.max(60000, Math.ceil(dur * 1000) + 30000));
-    return dur;
+    await runCmd('ffmpeg', ['-y', '-v', 'error', '-i', tmpMp3, '-ac', '1', '-ar', String(PIPE_RATE), '-f', 's16le', tmpRaw], 60000);
+    if (!fs.existsSync(tmpRaw) || fs.statSync(tmpRaw).size < 100) throw new Error('ffmpeg produced no usable PCM');
+    const pcm = fs.readFileSync(tmpRaw);
+    return { pcm, seconds: pcm.length / PIPE_BYTES_PER_SEC };
   } finally {
-    try { fs.unlinkSync(wav); } catch (_) {}
-    try { fs.unlinkSync(mp3); } catch (_) {}
+    try { fs.unlinkSync(tmpMp3); } catch (_) {}
+    try { fs.unlinkSync(tmpRaw); } catch (_) {}
   }
 }
 
-// Generate a sine tone WAV and start playing it into the sink.
-// Returns the paplay ChildProcess (caller awaits/kills it). The WAV
-// file is removed once playback ends.
-function playToneToSink(freq, seconds, sink) {
-  const tag = 'hailmary-tone-' + Date.now() + '.wav';
-  const tmpWav = path.join(os.tmpdir(), tag);
-  const child = spawn('sh', ['-c', 'ffmpeg -y -v error -f lavfi -i "sine=frequency=' + freq + ':duration=' + seconds + '" -ac 1 -ar 44100 -f wav "' + tmpWav + '" && paplay --device=' + sink + ' "' + tmpWav + '"; rm -f "' + tmpWav + '"'], { stdio: 'ignore' });
-  return child;
+// Write raw PCM into the pipe at ~real-time rate (100 ms chunks).
+// Awaits playback completion. Returns the duration in seconds.
+async function playPipePcm(pcm) {
+  await ensurePipe();
+  pipeState.speaking = true;
+  try {
+    const total = Math.ceil(pcm.length / PIPE_CHUNK);
+    for (let i = 0; i < total; i++) {
+      const chunk = pcm.subarray(i * PIPE_CHUNK, Math.min(pcm.length, (i + 1) * PIPE_CHUNK));
+      const t0 = Date.now();
+      await pipeWrite(chunk);
+      const elapsed = Date.now() - t0;
+      if (elapsed < 90) await sleep(90 - elapsed);
+    }
+    return pcm.length / PIPE_BYTES_PER_SEC;
+  } finally {
+    pipeState.speaking = false;
+  }
+}
+
+// Generate a sine tone as raw PCM and play it into the pipe.
+// Awaits playback completion. Returns the duration in seconds.
+async function playTonePipe(freq, seconds) {
+  const total = Math.floor(seconds * PIPE_RATE);
+  const pcm = Buffer.alloc(total * 2);
+  for (let i = 0; i < total; i++) {
+    const v = Math.round(16383 * Math.sin((2 * Math.PI * freq * i) / PIPE_RATE));
+    pcm.writeInt16LE(v, i * 2);
+  }
+  return playPipePcm(pcm);
 }
 
 // Mean volume (dB) of an audio file via ffmpeg volumedetect.
@@ -209,9 +303,9 @@ function chromiumOpts(extraArgs) {
     headless: true,
     // --use-fake-ui-for-media-stream auto-accepts the mic permission
     // prompt. NEVER add --use-fake-device-for-media-stream (it bypasses
-    // PulseAudio entirely, so the virtual mic is never used) or
+    // PulseAudio entirely, so the pipe-source mic is never used) or
     // --use-file-for-fake-audio-capture (forces silence as mic input).
-    // Those two flags break the Vexa PulseAudio mic (see inject.js).
+    // Those two flags break the pipe-source mic (see inject.js).
     args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--no-sandbox', '--disable-dev-shm-usage'].concat(extraArgs || []),
   };
   // On GitHub Actions Playwright installs its own Chromium; on this VM
@@ -225,10 +319,11 @@ function chromiumOpts(extraArgs) {
 // UDP: direct socket send to loopback + to a public STUN host.
 // TURN: ICE gathering against openrelay.metered.ca (TCP/TLS).
 // Two-peer: two RTCPeerConnections in-page; peer A uses the REAL
-// PulseAudio mic (virtual_mic), a tone is played into tts_sink with
-// paplay, and peer B's received audio is measured with MediaRecorder
-// (decoded + ffmpeg volumedetect). This tests the Vexa mic path —
-// the old Web Audio tone test is gone (it was always silent here).
+// pipe-source mic (virtmic), a tone is written into the pipe, and peer
+// B's received audio is measured with MediaRecorder (decoded + ffmpeg
+// volumedetect). This tests the pipe-source mic path — the old Vexa
+// remap-source mic was always silent here (Chromium refuses a .monitor
+// as a mic input).
 async function hostCheck() {
   const out = { udpOk: false, turnRelay: false, twoPeerConnected: false, twoPeerRms: 0, micLabel: '', recvDb: null, recvBytes: 0 };
   // UDP socket send (loopback). EPERM here = the host blocks UDP.
@@ -243,6 +338,10 @@ async function hostCheck() {
   } catch (e) {
     log('host', 'UDP socket send to loopback: FAIL (' + e.message + ')');
   }
+
+  // Open the pipe BEFORE launching Chromium so the pipe-source is live
+  // (fed with silence) when Chromium opens the mic.
+  try { await ensurePipe(); } catch (e) { log('host', 'pipe open failed: ' + e.message); }
 
   const browser = await chromium.launch(chromiumOpts(['--disable-features=WebRtcHideLocalIpsWithMdns']));
   let blank = null;
@@ -280,17 +379,36 @@ async function hostCheck() {
     out.turnRelay = relay.length > 0;
     if (out.udpOk && (host.length > 0 || srflx.length > 0)) {
       // UDP path exists — try two peers over host/srflx, using the REAL
-      // PulseAudio mic (virtual_mic). A tone is played into tts_sink
-      // with paplay and must arrive at the remote peer; the remote side
-      // is measured with MediaRecorder (not a Web Audio Analyser).
+      // pipe-source mic (virtmic). A tone is written into the pipe and
+      // must arrive at the remote peer; the remote side is measured
+      // with MediaRecorder (not a Web Audio Analyser).
       const setup = await page.evaluate(async () => {
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         let micInfo = null;
         let micStream = null;
+        // Labels are only revealed after permission, so get a temp
+        // stream first, enumerate, then open virtmic EXPLICITLY by
+        // deviceId (the default device has an empty label by design and
+        // may not be virtmic). APM off: it can gate non-speech audio.
+        const apmOff = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
         try {
-          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
+          let virtId = '';
+          let devList = [];
+          try {
+            const devs = await navigator.mediaDevices.enumerateDevices();
+            devList = devs.filter((d) => d.kind === 'audioinput').map((d) => ({ label: d.label || '', deviceId: (d.deviceId || '').slice(0, 12) }));
+            const virt = devs.find((d) => d.kind === 'audioinput' && /virtmic/i.test(d.label || ''));
+            if (virt) virtId = virt.deviceId;
+          } catch (e) { /* enumerate failed; fall back to default */ }
+          tmp.getTracks().forEach((t) => t.stop());
+          if (virtId) {
+            micStream = await navigator.mediaDevices.getUserMedia({ audio: Object.assign({ deviceId: { exact: virtId } }, apmOff) });
+          } else {
+            micStream = await navigator.mediaDevices.getUserMedia({ audio: apmOff });
+          }
           const track = micStream.getAudioTracks()[0];
-          micInfo = { label: track.label || '', readyState: track.readyState, enabled: track.enabled };
+          micInfo = { label: track.label || '', deviceId: (track.getSettings().deviceId || '').slice(0, 12), readyState: track.readyState, enabled: track.enabled, virtmicFound: !!virtId, devices: devList };
         } catch (e) {
           return { ok: false, micError: String(e), micInfo: null };
         }
@@ -334,9 +452,8 @@ async function hostCheck() {
       out.micLabel = setup.micInfo ? setup.micInfo.label : '';
       out.twoPeerConnected = !!setup.ok;
       if (setup.ok) {
-        // Play a 6s tone into tts_sink while the remote peer records.
-        const toneProc = playToneToSink(880, 6, TTS_SINK);
-        await new Promise((res) => { toneProc.on('close', res); toneProc.on('error', res); });
+        // Write a 6s tone into the pipe while the remote peer records.
+        await playTonePipe(880, 6);
         await sleep(800); // let the last recorder slice flush
         const captured = await page.evaluate(async () => {
           const rec = window.__hostRec;
@@ -382,12 +499,14 @@ async function hostCheck() {
 }
 
 // ---------- Audio helpers ----------
-// Play an MP3 buffer into the PulseAudio tts_sink (the mic hears it).
+// Play an MP3 buffer through the pipe-source mic (the mic hears it).
 // Returns duration in seconds. The page argument is unused — playback
-// is Node-side paplay, not Web Audio — but the signature is kept so
-// callers don't change.
+// is Node-side pipe writes, not Web Audio — but the signature is kept
+// so callers don't change.
 async function playAudio(page, audioBuf) {
-  return playToSink(audioBuf, TTS_SINK);
+  const { pcm, seconds } = await mp3ToPcm(audioBuf);
+  await playPipePcm(pcm);
+  return seconds;
 }
 
 // Synthesize the order script with espeak-ng (last-resort fallback when
@@ -610,7 +729,7 @@ async function ensureLoggedIn(page, email, orderId, idToken, directCode, onWaiti
 // ---------- Dry run ----------
 // Phase 1: host WebRTC check. Phase 2: full loop against a simulated
 // staff peer (two PeerConnections in-page; peer A plays a staff
-// utterance through the real PulseAudio mic, peer B captures it,
+// utterance through the pipe-source mic, peer B captures it,
 // Whisper transcribes, the responder picks a reply, the reply plays
 // back through the mic). No TextNow.
 async function dryRun(order, script, orderAudio) {
@@ -624,6 +743,7 @@ async function dryRun(order, script, orderAudio) {
   }
 
   log('dry-run', 'phase 2 — simulated staff conversation (two-peer loop)');
+  await ensurePipe(); // pipe already open from hostCheck; no-op if so
   const browser = await chromium.launch(chromiumOpts());
   const result = { ok: false, mode: 'dry-run', host, transcript: [], turns: 0 };
   let blank = null;
@@ -653,8 +773,20 @@ async function dryRun(order, script, orderAudio) {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       let micLabel = '';
       let micStream = null;
+      // Open virtmic EXPLICITLY by deviceId (see hostCheck for why).
+      const apmOff = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
       try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
+        let virtId = '';
+        try {
+          const devs = await navigator.mediaDevices.enumerateDevices();
+          const virt = devs.find((d) => d.kind === 'audioinput' && /virtmic/i.test(d.label || ''));
+          if (virt) virtId = virt.deviceId;
+        } catch (e) { /* fall back to default */ }
+        tmp.getTracks().forEach((t) => t.stop());
+        micStream = virtId
+          ? await navigator.mediaDevices.getUserMedia({ audio: Object.assign({ deviceId: { exact: virtId } }, apmOff) })
+          : await navigator.mediaDevices.getUserMedia({ audio: apmOff });
         micLabel = micStream.getAudioTracks()[0].label || '';
       } catch (e) {
         return { connected: false, state: 'gum-failed: ' + e, micLabel };
@@ -684,8 +816,8 @@ async function dryRun(order, script, orderAudio) {
       result.error = 'simulated peer did not connect (state=' + sim.state + ')';
       return result;
     }
-    // Play the staff utterance into the real mic (paplay -> tts_sink).
-    const staffDur = await playToSink(staffAudio, TTS_SINK);
+    // Play the staff utterance into the pipe-source mic.
+    const staffDur = await playAudio(page, staffAudio);
     await sleep(1500); // let the last recorder slice + forwarding flush
     const staffBytes = chunks.reduce((n, b) => n + b.length, 0);
     log('dry-run', 'staff fixture played (' + staffDur.toFixed(1) + 's); peer B captured chunks=' + chunks.length + ' bytes=' + staffBytes);
@@ -711,7 +843,7 @@ async function dryRun(order, script, orderAudio) {
     result.transcript.push({ speaker: 'us', text: '(reply: ' + res.key + ')' });
     result.turns = 1;
     // Verify the reply actually flows through the mic to the peer:
-    // play it via paplay and check peer B captures new audio.
+    // play it into the pipe and check peer B captures new audio.
     const replyBuf = fs.readFileSync(path.join(AUDIO_DIR, res.key + '.mp3'));
     const playedSec = await playAudio(page, replyBuf);
     await sleep(1500);
@@ -729,6 +861,9 @@ async function dryRun(order, script, orderAudio) {
 // ---------- Live call ----------
 async function liveCall(order, script, orderAudio, to, orderId, idToken, directCode, onWaitingForCode) {
   const email = process.env.TEXTNOW_EMAIL || DEFAULT_EMAIL;
+  // Open the pipe BEFORE launching Chromium so the pipe-source is live
+  // (fed with silence) when TextNow opens the mic.
+  await ensurePipe();
   const context = await chromium.launchPersistentContext(PROFILE_DIR, chromiumOpts());
   await context.addInitScript(INJECT);
   const page = context.pages()[0] || await context.newPage();
