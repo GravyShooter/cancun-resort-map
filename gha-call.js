@@ -172,9 +172,15 @@ async function hostCheck() {
         pcA.onicecandidate = (e) => { if (e.candidate) pcB.addIceCandidate(e.candidate).catch(() => {}); };
         pcB.onicecandidate = (e) => { if (e.candidate) pcA.addIceCandidate(e.candidate).catch(() => {}); };
         let remoteLevel = 0;
+        let remoteCtxState = '';
         pcB.ontrack = (ev) => {
           const track = ev.track;
           const src = new (window.AudioContext || window.webkitAudioContext)();
+          // Headless Chrome starts a new AudioContext suspended; a suspended
+          // context feeds silence to the Analyser even when the track carries
+          // audio, so RMS reads 0 and the host check fails. Resume it.
+          src.resume().catch(() => {});
+          remoteCtxState = src.state;
           const analyser = src.createAnalyser();
           analyser.fftSize = 2048;
           src.createMediaStreamSource(new MediaStream([track])).connect(analyser);
@@ -204,9 +210,9 @@ async function hostCheck() {
           await sleep(250);
         }
         await sleep(3000);
-        return { state, remoteLevel };
+        return { state, remoteLevel, remoteCtxState, micLevel: (typeof hm.micLevel === 'function' ? hm.micLevel() : -1) };
       });
-      log('host', 'two-peer: state=' + two.state + ' remote RMS=' + two.remoteLevel.toFixed(4));
+      log('host', 'two-peer: state=' + two.state + ' remote RMS=' + two.remoteLevel.toFixed(4) + ' remoteCtx=' + (two.remoteCtxState || '?') + ' micLevel=' + (typeof two.micLevel === 'number' ? two.micLevel.toFixed(4) : '?'));
       out.twoPeerConnected = two.state.startsWith('connected');
       out.twoPeerRms = +two.remoteLevel.toFixed(4);
     }
