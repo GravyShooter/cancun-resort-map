@@ -4,8 +4,10 @@ name: WebRTC host test
 # Trigger: Actions tab -> Run workflow. Inputs: mic_mode — 'pipe'
 # (default, live/dynamic PulseAudio mic) or 'fake-file' (Chromium's
 # built-in --use-file-for-fake-audio-capture; a real WAV file as the
-# mic, needs NO PulseAudio at all). The fake-file flag is the ONLY
-# method with verified end-to-end WebRTC audio flow.
+# mic, needs NO PulseAudio at all). Firefox fake-file uses the
+# generated-tone fake stream. Run #20 (Firefox fake-file) PASSED — the
+# first verified end-to-end WebRTC audio flow on this host. The real
+# two-way call needs Firefox + pipe (dynamic order audio as mic).
 on:
   workflow_dispatch:
     inputs:
@@ -14,7 +16,7 @@ on:
         required: false
         default: 'pipe'
       browser:
-        description: 'Browser: chromium (Playwright bundled, default), chrome (Google Chrome stable), or firefox (Playwright Firefox, fake-stream tone mic)'
+        description: 'Browser: chromium (Playwright bundled, default), chrome (Google Chrome stable), or firefox (Playwright Firefox; fake-file = generated-tone fake stream, pipe = real PulseAudio virtmic)'
         required: false
         default: 'chromium'
 # Do NOT cancel a running host test when a new run is dispatched: each
