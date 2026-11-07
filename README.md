@@ -6,10 +6,16 @@ Actions** — a free host where WebRTC/UDP works. This VM blocks WebRTC
 Actions runner is a standard Ubuntu VM with direct internet, no egress
 proxy, and UDP allowed by default.
 
-Free. No paid accounts, no top-ups, no per-minute charges, no API keys.
-TextNow is free. whisper.cpp is free and offline. The voice is Chatty
-Porch (Chris's voice) via pre-generated MP3s. The rule-based responder
-needs no LLM.
+Free. No paid accounts, no top-ups, no per-minute charges beyond
+FreeCallMe's free first call (up to $0.25 — the buddy test + the
+front-desk call both fit). No API keys. whisper.cpp is free and
+offline. The voice is Chatty Porch (Chris's voice) via pre-generated
+MP3s. The rule-based responder needs no LLM.
+
+FreeCallMe replaces TextNow (Cloudflare-blocked on the GitHub runner).
+Dialer selectors are verified from the server-rendered dialer HTML;
+the sign-in modal and in-call screen selectors are generic patterns
+and the first live run dumps the page state on failure.
 
 ## How it works
 
@@ -20,7 +26,8 @@ order page / parent --write--> Firebase hailmary-orders-2way/<id>
 GitHub Actions (every 5 min, or manual Run workflow)
   -> poll Firebase for a queued two-way order
   -> run gha-call.js --live
-       - log in to TextNow (passwordless; 6-digit code from Gmail)
+       - sign in to FreeCallMe (email OTP; 6-digit code or magic link
+         from Gmail, relayed via Firebase)
        - dial +52 998 872 8500, play the order (Chatty Porch)
        - LISTEN: capture the staff's voice (inject.js remote-track hook)
        - transcribe with whisper.cpp (offline, tiny.en model)
@@ -74,24 +81,33 @@ The closing is "That's everything. Thanks so much!" — no "how long"
 question (a one-way call can't hear the answer, and a two-way call
 lets the staff volunteer the time, which gets a "Perfect, thank you").
 
-## TextNow login code (how the 6-digit code gets to the runner)
+## FreeCallMe verification (how the OTP code/link gets to the runner)
 
-The runner is ephemeral — no persistent TextNow session. Every live
-call logs in fresh (passwordless: email → 6-digit code to Gmail).
-The code flow (mirrors the one-way server's POST /code, but via
-Firebase because there is no local server on the runner):
+The runner is ephemeral — no persistent FreeCallMe session. Every live
+call signs in fresh (email OTP: Supabase sends a 6-digit code or a
+magic link to cgd2049@gmail.com). The verification flow (mirrors the
+old TextNow code flow, but via Firebase because there is no local
+server on the runner):
 
-1. The runner attempts login; TextNow emails a code to
-   cgd2049+textnow@gmail.com. The runner marks the Firebase order
-   `waiting-for-code` and polls the order node for a `code` field.
+1. The runner fills the dialer, presses Call now, and the FreeCallMe
+   sign-in modal appears. It enters cgd2049@gmail.com; FreeCallMe
+   emails a 6-digit OTP code (or a magic link) to Gmail. The runner
+   marks the Firebase order `waiting-for-code` and polls the order
+   node for a `code` field.
 2. The parent (main agent) sees `waiting-for-code`, reads Gmail for
-   the 6-digit code, and writes it to the Firebase order node
-   (`code: "123456"`).
-3. The runner picks it up, enters it, and continues. Up to 3 attempts.
-No credential is hardcoded. The code is never logged.
+   the 6-digit code (or the magic-link URL), and writes it to the
+   Firebase order node (`code: "123456"` or `code: "https://..."`).
+3. The runner picks it up — enters the code, or opens the magic link
+   — and continues. Up to 3 attempts.
+No credential is hardcoded. The code/link is never logged.
 
-Alternatively, pass `--code 123456` (or `TEXTNOW_CODE`) when triggering
-manually if the code is already known.
+Alternatively, pass `--code 123456` (or a magic-link URL, or
+`FREECALLME_CODE`) when triggering manually if it is already known.
+
+Note: the Gmail connector must be connected/reauthorized for the
+parent to read the OTP. If Gmail reads fail with
+`reauthorization_required`, reauthorize Gmail first — the runner will
+wait at `waiting-for-code` until the code/link is written.
 
 ## Order audio (Chatty Porch)
 
@@ -170,13 +186,14 @@ full listen→transcribe→respond→speak cycle on the runner and uploads
 - whisper.cpp building + the tiny model downloading on the runner.
 - The dry-run loop (simulated staff peer → Whisper → responder →
   reply) on the runner.
-- A live TextNow login + dial + two-way conversation from the runner.
-- The Firebase code flow end-to-end (runner waits, parent writes code).
+- A live FreeCallMe sign-in + dial + two-way conversation from the runner.
+- The Firebase verification flow end-to-end (runner waits, parent writes code/link).
 
 These are verified by Step 1 and Step 2 above before any live call.
 
 ## Cost
 
-$0. GitHub Actions is free for public repos. TextNow is free.
+$0. GitHub Actions is free for public repos. FreeCallMe's first call
+is free up to $0.25 (Mexico $0.03/min, US $0.01/min) — no card.
 whisper.cpp is free and offline. No paid accounts, no top-ups,
 no per-minute charges, no API keys.
