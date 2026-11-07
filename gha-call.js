@@ -54,6 +54,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const dgram = require('dgram');
 const http = require('http');
 const os = require('os');
@@ -140,10 +141,11 @@ const SELECTORS = {
   // FreeCallMe dialer (freecallme.com/free-phone-calls). The dialer
   // selectors are taken from the server-rendered markup (verified in
   // the page HTML Nov 6): country listbox button, tel input, and the
-  // "Call now" submit button. The sign-in modal (Supabase email OTP)
-  // is client-rendered, so its selectors are generic patterns — the
-  // first live run screenshots + dumps the modal HTML on failure so
-  // they can be tightened. The in-call screen (SignalWire) markup is
+  // "Call now" submit button. The auth forms were verified from the
+  // server-rendered /signup and /login pages Nov 7 (firstName,
+  // lastName, email, password min 8; submit "Create free account"
+  // disabled until all fields valid; sign-in is email+password,
+  // submit "Sign in"). The in-call screen (SignalWire) markup is
   // unknown; liveCall waits for ANY in-call indicator and dumps the
   // page state on failure.
   dialerUrl: 'https://freecallme.com/free-phone-calls',
@@ -151,9 +153,27 @@ const SELECTORS = {
   countryOption: '[role="option"], [role="listbox"] button, [role="listbox"] li',
   dialInput: 'input[type="tel"][aria-label="Phone number"], input[type="tel"]',
   callButton: 'button[type="submit"]:has-text("Call now"), button:has-text("Call now")',
-  // Sign-in modal (Supabase OTP). Generic patterns — see note above.
-  email: 'input[type="email"]',
-  emailContinue: 'button[type="submit"]:has-text("Continue"), button:has-text("Send code"), button:has-text("Continue"), button[type="submit"]',
+  // Auth forms (Supabase email+password). The sign-up form on the
+  // dialer modal and /signup is: First name, Last name, Email,
+  // Password (min 8 chars), submit "Create free account" — the submit
+  // is DISABLED until all four fields are valid. (Run #29 died here:
+  // the old code filled only the email, so the button never enabled
+  // and the click timed out on "element is not enabled".) The sign-in
+  // form (/login, or "Already have an account? Sign in") is Email +
+  // Password, submit "Sign in". A passwordless OTP-only form is kept
+  // as a fallback. Submit selectors are scoped to the exact button
+  // text and the code waits for :enabled before clicking — never
+  // click a disabled submit, and never use a bare button[type=submit]
+  // fallback (it matches the disabled button first).
+  email: '#email, input[type="email"]',
+  authFirstName: '#firstName, input[autocomplete="given-name"], input[name="firstName" i]',
+  authLastName: '#lastName, input[autocomplete="family-name"], input[name="lastName" i]',
+  authPassword: '#password, input[type="password"]',
+  authSubmitSignup: 'button[type="submit"]:has-text("Create free account")',
+  authSubmitSignin: 'button[type="submit"]:has-text("Sign in")',
+  authToSignin: 'a:has-text("Already have an account"), a[href="/login"], button:has-text("Sign in")',
+  authAlreadyRegistered: 'text=/already registered|already exists|user already|account already exists/i',
+  authError: 'text=/incorrect|wrong|invalid|expired|try again|not confirmed/i',
   codeInput: 'input[maxlength="1"], input[autocomplete="one-time-code"], input[inputmode="numeric"]',
   codeBoxes: 'input[maxlength="1"]',
   codeSingle: 'input[autocomplete="one-time-code"], input[inputmode="numeric"], input[name*="code" i], input[name*="otp" i], input[placeholder*="code" i]',
@@ -292,11 +312,19 @@ function pipeWrite(buf) {
 // Background loop: while idle, feed 100 ms silence chunks at ~real-time
 // rate so the pipe-source never starves or suspends. Skips while
 // speaking (speech writes its own chunks) and while a write is in flight.
+// NOTE: before the call starts the mic source is idle/suspended, so the
+// FIFO is not drained and keepalive writes stall — that warning is
+// BENIGN pre-call (the feed starts draining once the browser opens the
+// mic). Throttle it to one log line per minute so it cannot spam the log.
+let lastPipeWarnAt = 0;
 async function pipeKeepaliveLoop() {
   while (pipeState.keepaliveOn) {
     if (!pipeState.speaking && !pipeState.keepaliveBusy && pipeState.stream) {
       pipeState.keepaliveBusy = true;
-      try { await pipeWrite(SILENCE_CHUNK); } catch (e) { log('pipe', 'keepalive write failed: ' + e.message); }
+      try { await pipeWrite(SILENCE_CHUNK); } catch (e) {
+        const now = Date.now();
+        if (now - lastPipeWarnAt > 60000) { lastPipeWarnAt = now; log('pipe', 'keepalive write failed: ' + e.message + ' (benign before the mic opens)'); }
+      }
       pipeState.keepaliveBusy = false;
     }
     await sleep(90);
@@ -1314,13 +1342,19 @@ async function enterCode(page, code) {
   });
 }
 
-// ---------- FreeCallMe sign-in (Supabase email OTP) ----------
-// FreeCallMe prompts sign-in when you press "Call now" while signed
-// out: an email step, then Supabase sends a 6-digit OTP code (or a
-// magic link) to Gmail. The code/link is relayed via Firebase (the
-// parent reads Gmail and writes it to the order node), mirroring the
-// old TextNow flow. The runner is ephemeral, so every live run signs
-// in fresh — there is no persistent session to restore.
+// ---------- FreeCallMe auth (Supabase email+password) ----------
+// FreeCallMe prompts sign-up when you press "Call now" while signed
+// out. The form is a full account sign-up — First name, Last name,
+// Email, Password (min 8 chars) — submit "Create free account". The
+// submit is DISABLED until all four fields are valid. Run #29 died
+// here: the old code filled only the email, so the button never
+// enabled and the click timed out on "element is not enabled". After
+// sign-up Supabase sends an email confirmation (6-digit code or
+// magic link), relayed via Firebase after the parent reads Gmail.
+// On later runs the account already exists, so the code signs in
+// instead (Email + Password, submit "Sign in"). The runner is
+// ephemeral, so every live run signs in fresh — there is no
+// persistent session to restore.
 // Returns true if a sign-in modal (email input) is currently visible.
 async function isSignInModalShowing(page) {
   try {
@@ -1344,17 +1378,112 @@ async function dumpSignInState(page, tag) {
   }
 }
 
-// Complete the FreeCallMe email-OTP sign-in. Called when the sign-in
-// modal is showing (after pressing "Call now"). Fills the email,
-// submits, waits for the OTP step, relays the code/link via Firebase,
-// and verifies. Up to 3 attempts. Throws if sign-in does not complete.
-async function signInWithOtp(page, email, orderId, idToken, directCode, onWaitingForCode) {
-  log('login', 'sign-in modal is showing — starting email OTP sign-in for ' + email);
+// Complete the FreeCallMe auth. Called when the sign-in modal is
+// showing (after pressing "Call now"). Handles three forms:
+//  - Sign-up (firstName/lastName/email/password, submit "Create free
+//    account"): fills all four fields, waits for the submit to become
+//    enabled, clicks it, then relays the email confirmation (6-digit
+//    code or magic link) via Firebase. If the email is already
+//    registered, switches to sign-in.
+//  - Sign-in (email/password, submit "Sign in"): fills both, clicks.
+//  - OTP-only (email only, legacy passwordless): fills email, clicks
+//    Continue/Send code, then relays the code/link as before.
+// Up to 3 confirmation attempts. Throws if auth does not complete.
+async function ensureSignedIn(page, email, orderId, idToken, directCode, onWaitingForCode) {
+  const password = await getAuthPassword(orderId, idToken);
+  const hasFirst = (await page.locator(SELECTORS.authFirstName).count()) > 0;
+  const hasPass = (await page.locator(SELECTORS.authPassword).count()) > 0;
+  if (hasFirst) {
+    // SIGN-UP form.
+    log('login', 'sign-up form showing — filling name/email/password for ' + email);
+    await fillIfPresent(page, SELECTORS.authFirstName, 'Chris');
+    await fillIfPresent(page, SELECTORS.authLastName, 'Dyer');
+    await fillIfPresent(page, SELECTORS.authEmail, email);
+    await fillIfPresent(page, SELECTORS.authPassword, password);
+    const submit = page.locator(SELECTORS.authSubmitSignup).first();
+    // The submit stays disabled until all fields are valid AND the
+    // Cloudflare Turnstile check completes (invisible, usually a few
+    // seconds in a real browser). Give it a full minute before failing.
+    log('login', 'waiting for "Create free account" to enable (fields + Turnstile check)…');
+    await waitForEnabled(submit, 60000, 'Create free account');
+    await submit.click({ timeout: 15000 });
+    log('login', 'sign-up submitted; waiting for email confirmation…');
+    // "Already registered" → the account exists; sign in instead.
+    await page.waitForTimeout(2500);
+    if ((await page.locator(SELECTORS.authAlreadyRegistered).count()) > 0) {
+      log('login', 'email already registered — switching to sign-in');
+      await signInWithPassword(page, email, password);
+      return;
+    }
+    await relayConfirmation(page, orderId, idToken, directCode, onWaitingForCode);
+    return;
+  }
+  if (hasPass) {
+    // SIGN-IN form (email + password).
+    await signInWithPassword(page, email, password);
+    return;
+  }
+  // OTP-only form (email only) — legacy passwordless path.
+  log('login', 'email-only form showing — starting OTP sign-in for ' + email);
   await page.fill(SELECTORS.email, email, { timeout: 15000 });
-  await page.locator(SELECTORS.emailContinue).first().click({ timeout: 15000 });
+  const cont = page.locator(SELECTORS.authSubmitSignin).first();
+  const target = (await cont.count()) > 0 ? cont : page.locator('button[type="submit"]:enabled').first();
+  await waitForEnabled(target, 20000, 'Continue / Send code');
+  await target.click({ timeout: 15000 });
   log('login', 'email submitted; waiting for the OTP step…');
-  // Supabase sends a 6-digit code (code input appears) or a magic link
-  // ("check your email" — no code input). Wait for either signal.
+  await relayConfirmation(page, orderId, idToken, directCode, onWaitingForCode);
+}
+
+// Fill a field only if it is present; no-op otherwise (so the same
+// code works on the sign-up, sign-in, and OTP-only forms).
+async function fillIfPresent(page, selector, value) {
+  const loc = page.locator(selector).first();
+  if ((await loc.count()) === 0) return;
+  try {
+    await loc.fill(value, { timeout: 10000 });
+  } catch (e) {
+    log('login', 'could not fill ' + selector + ': ' + e.message.slice(0, 120));
+  }
+}
+
+// Wait until a locator's element is enabled (visible + not disabled).
+// Throws with a clear message if it never enables — never click a
+// disabled submit (run #29 sat 30 min on exactly that).
+async function waitForEnabled(loc, timeoutMs, label) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    try {
+      if (await loc.isEnabled({ timeout: 2000 })) return;
+    } catch (_) {}
+    if (Date.now() > deadline) {
+      throw new Error('submit button "' + label + '" never became enabled — a required field is missing/invalid, or the Cloudflare Turnstile check did not complete (datacenter IP / bot-check). Check firstName/lastName/email/password and whether Turnstile rendered.');
+    }
+    await sleep(500);
+  }
+}
+
+// Sign in with email + password (account already exists).
+async function signInWithPassword(page, email, password) {
+  log('login', 'sign-in form showing — filling email/password for ' + email);
+  await fillIfPresent(page, SELECTORS.authEmail, email);
+  await fillIfPresent(page, SELECTORS.authPassword, password);
+  const submit = page.locator(SELECTORS.authSubmitSignin).first();
+  await waitForEnabled(submit, 20000, 'Sign in');
+  await submit.click({ timeout: 15000 });
+  await page.waitForTimeout(3000);
+  const modalGone = !(await isSignInModalShowing(page));
+  if (!modalGone) {
+    await dumpSignInState(page, 'signin-still-showing');
+    throw new Error('sign-in did not complete — the auth form is still showing (wrong password, or email not confirmed)');
+  }
+  log('login', 'signed in to FreeCallMe; session is live for this run');
+}
+
+// After sign-up (or an OTP-only submit), Supabase sends a 6-digit
+// code (code input appears) or a magic link ("check your email" — no
+// code input). Relay the code/link via Firebase (parent reads Gmail)
+// and verify. Up to 3 attempts. Throws if auth does not complete.
+async function relayConfirmation(page, orderId, idToken, directCode, onWaitingForCode) {
   let codeInputShown = false;
   try {
     await page.waitForSelector(SELECTORS.codeInput, { timeout: 30000 });
@@ -1393,14 +1522,39 @@ async function signInWithOtp(page, email, orderId, idToken, directCode, onWaitin
     const modalGone = !(await isSignInModalShowing(page));
     const onDialer = /freecallme\.com/i.test(page.url());
     if (modalGone && onDialer) {
-      log('login', 'signed in to FreeCallMe (attempt ' + attempt + '); session is live for this run');
+      log('login', 'FreeCallMe auth completed (attempt ' + attempt + '); session is live for this run');
       return;
     }
     const errShown = (await page.locator(SELECTORS.codeError).count()) > 0;
-    log('login', 'sign-in attempt ' + attempt + ' did not complete' + (errShown ? ' (error shown)' : ' (modal still showing)') + ' — waiting for a fresh code/link');
+    log('login', 'confirmation attempt ' + attempt + ' did not complete' + (errShown ? ' (error shown)' : ' (modal still showing)') + ' — waiting for a fresh code/link');
     await dumpSignInState(page, 'attempt-' + attempt);
   }
-  throw new Error('FreeCallMe sign-in failed after 3 attempts');
+  throw new Error('FreeCallMe email confirmation failed after 3 attempts');
+}
+
+// Password for the FreeCallMe account. Prefers the FREECALLME_PASSWORD
+// env var (GitHub secret). Otherwise reuses a value stored in Firebase
+// (freecallme-auth node); if none exists, generates a random 16-char
+// one and stores it there for later runs. The account holds no payment
+// method (free $0.25 credit only), so a Firebase-stored password is
+// low-stakes. Minimum 8 chars (FreeCallMe requirement).
+function genPassword() {
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let s = '';
+  const buf = crypto.randomBytes(16);
+  for (let i = 0; i < 16; i++) s += chars[buf[i] % chars.length];
+  return s;
+}
+async function getAuthPassword(orderId, idToken) {
+  if (process.env.FREECALLME_PASSWORD && process.env.FREECALLME_PASSWORD.length >= 8) return process.env.FREECALLME_PASSWORD;
+  try {
+    const stored = await fb.readAuthPassword(idToken);
+    if (stored && stored.length >= 8) return stored;
+  } catch (_) {}
+  const pw = genPassword();
+  try { await fb.writeAuthPassword(idToken, pw); } catch (e) { log('login', 'could not store generated password in Firebase: ' + e.message); }
+  log('login', 'generated a FreeCallMe password and stored it in Firebase for reuse');
+  return pw;
 }
 
 // ---------- Dry run ----------
@@ -1746,7 +1900,7 @@ async function liveCall(order, script, orderAudio, to, orderId, idToken, directC
     // If the sign-in modal appeared, complete the email OTP flow, then
     // press Call now again (the first press was consumed by the modal).
     if (await isSignInModalShowing(page)) {
-      await signInWithOtp(page, email, orderId, idToken, directCode, onWaitingForCode);
+      await ensureSignedIn(page, email, orderId, idToken, directCode, onWaitingForCode);
       await page.waitForTimeout(2000);
       // Re-fill the number if sign-in cleared the form, then dial again.
       const cur = (await page.locator(SELECTORS.dialInput).first().inputValue().catch(() => '')) || '';
@@ -1860,4 +2014,4 @@ if (require.main === module) {
   main().catch((e) => { console.error('ERROR:', e.message); process.exit(1); });
 }
 
-module.exports = { respond, hostCheck, dryRun, liveCall };
+module.exports = { respond, hostCheck, dryRun, liveCall, ensureSignedIn, getAuthPassword, waitForEnabled, fillIfPresent };
