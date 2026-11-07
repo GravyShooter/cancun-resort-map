@@ -2,13 +2,23 @@
 // GitHub Actions (a free host where WebRTC/UDP works — this VM
 // blocks it, so the caller cannot run here).
 //
-//   Live: log in to TextNow (passwordless, 6-digit code), dial the
-//   front desk, play the order script (Chatty Porch, natural wording),
-//   then LISTEN: capture the staff's voice from the WebRTC call,
-//   transcribe it with whisper.cpp (free, offline), respond with a
-//   rule-based reply (pre-generated Chatty Porch audio), and loop
+//   Live: sign in to FreeCallMe (Supabase email OTP — a 6-digit code
+//   or magic link, relayed via Firebase after the parent reads Gmail),
+//   dial the front desk, play the order script (Chatty Porch, natural
+//   wording), then LISTEN: capture the staff's voice from the WebRTC
+//   call, transcribe it with whisper.cpp (free, offline), respond with
+//   a rule-based reply (pre-generated Chatty Porch audio), and loop
 //   until the staff says goodbye or ~90s pass. Then hang up and
 //   report the outcome + transcript to Firebase.
+//
+//   FreeCallMe replaces TextNow (Cloudflare-blocked on the runner).
+//   First call free up to $0.25 (Mexico $0.03/min, US $0.01/min) —
+//   the buddy test (~$0.02) + the front-desk call (~$0.06) both fit
+//   in the free credit. No card. Dialer selectors are verified from
+//   the server-rendered page HTML; the sign-in modal and in-call
+//   screen selectors are generic patterns (client-rendered) and the
+//   first live run dumps the page state on failure so they can be
+//   tightened.
 //
 //   Dry run (default, safe): verify the host supports WebRTC media
 //   (UDP socket, TURN ICE, two-peer connection) and run the full
@@ -29,9 +39,9 @@
 //                  Firebase; if neither is present, espeak-ng is used
 //                  as a last resort (robotic — the parent should supply
 //                  Chatty Porch audio for the real call).
-//   --code         6-digit TextNow login code (direct). Otherwise the
-//                  code is polled from Firebase (parent writes it after
-//                  reading Gmail) — see firebase.js waitForCode.
+//   --code         FreeCallMe verification (6-digit OTP code or magic-link
+//                  URL, direct). Otherwise the code/link is polled from
+//                  Firebase (parent writes it after reading Gmail).
 //   --dry-run      Run the host + loop verification only (default).
 //   --live         Place a real call (needs HAILMARY_LIVE=1).
 //   --result       Write the result JSON to this file (in addition to
@@ -55,7 +65,7 @@ const fb = require('./firebase');
 
 const INJECT = fs.readFileSync(path.join(__dirname, 'inject.js'), 'utf8');
 const DEFAULT_TO = '+529988728500'; // Excellence Riviera Cancun front desk
-const DEFAULT_EMAIL = 'cgd2049+textnow@gmail.com';
+const DEFAULT_EMAIL = 'cgd2049@gmail.com'; // FreeCallMe sign-up email (plain Gmail)
 const PROFILE_DIR = path.join(__dirname, '.browser-profile');
 const FIREFOX_PROFILE_DIR = path.join(__dirname, '.browser-profile-firefox'); // separate: a Chrome profile dir is not a Firefox profile
 const AUDIO_DIR = __dirname; // flat repo-root layout: reply MP3s sit next to this file
@@ -127,21 +137,32 @@ const REMOTE_LEVEL_THRESHOLD = 0.02; // RMS above this = staff speaking
 const CODE_WAIT_MS = 10 * 60 * 1000;
 
 const SELECTORS = {
-  loginUrl: 'https://www.textnow.com/login?redirectTo=/messaging',
-  appUrl: 'https://www.textnow.com/messaging',
-  continueWithEmail: 'text=Continue with Email',
-  email: '#email',
-  emailContinue: 'button:has-text("Continue")',
+  // FreeCallMe dialer (freecallme.com/free-phone-calls). The dialer
+  // selectors are taken from the server-rendered markup (verified in
+  // the page HTML Nov 6): country listbox button, tel input, and the
+  // "Call now" submit button. The sign-in modal (Supabase email OTP)
+  // is client-rendered, so its selectors are generic patterns — the
+  // first live run screenshots + dumps the modal HTML on failure so
+  // they can be tightened. The in-call screen (SignalWire) markup is
+  // unknown; liveCall waits for ANY in-call indicator and dumps the
+  // page state on failure.
+  dialerUrl: 'https://freecallme.com/free-phone-calls',
+  countryButton: 'button[aria-label^="Country:"]',
+  countryOption: '[role="option"], [role="listbox"] button, [role="listbox"] li',
+  dialInput: 'input[type="tel"][aria-label="Phone number"], input[type="tel"]',
+  callButton: 'button[type="submit"]:has-text("Call now"), button:has-text("Call now")',
+  // Sign-in modal (Supabase OTP). Generic patterns — see note above.
+  email: 'input[type="email"]',
+  emailContinue: 'button[type="submit"]:has-text("Continue"), button:has-text("Send code"), button:has-text("Continue"), button[type="submit"]',
   codeInput: 'input[maxlength="1"], input[autocomplete="one-time-code"], input[inputmode="numeric"]',
   codeBoxes: 'input[maxlength="1"]',
-  codeSingle: 'input[autocomplete="one-time-code"], input[inputmode="numeric"], input[name*="code" i], input[placeholder*="code" i]',
+  codeSingle: 'input[autocomplete="one-time-code"], input[inputmode="numeric"], input[name*="code" i], input[name*="otp" i], input[placeholder*="code" i]',
   codeSubmit: 'button:has-text("Verify"), button:has-text("Continue"), button[type="submit"]',
   codeError: 'text=/incorrect|wrong|invalid|expired|try again/i',
-  newCallButton: 'button:has-text("Call"), [aria-label*="Call" i], [title*="Call" i]',
-  dialInput: 'input[type="tel"], input[placeholder*="number" i], input[inputmode="tel"]',
-  callButton: 'button:has-text("Call"), [aria-label*="Call" i]',
-  inCall: '[class*="call" i], [aria-label*="call" i]',
-  endCallButton: 'button:has-text("End"), [aria-label*="End call" i], [aria-label*="Hang up" i], button[title*="End" i]',
+  // In-call screen (SignalWire). Any one of these means the call is up.
+  inCallTimer: 'text=/\\b\\d{1,2}:\\d{2}\\b/',
+  inCallText: 'text=/calling|connected|on call/i',
+  endCallButton: 'button[aria-label*="End" i], button:has-text("End call"), button:has-text("End"), button[aria-label*="Hang up" i], button[title*="End" i]',
 };
 
 function log(step, msg) {
@@ -652,8 +673,8 @@ async function launchHostBrowser(extraArgs) {
   return chromium.launch(chromiumOpts(extraArgs));
 }
 
-// Launch a PERSISTENT browser context for the live call (TextNow login
-// session lives in the profile dir). Firefox uses its own profile dir
+// Launch a PERSISTENT browser context for the live call (FreeCallMe
+// session lives in the profile dir for the run). Firefox uses its own profile dir
 // (a Chrome profile is not a Firefox profile) with permission
 // auto-granted and NO fake-stream pref — the real PulseAudio virtmic
 // is the mic in pipe mode. Firefox + fake-file is refused by liveCall
@@ -1258,16 +1279,23 @@ async function converse(page, order, orderAudio, script, remoteState) {
 }
 
 // ---------- Login / dial (live) ----------
-// Code sources: --code, TEXTNOW_CODE env, then Firebase polling
-// (parent writes the code to the order node after reading Gmail).
+// Verification sources: --code, FREECALLME_CODE env, then Firebase
+// polling (parent writes the value to the order node after reading
+// Gmail). The value is EITHER a 6-digit OTP code OR a magic-link URL
+// (Supabase sends one or the other); the caller handles both.
+function isCodeOrLink(v) {
+  if (typeof v !== 'string') return false;
+  return /^\d{6}$/.test(v) || /^https?:\/\/\S+$/.test(v);
+}
 async function getCode(orderId, idToken, directCode) {
   if (directCode) {
-    if (!/^\d{6}$/.test(directCode)) throw new Error('--code must be exactly 6 digits');
+    if (!isCodeOrLink(directCode)) throw new Error('--code must be a 6-digit code or a magic-link URL');
     return directCode;
   }
-  if (process.env.TEXTNOW_CODE && /^\d{6}$/.test(process.env.TEXTNOW_CODE)) return process.env.TEXTNOW_CODE;
-  if (!orderId || !idToken) throw new Error('no login code supplied: pass --code, set TEXTNOW_CODE, or run with --order-id so the code can be polled from Firebase');
-  log('code', 'waiting for the 6-digit code in Firebase (parent reads Gmail and writes it to the order)…');
+  const envCode = process.env.FREECALLME_CODE || process.env.TEXTNOW_CODE;
+  if (envCode && isCodeOrLink(envCode)) return envCode;
+  if (!orderId || !idToken) throw new Error('no login verification supplied: pass --code, set FREECALLME_CODE, or run with --order-id so it can be polled from Firebase');
+  log('code', 'waiting for the verification code/link in Firebase (parent reads Gmail and writes it to the order)…');
   return fb.waitForCode(orderId, idToken, CODE_WAIT_MS);
 }
 
@@ -1286,46 +1314,93 @@ async function enterCode(page, code) {
   });
 }
 
-async function isLoggedIn(page) {
-  await page.goto(SELECTORS.appUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForTimeout(3000);
-  if (/\/login/i.test(page.url())) return false;
-  return (await page.locator(SELECTORS.continueWithEmail).count()) === 0;
+// ---------- FreeCallMe sign-in (Supabase email OTP) ----------
+// FreeCallMe prompts sign-in when you press "Call now" while signed
+// out: an email step, then Supabase sends a 6-digit OTP code (or a
+// magic link) to Gmail. The code/link is relayed via Firebase (the
+// parent reads Gmail and writes it to the order node), mirroring the
+// old TextNow flow. The runner is ephemeral, so every live run signs
+// in fresh — there is no persistent session to restore.
+// Returns true if a sign-in modal (email input) is currently visible.
+async function isSignInModalShowing(page) {
+  try {
+    return await page.locator(SELECTORS.email).first().isVisible({ timeout: 3000 });
+  } catch (_) {
+    return false;
+  }
 }
 
-async function ensureLoggedIn(page, email, orderId, idToken, directCode, onWaitingForCode) {
-  if (await isLoggedIn(page)) {
-    log('login', 'session restored from the persistent profile — already logged in');
-    return;
+// Dump the sign-in modal's visible text + buttons to the log so a
+// selector miss is diagnosable from the CI log (no live browser here).
+async function dumpSignInState(page, tag) {
+  try {
+    const url = page.url();
+    const bodyText = (await page.locator('body').innerText().catch(() => '')).slice(0, 800);
+    const buttons = await page.locator('button').allInnerTexts().catch(() => []);
+    log('login', tag + ' url=' + url + ' | buttons=[' + buttons.map((b) => JSON.stringify(b.trim())).join(', ') + '] | text=' + JSON.stringify(bodyText.slice(0, 400)));
+    await page.screenshot({ path: 'freecallme-signin-' + tag + '.png' }).catch(() => {});
+  } catch (e) {
+    log('login', tag + ' dump failed: ' + e.message);
   }
-  log('login', 'not logged in — starting passwordless login for ' + email);
-  await page.goto(SELECTORS.loginUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForTimeout(3000);
-  await page.click(SELECTORS.continueWithEmail, { timeout: 15000 });
-  await page.waitForTimeout(2000);
+}
+
+// Complete the FreeCallMe email-OTP sign-in. Called when the sign-in
+// modal is showing (after pressing "Call now"). Fills the email,
+// submits, waits for the OTP step, relays the code/link via Firebase,
+// and verifies. Up to 3 attempts. Throws if sign-in does not complete.
+async function signInWithOtp(page, email, orderId, idToken, directCode, onWaitingForCode) {
+  log('login', 'sign-in modal is showing — starting email OTP sign-in for ' + email);
   await page.fill(SELECTORS.email, email, { timeout: 15000 });
-  await page.click(SELECTORS.emailContinue, { timeout: 15000 });
-  log('login', 'waiting for the code-entry screen…');
+  await page.locator(SELECTORS.emailContinue).first().click({ timeout: 15000 });
+  log('login', 'email submitted; waiting for the OTP step…');
+  // Supabase sends a 6-digit code (code input appears) or a magic link
+  // ("check your email" — no code input). Wait for either signal.
+  let codeInputShown = false;
   try {
     await page.waitForSelector(SELECTORS.codeInput, { timeout: 30000 });
-  } catch (e) {
-    await page.screenshot({ path: 'textnow-after-email.png' }).catch(() => {});
-    throw new Error('code-entry screen did not appear after the email step (see textnow-after-email.png; current URL: ' + page.url() + ')');
+    codeInputShown = true;
+    log('login', 'OTP code-entry screen is showing; a 6-digit code was sent to Gmail');
+  } catch (_) {
+    log('login', 'no code input appeared in 30s — likely a magic-link flow (check the email for a link)');
+    await dumpSignInState(page, 'after-email');
   }
-  log('login', 'code-entry screen is showing; TextNow sent a 6-digit code to Gmail');
   if (onWaitingForCode) await onWaitingForCode().catch(() => {});
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const code = await getCode(orderId, idToken, attempt === 1 ? directCode : '');
-    await enterCode(page, code);
-    await page.waitForTimeout(4000);
-    if (/\/messaging/i.test(page.url()) && (await page.locator(SELECTORS.continueWithEmail).count()) === 0) {
-      log('login', 'logged in (attempt ' + attempt + '); session saved in the persistent profile');
+    const value = await getCode(orderId, idToken, attempt === 1 ? directCode : '');
+    if (/^https?:\/\//.test(value)) {
+      // Magic link: open it (same tab) — Supabase verifies and signs in.
+      log('login', 'magic link received — opening it to complete sign-in (attempt ' + attempt + ')');
+      await page.goto(value, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      await page.waitForTimeout(4000);
+    } else {
+      // 6-digit code.
+      if (!codeInputShown) {
+        // No code input is showing, but a code was supplied. The modal
+        // may have switched to a code step — re-check once.
+        try {
+          await page.waitForSelector(SELECTORS.codeInput, { timeout: 10000 });
+          codeInputShown = true;
+        } catch (_) {
+          throw new Error('a 6-digit code was supplied but no code input is showing — the sign-in is a magic-link flow; supply the magic link URL as the code instead');
+        }
+      }
+      await enterCode(page, value);
+      await page.waitForTimeout(4000);
+    }
+    // Signed in when the modal is gone (no email input) and we are back
+    // on the dialer (or an in-call screen). Re-check after a pause.
+    await page.waitForTimeout(2000);
+    const modalGone = !(await isSignInModalShowing(page));
+    const onDialer = /freecallme\.com/i.test(page.url());
+    if (modalGone && onDialer) {
+      log('login', 'signed in to FreeCallMe (attempt ' + attempt + '); session is live for this run');
       return;
     }
     const errShown = (await page.locator(SELECTORS.codeError).count()) > 0;
-    log('login', 'code attempt ' + attempt + ' did not log in' + (errShown ? ' (error shown)' : ' (still on code screen)') + ' — waiting for a fresh code');
+    log('login', 'sign-in attempt ' + attempt + ' did not complete' + (errShown ? ' (error shown)' : ' (modal still showing)') + ' — waiting for a fresh code/link');
+    await dumpSignInState(page, 'attempt-' + attempt);
   }
-  throw new Error('login failed after 3 code attempts');
+  throw new Error('FreeCallMe sign-in failed after 3 attempts');
 }
 
 // ---------- Dry run ----------
@@ -1557,8 +1632,78 @@ async function dryRun(order, script, orderAudio) {
 }
 
 // ---------- Live call ----------
+// ---------- FreeCallMe dial helpers ----------
+// Pick the dialer's country from the destination number (+52 → Mexico,
+// +1 → United States). The dialer defaults to United States (+1).
+async function selectCountry(page, to) {
+  const want = /^\+52/.test(to) ? 'Mexico' : (/^\+1/.test(to) ? 'United States' : null);
+  if (!want) { log('dial', 'no country mapping for ' + to + ' — leaving the dialer country as-is'); return; }
+  const btn = page.locator(SELECTORS.countryButton).first();
+  const label = (await btn.getAttribute('aria-label').catch(() => '')) || '';
+  if (label.toLowerCase().includes(want.toLowerCase())) {
+    log('dial', 'country already ' + want + ' (' + label + ')');
+    return;
+  }
+  log('dial', 'changing country to ' + want + ' (currently: ' + (label || '?') + ')');
+  await btn.click({ timeout: 15000 });
+  await page.waitForTimeout(1500);
+  const opt = page.locator('[role="option"]:has-text("' + want + '"), [role="listbox"] :text("' + want + '")').first();
+  await opt.click({ timeout: 15000 });
+  await page.waitForTimeout(1500);
+  const after = (await btn.getAttribute('aria-label').catch(() => '')) || '';
+  log('dial', 'country now: ' + (after || '?'));
+}
+
+// Fill the dialer tel input with the full international number and
+// verify the digits landed (the input reformats as you type). Falls
+// back to keyboard typing if fill does not stick.
+async function fillDialNumber(page, to) {
+  const digits = to.replace(/\D/g, '');
+  await page.fill(SELECTORS.dialInput, to, { timeout: 15000 });
+  let val = (await page.locator(SELECTORS.dialInput).first().inputValue().catch(() => '')) || '';
+  if (val.replace(/\D/g, '') === digits || val.replace(/\D/g, '').endsWith(digits.slice(-10))) {
+    log('dial', 'dial input = ' + JSON.stringify(val));
+    return;
+  }
+  log('dial', 'fill gave ' + JSON.stringify(val) + ' (want ' + to + ') — retrying by typing');
+  await page.locator(SELECTORS.dialInput).first().click({ timeout: 10000 });
+  await page.keyboard.press('Control+a');
+  await page.keyboard.press('Backspace');
+  await page.locator(SELECTORS.dialInput).first().pressSequentially(to, { delay: 60 });
+  val = (await page.locator(SELECTORS.dialInput).first().inputValue().catch(() => '')) || '';
+  log('dial', 'dial input after typing = ' + JSON.stringify(val));
+}
+
+// Wait for ANY in-call indicator (End button, call timer, or
+// Calling/Connected text). Returns the indicator that fired, or throws
+// after timeoutMs with a page-state dump.
+async function waitForInCall(page, timeoutMs) {
+  const deadline = Date.now() + (timeoutMs || 60000);
+  while (Date.now() < deadline) {
+    try {
+      if (await page.locator(SELECTORS.endCallButton).first().isVisible({ timeout: 1000 })) return 'end-button';
+    } catch (_) {}
+    try {
+      if (await page.locator(SELECTORS.inCallTimer).first().isVisible({ timeout: 1000 })) return 'timer';
+    } catch (_) {}
+    try {
+      if (await page.locator(SELECTORS.inCallText).first().isVisible({ timeout: 1000 })) return 'calling-text';
+    } catch (_) {}
+    await page.waitForTimeout(1500);
+  }
+  try {
+    const bodyText = (await page.locator('body').innerText().catch(() => '')).slice(0, 1000);
+    const buttons = await page.locator('button').allInnerTexts().catch(() => []);
+    log('dial', 'IN-CALL WAIT TIMED OUT url=' + page.url() + ' | buttons=[' + buttons.map((b) => JSON.stringify(b.trim())).join(', ') + '] | text=' + JSON.stringify(bodyText.slice(0, 500)));
+    await page.screenshot({ path: 'freecallme-incall-timeout.png' }).catch(() => {});
+  } catch (e) {
+    log('dial', 'in-call dump failed: ' + e.message);
+  }
+  throw new Error('no in-call indicator appeared in ' + Math.round((timeoutMs || 60000) / 1000) + 's (see freecallme-incall-timeout.png / log above)');
+}
+
 async function liveCall(order, script, orderAudio, to, orderId, idToken, directCode, onWaitingForCode) {
-  const email = process.env.TEXTNOW_EMAIL || DEFAULT_EMAIL;
+  const email = process.env.FREECALLME_EMAIL || process.env.TEXTNOW_EMAIL || DEFAULT_EMAIL;
   // Fake-file mode (Chromium only): the ORDER audio IS the mic.
   // Convert the order MP3 to a real WAV (mono 48kHz s16) BEFORE
   // launching the browser — the flag needs the file to exist at
@@ -1569,7 +1714,7 @@ async function liveCall(order, script, orderAudio, to, orderId, idToken, directC
   // mic. See converse(). Firefox + fake-file is refused: the
   // generated tone cannot speak the order — use pipe.
   // Pipe mode: open the pipe BEFORE launching the browser so the
-  // pipe-source is live (fed with silence) when TextNow opens the mic.
+  // pipe-source is live (fed with silence) when FreeCallMe opens the mic.
   if (MIC_MODE === 'fake-file') {
     if (IS_FIREFOX) throw new Error('Firefox live calls require MIC_MODE=pipe — the fake-stream tone cannot speak the order');
     await mp3ToWavFile(orderAudio, FAKE_MIC_WAV);
@@ -1588,49 +1733,35 @@ async function liveCall(order, script, orderAudio, to, orderId, idToken, directC
   const remoteState = newRemoteState();
   await exposeRemoteReceivers(page, remoteState);
   try {
-    await ensureLoggedIn(page, email, orderId, idToken, directCode, onWaitingForCode);
     event({ event: 'dialing', to });
-    log('dial', 'opening the dialer');
-    // After login the browser is ALREADY on /messaging: isLoggedIn navigated
-    // there to check the session. Do NOT navigate again to the same URL —
-    // a redundant same-URL goto hangs in this headless Firefox + TextNow
-    // SPA (it timed out in both run #18 and run #19). Only navigate when
-    // we are not already on the messaging page.
-    if (!/\/messaging/i.test(page.url())) {
-      let navigated = false;
-      for (let attempt = 1; attempt <= 2 && !navigated; attempt++) {
-        try {
-          await page.goto(SELECTORS.appUrl, { waitUntil: 'commit', timeout: 30000 });
-          navigated = true;
-        } catch (e) {
-          log('dial', 'goto attempt ' + attempt + ' failed: ' + e.message);
-          if (attempt === 2) throw e;
-          await page.waitForTimeout(2000);
-        }
-      }
-    } else {
-      log('dial', 'already on the messaging page — skipping the redundant goto');
-    }
-    await page.waitForTimeout(2000);
-    // TextNow may route through a Cloudflare challenge (URL carries
-    // __cf_chl_rt_tk) — the dial input does not exist until it clears.
-    // Wait up to 60s for the challenge to resolve (headed Firefox under
-    // xvfb auto-solves it), then proceed. Run #20 died here: the fill
-    // timed out at 15s on a challenge page with no dial input.
-    for (let i = 0; i < 30; i++) {
-      if (!/__cf_chl/i.test(page.url())) break;
-      log('dial', 'Cloudflare challenge in progress — waiting for it to clear…');
+    log('dial', 'opening the FreeCallMe dialer');
+    await page.goto(SELECTORS.dialerUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForTimeout(3000);
+    await selectCountry(page, to);
+    await fillDialNumber(page, to);
+    await page.locator(SELECTORS.callButton).first().click({ timeout: 30000 });
+    log('dial', 'pressed Call now for ' + to + ' …');
+    await page.waitForTimeout(3000);
+    // FreeCallMe prompts sign-in when you press Call while signed out.
+    // If the sign-in modal appeared, complete the email OTP flow, then
+    // press Call now again (the first press was consumed by the modal).
+    if (await isSignInModalShowing(page)) {
+      await signInWithOtp(page, email, orderId, idToken, directCode, onWaitingForCode);
       await page.waitForTimeout(2000);
+      // Re-fill the number if sign-in cleared the form, then dial again.
+      const cur = (await page.locator(SELECTORS.dialInput).first().inputValue().catch(() => '')) || '';
+      if (cur.replace(/\D/g, '') !== to.replace(/\D/g, '')) {
+        await selectCountry(page, to);
+        await fillDialNumber(page, to);
+      }
+      if (!(await isSignInModalShowing(page))) {
+        await page.locator(SELECTORS.callButton).first().click({ timeout: 30000 })
+          .catch(() => log('dial', 'second Call now click failed (call may already be dialing)'));
+        log('dial', 'pressed Call now again after sign-in …');
+      }
     }
-    if (/__cf_chl/i.test(page.url())) {
-      log('dial', 'Cloudflare challenge did not clear in 60s; trying the dial input anyway');
-    }
-    await page.locator(SELECTORS.newCallButton).first().click({ timeout: 30000 })
-      .catch(() => log('dial', 'no separate new-call button; trying the dial input directly'));
-    await page.fill(SELECTORS.dialInput, to, { timeout: 60000 });
-    await page.click(SELECTORS.callButton, { timeout: 30000 });
-    log('dial', 'calling ' + to + ' …');
-    await page.waitForSelector(SELECTORS.inCall, { timeout: 30000 });
+    const via = await waitForInCall(page, 60000);
+    log('dial', 'call appears connected (indicator: ' + via + ')');
     await page.waitForTimeout(2000);
     event({ event: 'playing' });
     log('call', 'call appears connected; playing the order (' + script.language + ')');
