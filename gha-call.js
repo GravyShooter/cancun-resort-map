@@ -660,8 +660,12 @@ async function launchHostBrowser(extraArgs) {
 // (the generated tone cannot speak the order); use pipe.
 async function launchCallPersistentContext() {
   if (IS_FIREFOX) {
+    // HEADED under xvfb (the workflow runs xvfb-run): a headed browser is
+    // far less likely to be Cloudflare-challenged than headless, and a
+    // challenge page can auto-solve in a real browser. Run #20 (headless)
+    // hit a Cloudflare challenge that hid the dial input entirely.
     return firefox.launchPersistentContext(FIREFOX_PROFILE_DIR, {
-      headless: true,
+      headless: false,
       firefoxUserPrefs: { 'media.navigator.permission.disabled': true },
     });
   }
@@ -1608,10 +1612,23 @@ async function liveCall(order, script, orderAudio, to, orderId, idToken, directC
       log('dial', 'already on the messaging page — skipping the redundant goto');
     }
     await page.waitForTimeout(2000);
-    await page.locator(SELECTORS.newCallButton).first().click({ timeout: 15000 })
+    // TextNow may route through a Cloudflare challenge (URL carries
+    // __cf_chl_rt_tk) — the dial input does not exist until it clears.
+    // Wait up to 60s for the challenge to resolve (headed Firefox under
+    // xvfb auto-solves it), then proceed. Run #20 died here: the fill
+    // timed out at 15s on a challenge page with no dial input.
+    for (let i = 0; i < 30; i++) {
+      if (!/__cf_chl/i.test(page.url())) break;
+      log('dial', 'Cloudflare challenge in progress — waiting for it to clear…');
+      await page.waitForTimeout(2000);
+    }
+    if (/__cf_chl/i.test(page.url())) {
+      log('dial', 'Cloudflare challenge did not clear in 60s; trying the dial input anyway');
+    }
+    await page.locator(SELECTORS.newCallButton).first().click({ timeout: 30000 })
       .catch(() => log('dial', 'no separate new-call button; trying the dial input directly'));
-    await page.fill(SELECTORS.dialInput, to, { timeout: 15000 });
-    await page.click(SELECTORS.callButton, { timeout: 15000 });
+    await page.fill(SELECTORS.dialInput, to, { timeout: 60000 });
+    await page.click(SELECTORS.callButton, { timeout: 30000 });
     log('dial', 'calling ' + to + ' …');
     await page.waitForSelector(SELECTORS.inCall, { timeout: 30000 });
     await page.waitForTimeout(2000);
