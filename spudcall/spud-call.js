@@ -145,7 +145,7 @@
     return name + 's';
   }
   function buildScriptText(order) {
-    var room = String(order.room || '6131').trim();
+    var room = String(order.room || '7160').trim();
     var guest = String(order.guestName || order.guest || 'Chris').trim() || 'Chris';
     var items = order.items || [];
     var phrases = items.map(function (it) {
@@ -574,7 +574,7 @@
       log('Refused to dial the front desk: testPassed is not set. Run the test call to +1 740-381-3531 first.');
       return;
     }
-    log('order: room ' + (order.room || '6131') + ', ' + (order.items || []).length + ' items, to ' + to + (isFrontDesk ? ' (FRONT DESK)' : ' (test)'));
+    log('order: room ' + (order.room || '7160') + ', ' + (order.items || []).length + ' items, to ' + to + (isFrontDesk ? ' (FRONT DESK)' : ' (test)'));
     log('saying: ' + buildScriptText(order));
     try { await fbPatch(NODE + '/' + ORDER_ID, auth.idToken, { status: 'calling', callStartedAt: Date.now() }); } catch (e) {}
 

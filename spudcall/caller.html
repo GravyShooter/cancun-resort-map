@@ -60,7 +60,7 @@
 <div class="card">
   <h2>2 · Your order</h2>
   <div class="row">
-    <div style="flex:1"><label>Room</label><input id="room" type="text" value="6131" inputmode="numeric"></div>
+    <div style="flex:1"><label>Room</label><input id="room" type="text" value="7160" inputmode="numeric"></div>
     <div style="flex:1"><label>Guest</label><input id="guest" type="text" value="Chris"></div>
   </div>
   <label>Delivery notes (spoken exactly as typed)</label>
@@ -121,7 +121,7 @@ var DIALER = { freecallme: 'https://freecallme.com/free-phone-calls', poptox: 'h
 var MENU = ["Eggs Your Way (2)","Bacon Egg Muffin","Broccoli Egg Muffin","Ham, Egg & Cheese Crepe","Machaca Burrito with Egg","Salmon Bagel","Chicken Breast Baguette","Prosciutto Baguette","Guacamole & Bacon Baguette","Waffles","Nutella & Banana Crepe","Blackberry Pancakes","Banana Pancakes","Chocochip Pancakes","Cinnamon Roll Casserole","Freshly Baked Sweet Bread","Toasted White Bread","Toasted Whole Wheat Bread","Fruit Salad","Cereal — Frosted Flakes","Cereal — Froot Loops","Cereal — Choco Krispis","Cereal — All Bran","8 oz Angus Burger","Cuban Sandwich","BLT Baguette","Artisanal Tuna Baguette","Roast Beef Panini","Hanger Steak Burrito","Chicken Tender Wrap","Chicken Gyros","Pepperoni Pizza","Hawaiian Pizza","Margarita Pizza","Classic Caesar Salad with Shrimp","Green Leaves Salad with Chicken","Nachos Machos","Popcorn","3 Chocolate Cold Cake","Lemon Pie","Banana Crumble","Orange Juice","Green Juice","Grapefruit Juice","Apple Juice","Pineapple Juice","Tomato Juice","American Coffee","Decaf Coffee","Tea","Coke","Diet Coke","Fanta","Sprite","Still Water","Sparkling Water","Whole Milk","Chocolate Milk","Domestic Beer — Sol","Domestic Beer — Dos Equis","Domestic Beer — Tecate","Imported Beer — Heineken","Imported Beer — Coors Light","House Red Wine (180 ml)","House White Wine (180 ml)","Chicken Fingers"];
 
 // ---------- State ----------
-var order = { room: '6131', guestName: 'Chris', deliveryNotes: 'Oh, and could you just leave it in the delivery box by the door? No need to knock.', language: 'en', items: [{ name: 'Chicken Fingers', qty: 1, notes: '' }, { name: 'Coke', qty: 2, notes: '' }], testCall: true, to: TEST_NUMBER, testPassed: false };
+var order = { room: '7160', guestName: 'Chris', deliveryNotes: 'Oh, and could you just leave it in the delivery box by the door? No need to knock.', language: 'en', items: [{ name: 'Chicken Fingers', qty: 1, notes: '' }, { name: 'Coke', qty: 2, notes: '' }], testCall: true, to: TEST_NUMBER, testPassed: false };
 var backend = 'freecallme';
 var idToken = null;
 var saveTimer = null;
@@ -168,7 +168,7 @@ function pluralizeEn(name) {
   return name + 's';
 }
 function buildScriptText(o) {
-  var room = String(o.room || '6131').trim();
+  var room = String(o.room || '7160').trim();
   var guest = String(o.guestName || o.guest || 'Chris').trim() || 'Chris';
   var phrases = (o.items || []).map(function (it) {
     var qty = it.qty || 1;
