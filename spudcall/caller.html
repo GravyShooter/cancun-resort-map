@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SpudCall — Room Service Caller</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #14100c; color: #f5efe6; padding: 14px 14px 40px; }
+  h1 { font-size: 22px; margin: 4px 0 2px; }
+  .sub { color: #c9bda8; font-size: 13px; margin: 0 0 14px; }
+  .card { background: #221c15; border: 1px solid #3a3126; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .card h2 { font-size: 15px; margin: 0 0 10px; }
+  label { display: block; font-size: 12px; color: #c9bda8; margin: 10px 0 4px; }
+  input[type=text], textarea { width: 100%; background: #14100c; color: #f5efe6; border: 1px solid #4a4033; border-radius: 10px; padding: 10px; font-size: 16px; }
+  textarea { min-height: 64px; resize: vertical; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row input { flex: 1; }
+  .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .item { background: #14100c; border: 1px solid #3a3126; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .item .nm { font-size: 13px; line-height: 1.3; min-height: 34px; }
+  .qty { display: flex; gap: 6px; align-items: center; }
+  .qty button { flex: 1; }
+  button { background: #3a3126; color: #f5efe6; border: 0; border-radius: 10px; padding: 10px 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  button:active { opacity: .7; }
+  .big { width: 100%; padding: 16px; font-size: 18px; border-radius: 14px; margin-top: 8px; }
+  .go { background: #2e7d32; }
+  .front { background: #b26a00; }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+  .orderline { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #3a3126; }
+  .orderline .nm { flex: 1; font-size: 14px; }
+  .orderline .q { font-weight: 700; min-width: 28px; text-align: center; }
+  .orderline button { padding: 6px 10px; font-size: 14px; }
+  .script { background: #14100c; border: 1px solid #3a3126; border-radius: 10px; padding: 10px; font-size: 14px; line-height: 1.5; color: #ffe9b0; }
+  .status { font-size: 13px; color: #c9bda8; }
+  .status b { color: #7ee787; }
+  .warn { background: #3a1f1f; border: 1px solid #7a2e2e; border-radius: 10px; padding: 10px; font-size: 13px; line-height: 1.5; }
+  .steps { font-size: 14px; line-height: 1.7; }
+  .steps li { margin-bottom: 6px; }
+  a.bm { display: inline-block; background: #6a4fa3; color: #fff; padding: 12px 18px; border-radius: 12px; font-weight: 700; text-decoration: none; margin: 6px 0; }
+  .seg { display: flex; gap: 8px; }
+  .seg button { flex: 1; }
+  .seg button.on { background: #2e7d32; }
+  .tiny { font-size: 12px; color: #9a8f7d; }
+</style>
+</head>
+<body>
+<h1>🥔 SpudCall — Room Service</h1>
+<p class="sub">Silent, free, works on iPhone (Safari) &amp; Android (Chrome). No app install. The call is placed from the dialer page — you hear nothing.</p>
+
+<div class="card">
+  <h2>1 · Backend</h2>
+  <div class="seg">
+    <button id="be-freecallme" class="on" type="button">FreeCallMe (primary)</button>
+    <button id="be-poptox" type="button">PopTox (backup)</button>
+  </div>
+  <p class="tiny">FreeCallMe needs the account (already created). PopTox needs no login. If FreeCallMe fails on the phone, switch to PopTox and retry.</p>
+</div>
+
+<div class="card">
+  <h2>2 · Your order</h2>
+  <div class="row">
+    <div style="flex:1"><label>Room</label><input id="room" type="text" value="6131" inputmode="numeric"></div>
+    <div style="flex:1"><label>Guest</label><input id="guest" type="text" value="Chris"></div>
+  </div>
+  <label>Delivery notes (spoken exactly as typed)</label>
+  <textarea id="notes">Oh, and could you just leave it in the delivery box by the door? No need to knock.</textarea>
+  <h2 style="margin-top:14px">Order</h2>
+  <div id="orderlist"></div>
+  <h2 style="margin-top:14px">Menu — tap + to add</h2>
+  <div class="menu" id="menugrid"></div>
+  <h2 style="margin-top:14px">What they'll hear</h2>
+  <div class="script" id="scriptpreview"></div>
+  <p class="status" id="savestate">Saving…</p>
+</div>
+
+<div class="card">
+  <h2>3 · Call</h2>
+  <button id="calltest" class="big go" type="button">📞 CALL TEST NUMBER (+1 740-381-3531)</button>
+  <button id="testpassed" class="big" type="button" style="background:#33507a">✅ TEST PASSED — I HEARD THE ORDER</button>
+  <button id="callfront" class="big front" type="button" disabled>📞 CALL FRONT DESK (+52 998 872 8500)</button>
+  <p class="tiny">Front desk is LOCKED until a test call passes. After the test call, if you heard the Chicken Fingers + Coke order on your phone, tap TEST PASSED — that unlocks the front desk. Never call the front desk before a test passes.</p>
+  <p class="status" id="callstate"></p>
+</div>
+
+<div class="card">
+  <h2>4 · Bookmarklet (one-time setup)</h2>
+  <p class="steps">The caller runs <b>inside</b> the dialer page. A bookmarklet is how a web page gets in there — install it once, then it just works.</p>
+  <a class="bm" id="bmlink" href="#">🔖 SpudCall</a>
+  <button id="copybm" type="button">Copy bookmarklet</button>
+  <ol class="steps">
+    <li><b>iPhone Safari:</b> Tap <b>Copy bookmarklet</b> above. Bookmark any page (Share → Add Bookmark). Open Bookmarks → Edit → tap that bookmark → paste into the URL field (replace the whole URL) → Done. Rename it “SpudCall”.</li>
+    <li><b>Android Chrome:</b> Tap <b>Copy bookmarklet</b>. Bookmark any page (⋮ → ☆). Edit the bookmark → paste into the URL → Save. Rename it “SpudCall”.</li>
+    <li><b>Desktop:</b> Drag the purple “SpudCall” link to your bookmarks bar.</li>
+  </ol>
+  <p class="tiny">To place a call: tap CALL TEST / CALL FRONT DESK above (it opens the dialer in a new tab), then tap the <b>SpudCall</b> bookmark. The caller takes over the dialer, dials, and speaks — silently.</p>
+</div>
+
+<div class="card warn">
+  <b>How it works &amp; limits</b><br>
+  • The dialer runs in your real browser (real phone, real IP) — that's why it doesn't hit the bot-check that killed the GitHub runner.<br>
+  • The order audio is the pre-generated Chatty Porch voice, read from Firebase. When you change the order, fresh audio is generated into Firebase before you call.<br>
+  • The caller listens for the staff (sound level only, no transcription), says goodbye, and hangs up. You hear nothing — no speakerphone.<br>
+  • $0: FreeCallMe free credit / PopTox free. No card, no paid service.<br>
+  • If FreeCallMe shows a 6-digit code screen, the code is relayed via Firebase (E.T. reads Gmail and writes it there) — just wait on that screen.
+</div>
+
+<script>
+// ---------- Config ----------
+var SPUDCALL_JS_URL = 'https://gravyshooter.github.io/cancun-resort-map/spudcall/spud-call.js';
+var ORDER_ID = '-P5my-uyvJJfZz7Fkrpf';
+var NODE = 'hailmary-orders-2way';
+var AUTH_NODE = 'freecallme-auth';
+var DB_URL = 'https://excellence-riviera-cancu-12f14-default-rtdb.firebaseio.com';
+var MAP_URL = 'https://gravyshooter.github.io/cancun-resort-map/';
+var FRONT_DESK = '+529988728500';
+var TEST_NUMBER = '+17403813531';
+var DIALER = { freecallme: 'https://freecallme.com/free-phone-calls', poptox: 'https://www.poptox.com/' };
+
+// ---------- Menu (65 items from menu.json + Chicken Fingers, the test item) ----------
+var MENU = ["Eggs Your Way (2)","Bacon Egg Muffin","Broccoli Egg Muffin","Ham, Egg & Cheese Crepe","Machaca Burrito with Egg","Salmon Bagel","Chicken Breast Baguette","Prosciutto Baguette","Guacamole & Bacon Baguette","Waffles","Nutella & Banana Crepe","Blackberry Pancakes","Banana Pancakes","Chocochip Pancakes","Cinnamon Roll Casserole","Freshly Baked Sweet Bread","Toasted White Bread","Toasted Whole Wheat Bread","Fruit Salad","Cereal — Frosted Flakes","Cereal — Froot Loops","Cereal — Choco Krispis","Cereal — All Bran","8 oz Angus Burger","Cuban Sandwich","BLT Baguette","Artisanal Tuna Baguette","Roast Beef Panini","Hanger Steak Burrito","Chicken Tender Wrap","Chicken Gyros","Pepperoni Pizza","Hawaiian Pizza","Margarita Pizza","Classic Caesar Salad with Shrimp","Green Leaves Salad with Chicken","Nachos Machos","Popcorn","3 Chocolate Cold Cake","Lemon Pie","Banana Crumble","Orange Juice","Green Juice","Grapefruit Juice","Apple Juice","Pineapple Juice","Tomato Juice","American Coffee","Decaf Coffee","Tea","Coke","Diet Coke","Fanta","Sprite","Still Water","Sparkling Water","Whole Milk","Chocolate Milk","Domestic Beer — Sol","Domestic Beer — Dos Equis","Domestic Beer — Tecate","Imported Beer — Heineken","Imported Beer — Coors Light","House Red Wine (180 ml)","House White Wine (180 ml)","Chicken Fingers"];
+
+// ---------- State ----------
+var order = { room: '6131', guestName: 'Chris', deliveryNotes: 'Oh, and could you just leave it in the delivery box by the door? No need to knock.', language: 'en', items: [{ name: 'Chicken Fingers', qty: 1, notes: '' }, { name: 'Coke', qty: 2, notes: '' }], testCall: true, to: TEST_NUMBER, testPassed: false };
+var backend = 'freecallme';
+var idToken = null;
+var saveTimer = null;
+
+// ---------- Firebase (REST, anonymous auth) ----------
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+async function getApiKey() {
+  var res = await fetch(MAP_URL);
+  if (!res.ok) throw new Error('map page HTTP ' + res.status);
+  var html = await res.text();
+  var m = html.match(/apiKey\s*:\s*["']([^"']+)["']/);
+  if (!m) throw new Error('apiKey not found in map page');
+  return m[1];
+}
+async function fbAuth() {
+  if (idToken) return idToken;
+  var apiKey = await getApiKey();
+  var res = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + encodeURIComponent(apiKey),
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) });
+  var body = await res.json().catch(function () { return {}; });
+  if (!res.ok || !body.idToken) throw new Error('anonymous sign-in failed');
+  idToken = body.idToken;
+  return idToken;
+}
+async function fbRead(path) {
+  var tok = await fbAuth();
+  var res = await fetch(DB_URL + '/' + path + '.json?auth=' + encodeURIComponent(tok));
+  if (!res.ok) return null;
+  return res.json().catch(function () { return null; });
+}
+async function fbPatch(path, patch) {
+  var tok = await fbAuth();
+  var res = await fetch(DB_URL + '/' + path + '.json?auth=' + encodeURIComponent(tok),
+    { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
+  if (!res.ok) throw new Error('firebase patch failed HTTP ' + res.status);
+  return res.json().catch(function () { return {}; });
+}
+
+// ---------- Script text ----------
+var EN_NUM = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten' };
+function pluralizeEn(name) {
+  if (/s$/i.test(name)) return name;
+  if (/(x|z|ch|sh)$/i.test(name)) return name + 'es';
+  return name + 's';
+}
+function buildScriptText(o) {
+  var room = String(o.room || '6131').trim();
+  var guest = String(o.guestName || o.guest || 'Chris').trim() || 'Chris';
+  var phrases = (o.items || []).map(function (it) {
+    var qty = it.qty || 1;
+    var name = String(it.name || '').trim();
+    if (qty > 1) name = pluralizeEn(name);
+    var q = EN_NUM[qty] || String(qty);
+    var p = q + ' ' + name;
+    if (it.notes) p += ', ' + it.notes;
+    return p;
+  });
+  var itemsText = phrases.length === 1 ? phrases[0]
+    : phrases.length === 2 ? phrases[0] + ', and ' + phrases[1]
+    : phrases.slice(0, -1).join(', ') + ', and ' + phrases[phrases.length - 1];
+  var out = [];
+  out.push('Hi, this is ' + guest + ', room ' + room + '. Can I order some room service, please?');
+  if (itemsText) out.push('Can I get ' + itemsText + '?');
+  var notes = String(o.deliveryNotes || '').trim();
+  if (notes) out.push(/[.!?]$/.test(notes) ? notes : notes + '.');
+  out.push('That’s everything. Thanks so much!');
+  return out.join(' ');
+}
+
+// ---------- UI ----------
+var $ = function (id) { return document.getElementById(id); };
+function qtyOf(name) {
+  var it = order.items.find(function (x) { return x.name === name; });
+  return it ? it.qty : 0;
+}
+function setQty(name, qty) {
+  var it = order.items.find(function (x) { return x.name === name; });
+  if (qty <= 0) { order.items = order.items.filter(function (x) { return x.name !== name; }); }
+  else if (it) { it.qty = qty; }
+  else { order.items.push({ name: name, qty: qty, notes: '' }); }
+  render();
+  scheduleSave();
+}
+function render() {
+  var ol = $('orderlist');
+  ol.innerHTML = '';
+  if (!order.items.length) ol.innerHTML = '<p class="tiny">No items yet — tap + on the menu.</p>';
+  order.items.forEach(function (it) {
+    var div = document.createElement('div');
+    div.className = 'orderline';
+    var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = it.name;
+    var minus = document.createElement('button'); minus.type = 'button'; minus.textContent = '−';
+    minus.onclick = function () { setQty(it.name, (it.qty || 1) - 1); };
+    var q = document.createElement('span'); q.className = 'q'; q.textContent = it.qty;
+    var plus = document.createElement('button'); plus.type = 'button'; plus.textContent = '+';
+    plus.onclick = function () { setQty(it.name, (it.qty || 1) + 1); };
+    div.appendChild(nm); div.appendChild(minus); div.appendChild(q); div.appendChild(plus);
+    ol.appendChild(div);
+  });
+  var mg = $('menugrid');
+  if (!mg.dataset.built) {
+    mg.dataset.built = '1';
+    MENU.forEach(function (name) {
+      var div = document.createElement('div');
+      div.className = 'item';
+      var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = name;
+      var row = document.createElement('div'); row.className = 'qty';
+      var minus = document.createElement('button'); minus.type = 'button'; minus.textContent = '−';
+      minus.onclick = function () { setQty(name, qtyOf(name) - 1); };
+      var plus = document.createElement('button'); plus.type = 'button'; plus.textContent = '+ add';
+      plus.onclick = function () { setQty(name, qtyOf(name) + 1); };
+      row.appendChild(minus); row.appendChild(plus);
+      div.appendChild(nm); div.appendChild(row);
+      mg.appendChild(div);
+    });
+  }
+  $('scriptpreview').textContent = buildScriptText(order);
+  $('callfront').disabled = !order.testPassed;
+}
+function scheduleSave() {
+  $('savestate').textContent = 'Saving…';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveOrder, 800);
+}
+async function saveOrder() {
+  try {
+    await fbPatch(NODE + '/' + ORDER_ID, {
+      room: order.room, guestName: order.guestName, deliveryNotes: order.deliveryNotes,
+      language: 'en', items: order.items, to: order.to, testCall: order.testCall, testPassed: order.testPassed,
+      status: 'queued', updatedAt: Date.now()
+    });
+    $('savestate').innerHTML = 'Saved to Firebase ✓';
+  } catch (e) {
+    $('savestate').textContent = 'Save failed: ' + e.message + ' — will retry on Call.';
+  }
+}
+function setBackend(b) {
+  backend = b;
+  $('be-freecallme').classList.toggle('on', b === 'freecallme');
+  $('be-poptox').classList.toggle('on', b === 'poptox');
+}
+$('be-freecallme').onclick = function () { setBackend('freecallme'); };
+$('be-poptox').onclick = function () { setBackend('poptox'); };
+$('room').addEventListener('input', function () { order.room = $('room').value; render(); scheduleSave(); });
+$('guest').addEventListener('input', function () { order.guestName = $('guest').value; render(); scheduleSave(); });
+$('notes').addEventListener('input', function () { order.deliveryNotes = $('notes').value; render(); scheduleSave(); });
+
+// ---------- Bookmarklet ----------
+var BM_CODE = "(function(){var s=document.createElement('script');s.src='" + SPUDCALL_JS_URL + "';s.onload=function(){};s.onerror=function(){alert('SpudCall: could not load spud-call.js — is it uploaded to GitHub Pages?');};document.head.appendChild(s);})();";
+var BM_URL = 'javascript:' + encodeURIComponent(BM_CODE).replace(/%20/g, ' ');
+$('bmlink').href = BM_URL;
+$('copybm').onclick = async function () {
+  try { await navigator.clipboard.writeText(BM_URL); $('copybm').textContent = 'Copied ✓ — now paste it into a bookmark'; }
+  catch (e) {
+    var ta = document.createElement('textarea');
+    ta.value = BM_URL; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); $('copybm').textContent = 'Copied ✓ — now paste it into a bookmark'; } catch (e2) { $('copybm').textContent = 'Copy failed — long-press the purple link instead'; }
+    document.body.removeChild(ta);
+  }
+};
+
+// ---------- Call buttons ----------
+async function startCall(to, isTest) {
+  order.to = to;
+  order.testCall = isTest;
+  if (isTest) order.testPassed = order.testPassed; // keep existing flag
+  $('callstate').textContent = 'Saving the order, then opening the dialer…';
+  try { await saveOrder(); } catch (e) {}
+  var url = DIALER[backend];
+  $('callstate').textContent = 'Dialer opening in a new tab. Once it loads, tap your SpudCall bookmark — the caller will dial ' + to + ' and speak the order. You hear nothing.';
+  window.open(url, '_blank');
+}
+$('calltest').onclick = function () { startCall(TEST_NUMBER, true); };
+$('callfront').onclick = function () {
+  if (!order.testPassed) { $('callstate').textContent = 'Front desk is locked — run the test call and tap TEST PASSED first.'; return; }
+  startCall(FRONT_DESK, false);
+};
+$('testpassed').onclick = async function () {
+  order.testPassed = true;
+  render();
+  try { await fbPatch(NODE + '/' + ORDER_ID, { testPassed: true }); } catch (e) {}
+  $('callstate').innerHTML = '<b>Front desk unlocked ✓</b> — you can now tap CALL FRONT DESK.';
+};
+
+// ---------- Load existing order (restore testPassed + items) ----------
+(async function init() {
+  render();
+  try {
+    var existing = await fbRead(NODE + '/' + ORDER_ID);
+    if (existing) {
+      if (existing.room) { order.room = existing.room; $('room').value = existing.room; }
+      if (existing.guestName) { order.guestName = existing.guestName; $('guest').value = existing.guestName; }
+      if (typeof existing.deliveryNotes === 'string') { order.deliveryNotes = existing.deliveryNotes; $('notes').value = existing.deliveryNotes; }
+      if (Array.isArray(existing.items) && existing.items.length) order.items = existing.items;
+      if (existing.testPassed === true) order.testPassed = true;
+      render();
+      $('savestate').innerHTML = 'Loaded the saved order from Firebase ✓' + (order.testPassed ? ' — front desk unlocked.' : '');
+    } else {
+      await saveOrder();
+    }
+  } catch (e) {
+    $('savestate').textContent = 'Firebase not reachable yet (' + e.message + ') — the order will save when you tap Call.';
+  }
+})();
+</script>
+</body>
+</html>

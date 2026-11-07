@@ -1,0 +1,262 @@
+[
+  {
+    "en": "Eggs Your Way (2)",
+    "es": "huevos al gusto (2)"
+  },
+  {
+    "en": "Bacon Egg Muffin",
+    "es": "muffin de huevo con tocino"
+  },
+  {
+    "en": "Broccoli Egg Muffin",
+    "es": "muffin de huevo con brócoli"
+  },
+  {
+    "en": "Ham, Egg & Cheese Crepe",
+    "es": "crepa de huevo, jamón y queso"
+  },
+  {
+    "en": "Machaca Burrito with Egg",
+    "es": "burrito de machaca con huevo"
+  },
+  {
+    "en": "Salmon Bagel",
+    "es": "bagel de salmón"
+  },
+  {
+    "en": "Chicken Breast Baguette",
+    "es": "baguette de pechuga de pollo"
+  },
+  {
+    "en": "Prosciutto Baguette",
+    "es": "baguette de jamón serrano"
+  },
+  {
+    "en": "Guacamole & Bacon Baguette",
+    "es": "baguette de guacamole y tocino"
+  },
+  {
+    "en": "Waffles",
+    "es": "waffles"
+  },
+  {
+    "en": "Nutella & Banana Crepe",
+    "es": "crepa dulce de Nutella con plátano"
+  },
+  {
+    "en": "Blackberry Pancakes",
+    "es": "pancakes de moras"
+  },
+  {
+    "en": "Banana Pancakes",
+    "es": "pancakes de plátano"
+  },
+  {
+    "en": "Chocochip Pancakes",
+    "es": "pancakes con chocochips"
+  },
+  {
+    "en": "Cinnamon Roll Casserole",
+    "es": "cazuela de rollo de canela"
+  },
+  {
+    "en": "Freshly Baked Sweet Bread",
+    "es": "pan dulce horneado"
+  },
+  {
+    "en": "Toasted White Bread",
+    "es": "pan blanco tostado"
+  },
+  {
+    "en": "Toasted Whole Wheat Bread",
+    "es": "pan integral tostado"
+  },
+  {
+    "en": "Fruit Salad",
+    "es": "ensalada de frutas"
+  },
+  {
+    "en": "Cereal — Frosted Flakes",
+    "es": "cereal Zucaritas"
+  },
+  {
+    "en": "Cereal — Froot Loops",
+    "es": "cereal Froot Loops"
+  },
+  {
+    "en": "Cereal — Choco Krispis",
+    "es": "cereal Choco Krispis"
+  },
+  {
+    "en": "Cereal — All Bran",
+    "es": "cereal All Bran"
+  },
+  {
+    "en": "8 oz Angus Burger",
+    "es": "hamburguesa Angus de 8 oz"
+  },
+  {
+    "en": "Cuban Sandwich",
+    "es": "sándwich cubano"
+  },
+  {
+    "en": "BLT Baguette",
+    "es": "baguette BLT"
+  },
+  {
+    "en": "Artisanal Tuna Baguette",
+    "es": "baguette de atún artesanal"
+  },
+  {
+    "en": "Roast Beef Panini",
+    "es": "panini de roast beef"
+  },
+  {
+    "en": "Hanger Steak Burrito",
+    "es": "burrito de arrachera"
+  },
+  {
+    "en": "Chicken Tender Wrap",
+    "es": "wrap de tiras de pollo"
+  },
+  {
+    "en": "Chicken Gyros",
+    "es": "gyros de pollo"
+  },
+  {
+    "en": "Pepperoni Pizza",
+    "es": "pizza de pepperoni"
+  },
+  {
+    "en": "Hawaiian Pizza",
+    "es": "pizza hawaiana"
+  },
+  {
+    "en": "Margarita Pizza",
+    "es": "pizza margarita"
+  },
+  {
+    "en": "Classic Caesar Salad with Shrimp",
+    "es": "ensalada César clásica con camarones"
+  },
+  {
+    "en": "Green Leaves Salad with Chicken",
+    "es": "ensalada de hojas verdes con pollo"
+  },
+  {
+    "en": "Nachos Machos",
+    "es": "nachos machos"
+  },
+  {
+    "en": "Popcorn",
+    "es": "palomitas de maíz"
+  },
+  {
+    "en": "3 Chocolate Cold Cake",
+    "es": "pastel frío de 3 chocolates"
+  },
+  {
+    "en": "Lemon Pie",
+    "es": "pie de limón"
+  },
+  {
+    "en": "Banana Crumble",
+    "es": "crumble de plátano"
+  },
+  {
+    "en": "Orange Juice",
+    "es": "jugo de naranja"
+  },
+  {
+    "en": "Green Juice",
+    "es": "jugo verde"
+  },
+  {
+    "en": "Grapefruit Juice",
+    "es": "jugo de toronja"
+  },
+  {
+    "en": "Apple Juice",
+    "es": "jugo de manzana"
+  },
+  {
+    "en": "Pineapple Juice",
+    "es": "jugo de piña"
+  },
+  {
+    "en": "Tomato Juice",
+    "es": "jugo de tomate"
+  },
+  {
+    "en": "American Coffee",
+    "es": "café americano"
+  },
+  {
+    "en": "Decaf Coffee",
+    "es": "café descafeinado"
+  },
+  {
+    "en": "Tea",
+    "es": "té"
+  },
+  {
+    "en": "Coke",
+    "es": "Coca Cola"
+  },
+  {
+    "en": "Diet Coke",
+    "es": "Coca Cola de dieta"
+  },
+  {
+    "en": "Fanta",
+    "es": "Fanta"
+  },
+  {
+    "en": "Sprite",
+    "es": "Sprite"
+  },
+  {
+    "en": "Still Water",
+    "es": "agua natural"
+  },
+  {
+    "en": "Sparkling Water",
+    "es": "agua mineral con gas"
+  },
+  {
+    "en": "Whole Milk",
+    "es": "leche entera"
+  },
+  {
+    "en": "Chocolate Milk",
+    "es": "leche con chocolate"
+  },
+  {
+    "en": "Domestic Beer — Sol",
+    "es": "cerveza Sol"
+  },
+  {
+    "en": "Domestic Beer — Dos Equis",
+    "es": "cerveza Dos Equis"
+  },
+  {
+    "en": "Domestic Beer — Tecate",
+    "es": "cerveza Tecate"
+  },
+  {
+    "en": "Imported Beer — Heineken",
+    "es": "cerveza Heineken"
+  },
+  {
+    "en": "Imported Beer — Coors Light",
+    "es": "cerveza Coors Light"
+  },
+  {
+    "en": "House Red Wine (180 ml)",
+    "es": "vino tinto de la casa"
+  },
+  {
+    "en": "House White Wine (180 ml)",
+    "es": "vino blanco de la casa"
+  }
+]
