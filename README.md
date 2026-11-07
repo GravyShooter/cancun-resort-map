@@ -13,9 +13,10 @@ offline. The voice is Chatty Porch (Chris's voice) via pre-generated
 MP3s. The rule-based responder needs no LLM.
 
 FreeCallMe replaces TextNow (Cloudflare-blocked on the GitHub runner).
-Dialer selectors are verified from the server-rendered dialer HTML;
-the sign-in modal and in-call screen selectors are generic patterns
-and the first live run dumps the page state on failure.
+Dialer and auth-form selectors are verified from the server-rendered
+dialer, /signup, and /login HTML (Nov 7); only the in-call screen
+selectors are generic patterns, and the first live run dumps the page
+state on failure.
 
 ## How it works
 
@@ -26,8 +27,9 @@ order page / parent --write--> Firebase hailmary-orders-2way/<id>
 GitHub Actions (every 5 min, or manual Run workflow)
   -> poll Firebase for a queued two-way order
   -> run gha-call.js --live
-       - sign in to FreeCallMe (email OTP; 6-digit code or magic link
-         from Gmail, relayed via Firebase)
+       - sign in to FreeCallMe (email+password account; first run
+         creates it — first/last name + email + password, then email
+         confirmation code/link from Gmail, relayed via Firebase)
        - dial +52 998 872 8500, play the order (Chatty Porch)
        - LISTEN: capture the staff's voice (inject.js remote-track hook)
        - transcribe with whisper.cpp (offline, tiny.en model)
@@ -81,19 +83,31 @@ The closing is "That's everything. Thanks so much!" — no "how long"
 question (a one-way call can't hear the answer, and a two-way call
 lets the staff volunteer the time, which gets a "Perfect, thank you").
 
-## FreeCallMe verification (how the OTP code/link gets to the runner)
+## FreeCallMe auth (how sign-in + confirmation work)
 
 The runner is ephemeral — no persistent FreeCallMe session. Every live
-call signs in fresh (email OTP: Supabase sends a 6-digit code or a
-magic link to cgd2049@gmail.com). The verification flow (mirrors the
-old TextNow code flow, but via Firebase because there is no local
-server on the runner):
+call signs in fresh. The dialer prompts a sign-up form (First name,
+Last name, Email, Password min 8 chars; submit "Create free account").
+The submit is DISABLED until all four fields are valid AND the
+Cloudflare Turnstile check completes (invisible, usually a few seconds
+in a real browser) — the code fills all fields and waits up to 60s for
+the button to enable (run #29 died here by filling only the email).
+After sign-up Supabase sends an email confirmation (6-digit code or
+magic link) to cgd2049@gmail.com. On later runs the account exists, so
+the code signs in instead (Email + Password, submit "Sign in"; the
+sign-in form is not Turnstile-gated). The password is
+FREECALLME_PASSWORD (GitHub secret, preferred) or a generated one
+stored in Firebase (freecallme-auth node) for reuse. The account holds
+no payment method (free $0.25 credit only).
+
+The confirmation relay (mirrors the old TextNow code flow, but via
+Firebase because there is no local server on the runner):
 
 1. The runner fills the dialer, presses Call now, and the FreeCallMe
-   sign-in modal appears. It enters cgd2049@gmail.com; FreeCallMe
-   emails a 6-digit OTP code (or a magic link) to Gmail. The runner
-   marks the Firebase order `waiting-for-code` and polls the order
-   node for a `code` field.
+   sign-up/sign-in form appears. It fills the fields and submits;
+   FreeCallMe emails a 6-digit confirmation code (or a magic link) to
+   Gmail. The runner marks the Firebase order `waiting-for-code` and
+   polls the order node for a `code` field.
 2. The parent (main agent) sees `waiting-for-code`, reads Gmail for
    the 6-digit code (or the magic-link URL), and writes it to the
    Firebase order node (`code: "123456"` or `code: "https://..."`).
@@ -105,7 +119,7 @@ Alternatively, pass `--code 123456` (or a magic-link URL, or
 `FREECALLME_CODE`) when triggering manually if it is already known.
 
 Note: the Gmail connector must be connected/reauthorized for the
-parent to read the OTP. If Gmail reads fail with
+parent to read the confirmation code. If Gmail reads fail with
 `reauthorization_required`, reauthorize Gmail first — the runner will
 wait at `waiting-for-code` until the code/link is written.
 
