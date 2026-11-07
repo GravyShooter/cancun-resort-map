@@ -1,7 +1,12 @@
 name: Room service call (two-way)
-# FREE two-way conversational room-service caller (TextNow web).
+# FREE two-way conversational room-service caller (FreeCallMe web).
 # Listens to the front desk, transcribes with whisper.cpp (offline),
 # and answers back with rule-based Chatty Porch replies.
+#
+# FreeCallMe replaces TextNow (Cloudflare-blocked on the runner).
+# First call free up to $0.25 (Mexico $0.03/min, US $0.01/min) — no
+# card. Sign-in is a Supabase email OTP (6-digit code or magic link),
+# relayed via Firebase after the parent reads Gmail.
 #
 # Browser (workflow_dispatch input browser, default 'firefox'):
 #  - firefox: the PROVEN call path. Host checks #20 (fake-file) and
@@ -30,7 +35,8 @@ name: Room service call (two-way)
 # The order (items, room, guest, language) and the Chatty Porch order
 # audio (orderAudioB64) live in Firebase node hailmary-orders-2way.
 # The parent writes the order + audio there and, when the run reports
-# waiting-for-code, reads Gmail and writes the 6-digit code to the order.
+# waiting-for-code, reads Gmail and writes the FreeCallMe verification
+# (6-digit OTP code or magic-link URL) to the order as `code`.
 on:
   workflow_dispatch:
     inputs:
@@ -39,7 +45,7 @@ on:
         required: false
         default: ''
       code:
-        description: '6-digit TextNow login code (optional — otherwise polled from Firebase)'
+        description: 'FreeCallMe verification — 6-digit OTP code or magic-link URL (optional — otherwise polled from Firebase)'
         required: false
         default: ''
       dry_run:
