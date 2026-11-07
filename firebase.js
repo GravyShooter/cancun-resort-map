@@ -81,4 +81,25 @@ async function waitForCode(orderId, idToken, timeoutMs) {
   }
 }
 
-module.exports = { DB_URL, NODE, getApiKey, signInAnonymously, auth, readOrder, patchOrder, waitForCode };
+// FreeCallMe account password, persisted across ephemeral runner runs
+// in a dedicated node (freecallme-auth). The account holds no payment
+// method (free $0.25 credit only), so this is low-stakes. Prefer the
+// FREECALLME_PASSWORD env var (GitHub secret) when set.
+const AUTH_NODE = 'freecallme-auth';
+async function readAuthPassword(idToken) {
+  const res = await fetch(DB_URL + '/' + AUTH_NODE + '.json?auth=' + encodeURIComponent(idToken), { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) return null;
+  const body = await res.json().catch(() => null);
+  return body && body.password;
+}
+async function writeAuthPassword(idToken, password) {
+  const res = await fetch(DB_URL + '/' + AUTH_NODE + '.json?auth=' + encodeURIComponent(idToken), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) throw new Error('write auth password failed (HTTP ' + res.status + ')');
+  return res.json().catch(() => ({}));
+}
+
+module.exports = { DB_URL, NODE, getApiKey, signInAnonymously, auth, readOrder, patchOrder, waitForCode, readAuthPassword, writeAuthPassword };
