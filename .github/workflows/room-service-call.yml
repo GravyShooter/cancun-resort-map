@@ -68,7 +68,16 @@ jobs:
         with:
           node-version: '20'
       - name: Install system deps
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng cmake build-essential pulseaudio xvfb pulseaudio-utils pipewire
+        # The default Azure Ubuntu mirror (azure.archive.ubuntu.com) stalled
+        # Nov 6 ~6:10 PM — apt-get update hung downloading cmake-data, and
+        # two fresh runners hit the same wall. Switch to the main archive
+        # mirror first (covers both sources.list and the DEB822
+        # ubuntu.sources used by Ubuntu 24.04+), then update with retries.
+        run: |
+          sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          grep -rh "URIs:" /etc/apt/sources.list.d/*.sources 2>/dev/null | head -3 || true
+          for i in 1 2 3; do sudo apt-get update -o Acquire::Retries=3 && break || { echo "apt-get update attempt $i failed — retrying in 10s"; sleep 10; }; done
+          sudo apt-get install -y ffmpeg espeak-ng cmake build-essential pulseaudio xvfb pulseaudio-utils pipewire
       - name: Start audio (pipe-source or pw-loopback mic)
         # MIC_MODE=fake-file: SKIP all PulseAudio setup — Chromium's
         # --use-file-for-fake-audio-capture needs NO sound server at
