@@ -5,8 +5,14 @@ name: Room service call (two-way)
 #
 # FreeCallMe replaces TextNow (Cloudflare-blocked on the runner).
 # First call free up to $0.25 (Mexico $0.03/min, US $0.01/min) — no
-# card. Sign-in is a Supabase email OTP (6-digit code or magic link),
-# relayed via Firebase after the parent reads Gmail.
+# card. Auth is a Supabase email+password account: the dialer prompts
+# a sign-up form (First name, Last name, Email, Password min 8) with
+# submit "Create free account" (disabled until all fields are valid);
+# after sign-up Supabase sends an email confirmation (6-digit code or
+# magic link), relayed via Firebase after the parent reads Gmail. On
+# later runs the account exists, so the code signs in (email+password).
+# The password is FREECALLME_PASSWORD (GitHub secret, preferred) or a
+# generated one stored in Firebase (freecallme-auth node).
 #
 # Browser (workflow_dispatch input browser, default 'firefox'):
 #  - firefox: the PROVEN call path. Host checks #20 (fake-file) and
