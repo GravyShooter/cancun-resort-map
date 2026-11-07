@@ -64,17 +64,19 @@ async function patchOrder(orderId, idToken, patch) {
 }
 
 // Poll the order node until a `code` field appears (the parent writes
-// the 6-digit TextNow login code there after reading Gmail). Returns
-// the code, or throws on timeout. The code is never logged.
+// the login verification there after reading Gmail). The value is
+// EITHER a 6-digit OTP code OR a magic-link URL (Supabase sends one
+// or the other). Returns it as-is, or throws on timeout. The value is
+// never logged.
 async function waitForCode(orderId, idToken, timeoutMs) {
   const deadline = Date.now() + (timeoutMs || 10 * 60 * 1000);
   for (;;) {
     try {
       const order = await readOrder(orderId, idToken);
       const code = order && order.code;
-      if (typeof code === 'string' && /^\d{6}$/.test(code)) return code;
+      if (typeof code === 'string' && (/^\d{6}$/.test(code) || /^https?:\/\/\S+$/.test(code))) return code;
     } catch (e) { /* transient read failure — keep waiting */ }
-    if (Date.now() > deadline) throw new Error('timed out waiting for the TextNow login code in Firebase');
+    if (Date.now() > deadline) throw new Error('timed out waiting for the login verification (code or magic link) in Firebase');
     await new Promise((r) => setTimeout(r, 5000));
   }
 }
